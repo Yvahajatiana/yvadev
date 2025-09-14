@@ -11,6 +11,7 @@ import { formatDateLong } from '@/lib/utils';
 import { siteConfig } from '@/lib/constants';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { CopyButton } from '@/components/ui/CopyButton';
 import { NewsletterForm } from '@/components/ui/NewsletterForm';
 import { PostCard } from '@/components/blog/PostCard';
 import { TableOfContents } from '@/components/blog/TableOfContents';
@@ -171,17 +172,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                       LinkedIn
                     </a>
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      navigator.clipboard.writeText(postUrl);
-                      // Could add a toast notification here
-                    }}
-                  >
-                    <LinkIcon className="h-4 w-4 mr-2" />
-                    Copy
-                  </Button>
+                  <CopyButton text={postUrl} />
                 </div>
 
                 {/* Cover Image */}
