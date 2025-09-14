@@ -1,0 +1,57 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Next.js plugin for Netlify
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.ai4dev.blog https://www.google-analytics.com;"
+
+# Cache headers for static assets
+[[headers]]
+  for = "/images/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Redirects
+[[redirects]]
+  from = "https://www.ai4dev.blog/*"
+  to = "https://ai4dev.blog/:splat"
+  status = 301
+  force = true
+
+# API rate limiting (if needed)
+[[edge_functions]]
+  function = "rate-limit"
+  path = "/api/*"
+
+# Environment variables (set these in Netlify dashboard)
+# NEXT_PUBLIC_SITE_URL
+# NEXT_PUBLIC_GA_ID
+# NEWSLETTER_API_KEY
+
+# Build settings
+[build.environment]
+  NODE_VERSION = "18"
+  NPM_VERSION = "9"
+
+# Deploy previews settings
+[context.deploy-preview]
+  command = "npm run build"
+
+[context.branch-deploy]
+  command = "npm run build"
