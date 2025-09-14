@@ -1,17 +1,22 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-export function Input({ className, type = 'text', ...props }: InputProps) {
-  return (
-    <input
-      type={type}
-      className={cn(
-        'input-field',
-        className
-      )}
-      {...props}
-    />
-  );
-}
+export const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type = 'text', ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          'input-field',
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+
+Input.displayName = 'Input';
