@@ -29,23 +29,37 @@ export function SearchBar({ className, placeholder = "Search articles...", initi
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Debounced search query
-  const debouncedQuery = useMemo(() => {
-    const handler = setTimeout(() => query, 300);
-    return () => clearTimeout(handler);
-  }, [query]);
+  // Cleanup ref for timeout
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sanitize search input
+  const sanitizeQuery = (input: string): string => {
+    return input
+      .trim()
+      .replace(/[<>'"&]/g, '') // Remove potential XSS characters
+      .slice(0, 100) // Limit length to prevent abuse
+      .replace(/\s+/g, ' '); // Normalize whitespace
+  };
 
   // Perform search
   const performSearch = async (searchQuery: string) => {
-    if (searchQuery.trim().length < 2) {
+    const sanitizedQuery = sanitizeQuery(searchQuery);
+
+    if (sanitizedQuery.length < 2) {
       setResults([]);
       setIsOpen(false);
       return;
     }
 
+    // Additional validation
+    if (sanitizedQuery.length > 100) {
+      console.warn('Search query too long, truncated');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}&limit=8`);
+      const response = await fetch(`/api/search?q=${encodeURIComponent(sanitizedQuery)}&limit=8`);
       if (response.ok) {
         const data: SearchResult = await response.json();
         setResults(data.results);
@@ -60,9 +74,15 @@ export function SearchBar({ className, placeholder = "Search articles...", initi
     }
   };
 
-  // Effect for debounced search
+  // Effect for debounced search with proper cleanup
   useEffect(() => {
-    const timer = setTimeout(() => {
+    // Clear any existing timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    // Set new timeout
+    timeoutRef.current = setTimeout(() => {
       if (query.trim()) {
         performSearch(query);
       } else {
@@ -71,8 +91,23 @@ export function SearchBar({ className, placeholder = "Search articles...", initi
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    // Cleanup function
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
   }, [query]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
