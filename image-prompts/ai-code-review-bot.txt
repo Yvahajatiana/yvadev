@@ -1,0 +1,24 @@
+Technical blog header image for AI Code Review Bot tutorial, 800x400 pixels.
+
+Main elements:
+- Central focus: Futuristic AI robot or bot icon analyzing code on multiple screens
+- Left side: GitHub pull request interface with code diff view
+- Right side: AI analysis results with suggestions, warnings, and improvements
+- Multiple monitor setup showing different aspects of code review process
+- Code flowing from GitHub to AI bot with connecting lines or data streams
+- Bot character with friendly but professional appearance
+- Code snippets with syntax highlighting showing before/after improvements
+- GitHub integration elements (logos, PR interface, commit history)
+- Automated workflow visualization with arrows and process flow
+- Modern developer workspace with dark theme
+
+Technical elements:
+- Programming languages visible (TypeScript, JavaScript, Python)
+- Code quality metrics and analysis results
+- CI/CD pipeline visualization
+- Professional development tools interface
+- Clean, organized workspace aesthetic
+
+Style: Modern tech illustration, automation workflow, developer tools, professional AI assistant
+Colors: GitHub dark theme, electric blue (#2563eb) for AI elements, syntax highlighting colors
+Mood: Efficient automation, professional development, cutting-edge AI assistance, productivity

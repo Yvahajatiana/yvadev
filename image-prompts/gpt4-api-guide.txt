@@ -1,0 +1,22 @@
+Technical blog header image for GPT-4 API tutorial, 800x400 pixels.
+
+Main elements:
+- Split screen composition showing code editor on the left and AI chat interface on the right
+- Left side: Dark code editor (VS Code style) with TypeScript/JavaScript code visible
+- Code snippets showing OpenAI API calls, authentication, and response handling
+- Right side: Chat interface with GPT-4 logo and example AI responses
+- Connecting lines or arrows showing data flow between code and AI
+- Professional developer workspace aesthetic with multiple monitors
+- Soft blue lighting and tech ambiance
+- "GPT-4 API" text overlay in modern font
+- Clean, educational, and developer-focused design
+
+Technical details:
+- High contrast for readability
+- Syntax highlighting in code (blue, green, yellow accents)
+- Professional photography style with digital overlay
+- Sharp, clean lines and modern UI elements
+
+Style: Professional tech photography, developer workspace, modern UI design, educational
+Colors: Dark themes with blue accents (#2563eb), syntax highlighting colors, soft lighting
+Mood: Professional, educational, cutting-edge technology

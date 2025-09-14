@@ -1,0 +1,16 @@
+Professional social media banner for AI4Dev blog, 1200x630 pixels, modern tech design.
+
+Main elements:
+- Large bold text "AI4Dev" in electric blue (#2563eb) font, centered
+- Tagline "Master AI Integration in Your Apps" in smaller white text below
+- Abstract tech background with subtle circuit patterns or neural network nodes
+- Gradient from deep blue to purple (#8b5cf6) background
+- Clean, minimal design with plenty of white space
+- Tech icons subtly integrated: code brackets, AI brain symbol, API connection nodes
+- Professional, trustworthy appearance suitable for LinkedIn and social sharing
+- High contrast for readability on various platforms
+- Sans-serif font (Inter or similar)
+
+Style: Modern, professional, tech-focused, clean design, corporate branding
+Colors: Electric blue (#2563eb), purple (#8b5cf6), white, dark gray
+Format: PNG, high resolution, optimized for social media

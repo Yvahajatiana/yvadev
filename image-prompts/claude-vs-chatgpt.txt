@@ -1,0 +1,24 @@
+Comparison blog header image for Claude vs ChatGPT API article, 800x400 pixels.
+
+Main elements:
+- Split screen design with Claude on left, ChatGPT on right
+- Left side: Claude interface with Anthropic branding, orange/warm tones
+- Right side: ChatGPT interface with OpenAI branding, green/cool tones
+- Center: VS symbol or comparison arrows between the two sides
+- Each side shows example API responses or code snippets
+- Professional comparison chart or metrics overlay
+- Performance graphs, pricing tables, or feature comparisons
+- Clean, analytical presentation style
+- Professional developer tools and documentation visible
+- Modern tech workspace background
+
+Visual elements:
+- Clear division line down the middle
+- Equal weight given to both platforms
+- Professional logos and branding respected
+- Clean typography with comparison metrics
+- Neutral evaluation tone in visual design
+
+Style: Professional comparison, analytical, unbiased presentation, modern tech design
+Colors: Claude side (orange/warm tones), ChatGPT side (green/cool tones), neutral center
+Mood: Analytical, professional, informative, balanced comparison
