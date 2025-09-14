@@ -1,8 +1,10 @@
 import { Metadata } from 'next';
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
+import Link from 'next/link';
+import { X } from 'lucide-react';
+import { SearchBar } from '@/components/ui/SearchBar';
+import { Button } from '@/components/ui/Button';
 import { PostList } from '@/components/blog/PostList';
-import { getAllPosts } from '@/lib/posts';
+import { getAllPosts, searchPosts } from '@/lib/posts';
 import { siteConfig } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -15,8 +17,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPage() {
-  const posts = getAllPosts();
+interface BlogPageProps {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default function BlogPage({ searchParams }: BlogPageProps) {
+  const allPosts = getAllPosts();
+  const searchQuery = typeof searchParams.search === 'string' ? searchParams.search : undefined;
+  const posts = searchQuery ? searchPosts(searchQuery) : allPosts;
 
   return (
     <div className="container py-16">
@@ -24,20 +32,34 @@ export default function BlogPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
-            All Articles
+            {searchQuery ? `Search Results` : 'All Articles'}
           </h1>
           <p className="text-lg text-secondary mb-8">
-            Explore our complete collection of AI development tutorials and guides
+            {searchQuery 
+              ? `${posts.length} result${posts.length !== 1 ? 's' : ''} for "${searchQuery}"`
+              : 'Explore our complete collection of AI development tutorials and guides'
+            }
           </p>
 
           {/* Search Bar */}
-          <div className="relative max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary" />
-            <Input
-              placeholder="Search articles..."
-              className="pl-10"
+          <div className="max-w-md mx-auto">
+            <SearchBar 
+              placeholder="Search articles..." 
+              initialQuery={searchQuery || ''}
             />
           </div>
+
+          {/* Clear Search */}
+          {searchQuery && (
+            <div className="text-center mt-4">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/blog">
+                  <X className="h-4 w-4 mr-2" />
+                  Clear Search
+                </Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -78,10 +100,27 @@ export default function BlogPage() {
         </div>
 
         {/* Posts List */}
-        <PostList posts={posts} />
+        {posts.length === 0 && searchQuery ? (
+          <div className="text-center py-16">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
+              No articles found
+            </h3>
+            <p className="text-secondary mb-6">
+              We couldn't find any articles matching "{searchQuery}". 
+              Try searching with different keywords.
+            </p>
+            <Button variant="outline" asChild>
+              <Link href="/blog">
+                View All Articles
+              </Link>
+            </Button>
+          </div>
+        ) : (
+          <PostList posts={posts} />
+        )}
 
         {/* Load More (placeholder for future pagination) */}
-        {posts.length > 12 && (
+        {posts.length > 12 && !searchQuery && (
           <div className="text-center mt-12">
             <button className="button-secondary">
               Load More Articles
