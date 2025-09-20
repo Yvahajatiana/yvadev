@@ -114,6 +114,18 @@ types/                 # TypeScript definitions
 - No co-authored commits with Claude
 - Windows environment: use PowerShell/CMD commands
 
+## Custom Agents
+
+### Port Manager Agent
+- **Purpose**: Specialized agent for managing and freeing ports occupied by Next.js and development servers
+- **Usage**: Call proactively when ports 3000-3010 are occupied or before starting npm run dev
+- **Tools**: PowerShell script (Windows) and bash script (Unix) in `/scripts/`
+- **Features**:
+  - Automatic detection of development processes
+  - Safe termination of Next.js/Vite/Webpack servers
+  - Multi-platform support (Windows/Unix)
+  - Security checks to avoid killing system processes
+
 ## Content Creation
 
 ### Article Structure

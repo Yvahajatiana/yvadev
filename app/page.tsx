@@ -2,6 +2,7 @@ import { ArrowRight, Bot, Code, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { NewsletterForm } from '@/components/ui/NewsletterForm';
+import { CodeBlock } from '@/components/ui/CodeBlock';
 import { PostList } from '@/components/blog/PostList';
 import { getFeaturedPosts, getLatestPosts } from '@/lib/posts';
 import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT } from '@/lib/constants';
@@ -128,17 +129,10 @@ export default function HomePage() {
         </div>
 
         <div className="max-w-4xl mx-auto">
-          <div className="bg-muted/50 rounded-lg p-6 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              </div>
-              <span className="text-xs text-secondary">TypeScript + OpenAI API</span>
-            </div>
-            <pre className="text-sm text-foreground overflow-x-auto">
-              <code>{`import OpenAI from 'openai';
+          <CodeBlock
+            language="typescript"
+            title="TypeScript + OpenAI API"
+            code={`import OpenAI from 'openai';
 
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -157,17 +151,16 @@ export async function generateResponse(prompt: string) {
     console.error('OpenAI API error:', error);
     throw new Error('Failed to generate response');
   }
-}`}</code>
-            </pre>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-xs text-secondary">✓ Error handling • ✓ TypeScript • ✓ Environment variables</span>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/blog/getting-started-gpt4-api">
-                  View Full Tutorial
-                  <ArrowRight className="ml-1 h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
+}`}
+          />
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-xs text-secondary">✓ Error handling • ✓ TypeScript • ✓ Environment variables</span>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/blog/getting-started-gpt4-api">
+                View Full Tutorial
+                <ArrowRight className="ml-1 h-3 w-3" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

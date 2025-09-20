@@ -126,3 +126,146 @@
     display: none !important;
   }
 }
+
+/* Custom Highlight.js theme adapted to app design */
+.hljs {
+  background: transparent !important;
+  color: theme('colors.foreground');
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hljs-keyword,
+.hljs-built_in,
+.hljs-type {
+  color: theme('colors.primary');
+  font-weight: 600;
+}
+
+.hljs-string,
+.hljs-attr {
+  color: #059669; /* green-600 */
+}
+
+.hljs-number,
+.hljs-literal {
+  color: theme('colors.accent');
+}
+
+.hljs-comment {
+  color: theme('colors.secondary');
+  font-style: italic;
+}
+
+.hljs-function,
+.hljs-title,
+.hljs-class .hljs-title {
+  color: #dc2626; /* red-600 */
+  font-weight: 600;
+}
+
+.hljs-variable,
+.hljs-params {
+  color: theme('colors.foreground');
+}
+
+.hljs-punctuation {
+  color: theme('colors.secondary');
+}
+
+.hljs-meta {
+  color: theme('colors.secondary');
+}
+
+.hljs-operator {
+  color: theme('colors.foreground');
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Monokai theme for MDX blog posts */
+.hljs-monokai {
+  background: #272822 !important;
+  color: #f8f8f2;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hljs-monokai .hljs-keyword,
+.hljs-monokai .hljs-built_in,
+.hljs-monokai .hljs-type {
+  color: #66d9ef;
+  font-weight: 500;
+}
+
+.hljs-monokai .hljs-string,
+.hljs-monokai .hljs-attr {
+  color: #e6db74;
+}
+
+.hljs-monokai .hljs-number,
+.hljs-monokai .hljs-literal {
+  color: #ae81ff;
+}
+
+.hljs-monokai .hljs-comment {
+  color: #75715e;
+  font-style: italic;
+}
+
+.hljs-monokai .hljs-function,
+.hljs-monokai .hljs-title,
+.hljs-monokai .hljs-class .hljs-title {
+  color: #a6e22e;
+  font-weight: 500;
+}
+
+.hljs-monokai .hljs-variable,
+.hljs-monokai .hljs-params {
+  color: #f8f8f2;
+}
+
+.hljs-monokai .hljs-punctuation {
+  color: #f8f8f2;
+}
+
+.hljs-monokai .hljs-meta {
+  color: #75715e;
+}
+
+.hljs-monokai .hljs-operator {
+  color: #f92672;
+}
+
+.hljs-monokai .hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-monokai .hljs-strong {
+  font-weight: bold;
+}
+
+.hljs-monokai .hljs-tag {
+  color: #f92672;
+}
+
+.hljs-monokai .hljs-name {
+  color: #f92672;
+}
+
+.hljs-monokai .hljs-selector-id,
+.hljs-monokai .hljs-selector-class {
+  color: #a6e22e;
+}
+
+.hljs-monokai .hljs-property {
+  color: #66d9ef;
+}
+
+.hljs-monokai .hljs-regexp {
+  color: #fd971f;
+}
