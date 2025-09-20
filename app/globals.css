@@ -127,66 +127,6 @@
   }
 }
 
-/* Custom Highlight.js theme adapted to app design */
-.hljs {
-  background: transparent !important;
-  color: theme('colors.foreground');
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.hljs-keyword,
-.hljs-built_in,
-.hljs-type {
-  color: theme('colors.primary');
-  font-weight: 600;
-}
-
-.hljs-string,
-.hljs-attr {
-  color: #059669; /* green-600 */
-}
-
-.hljs-number,
-.hljs-literal {
-  color: theme('colors.accent');
-}
-
-.hljs-comment {
-  color: theme('colors.secondary');
-  font-style: italic;
-}
-
-.hljs-function,
-.hljs-title,
-.hljs-class .hljs-title {
-  color: #dc2626; /* red-600 */
-  font-weight: 600;
-}
-
-.hljs-variable,
-.hljs-params {
-  color: theme('colors.foreground');
-}
-
-.hljs-punctuation {
-  color: theme('colors.secondary');
-}
-
-.hljs-meta {
-  color: theme('colors.secondary');
-}
-
-.hljs-operator {
-  color: theme('colors.foreground');
-}
-
-.hljs-emphasis {
-  font-style: italic;
-}
-
-.hljs-strong {
-  font-weight: bold;
-}
 
 /* Monokai theme for MDX blog posts */
 .hljs-monokai {

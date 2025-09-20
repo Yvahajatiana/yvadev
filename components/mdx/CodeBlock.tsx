@@ -13,6 +13,7 @@ import python from 'highlight.js/lib/languages/python';
 import sql from 'highlight.js/lib/languages/sql';
 import css from 'highlight.js/lib/languages/css';
 import xml from 'highlight.js/lib/languages/xml';
+import 'highlight.js/styles/monokai.css';
 
 // Register languages
 hljs.registerLanguage('typescript', typescript);
@@ -81,12 +82,12 @@ export function CodeBlock({ children, className, language }: CodeBlockProps) {
 
       {/* Code content */}
       <pre className={cn(
-        'overflow-x-auto bg-[#272822] text-[#f8f8f2] p-4 rounded-b-lg text-sm leading-relaxed hljs-monokai',
+        'overflow-x-auto bg-[#272822] text-[#f8f8f2] p-4 rounded-b-lg text-sm leading-relaxed',
         'scrollbar-thin scrollbar-track-[#272822]/10 scrollbar-thumb-[#f8f8f2]/30',
         className
       )}>
         {lang !== 'text' ? (
-          <code ref={codeRef} className={`language-${lang} font-mono`}>
+          <code ref={codeRef} className={`language-${lang} font-mono hljs`}>
             {children}
           </code>
         ) : (
