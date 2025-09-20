@@ -13,6 +13,7 @@ import python from 'highlight.js/lib/languages/python';
 import sql from 'highlight.js/lib/languages/sql';
 import css from 'highlight.js/lib/languages/css';
 import xml from 'highlight.js/lib/languages/xml';
+import csharp from 'highlight.js/lib/languages/csharp';
 import 'highlight.js/styles/monokai.css';
 
 // Register languages
@@ -25,6 +26,8 @@ hljs.registerLanguage('sql', sql);
 hljs.registerLanguage('css', css);
 hljs.registerLanguage('xml', xml);
 hljs.registerLanguage('html', xml);
+hljs.registerLanguage('csharp', csharp);
+hljs.registerLanguage('cs', csharp);
 
 interface CodeBlockProps {
   children: string;

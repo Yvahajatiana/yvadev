@@ -1,0 +1,31 @@
+Technical blog header image for C# delegates tutorial, 800x400 pixels.
+
+Main elements:
+- Central focus: Three distinct sections representing Func, Action, and Predicate delegates
+- Left section (Func): Code showing function with return value, arrows pointing to output
+- Center section (Action): Code showing void method with side effects, action symbols
+- Right section (Predicate): Code showing boolean condition/filter, true/false indicators
+- Visual flow connecting all three sections showing delegate relationships
+- C# code snippets with proper syntax highlighting in each section
+- Modern IDE interface (Visual Studio/VS Code style) with dark theme
+- Delegate type signatures clearly visible: Func<T,TResult>, Action<T>, Predicate<T>
+- Professional developer workspace background
+
+Technical elements:
+- C# syntax highlighting (blue keywords, green strings, etc.)
+- Lambda expressions and method references visible
+- Generic type parameters (<T>) emphasized
+- Clean code structure with proper indentation
+- Modern .NET/C# branding elements
+- Professional development tools aesthetic
+
+Visual design:
+- Three-column layout with clear separation
+- Consistent color coding for each delegate type
+- Arrows and connectors showing data flow
+- Modern gradient backgrounds for each section
+- Clean typography for delegate names and descriptions
+
+Style: Modern tech illustration, educational diagram, professional C# development
+Colors: Visual Studio dark theme, C# blue (#239B56), orange accent (#F39C12), clean white text
+Mood: Educational, technical precision, modern .NET development, clear concept explanation
