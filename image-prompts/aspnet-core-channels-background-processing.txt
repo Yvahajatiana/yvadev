@@ -1,0 +1,18 @@
+A modern, technical illustration showing ASP.NET Core Channels for background processing. The image should feature:
+
+- A sleek, dark background with subtle gradients in blue and purple tones
+- Multiple producer components (represented as geometric shapes or nodes) feeding data into a central channel system
+- Channel visualization as sleek, glowing pipelines or tubes with flowing data streams
+- Consumer processes on the right side processing the data (shown as modern server icons or processing units)
+- Data flow indicators with arrows and glowing particles moving through the channels
+- ASP.NET Core logo subtly integrated
+- Code snippets or syntax highlighting effects floating around the composition
+- Performance metrics and monitoring dashboards in the background
+- Producer-consumer pattern clearly illustrated with multiple producers feeding into bounded/unbounded channels
+- Queue management indicators showing backpressure handling
+- Modern, minimalist design with clean lines and professional color scheme
+- Typography showing "System.Threading.Channels" and "Background Processing"
+- Subtle grid patterns or circuit board elements to emphasize the technical nature
+- High contrast and clarity suitable for blog thumbnails and technical documentation
+
+Style: Modern technical illustration, clean and professional, optimized for web use, 16:9 aspect ratio, high contrast for readability.
