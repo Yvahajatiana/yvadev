@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { PostList } from '@/components/blog/PostList';
 import { getAllPosts, searchPosts } from '@/lib/posts';
 import { siteConfig } from '@/lib/constants';
+import { BlogStructuredData } from '@/components/seo/StructuredData';
 
 export const metadata: Metadata = {
   title: 'All Articles',
@@ -27,8 +28,10 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
   const posts = searchQuery ? searchPosts(searchQuery) : allPosts;
 
   return (
-    <div className="container py-16">
-      <div className="max-w-4xl mx-auto">
+    <>
+      <BlogStructuredData />
+      <div className="container py-16">
+        <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-foreground mb-4">
@@ -127,7 +130,8 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
             </button>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

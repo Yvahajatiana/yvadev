@@ -29,16 +29,21 @@ export interface PostMetadata {
 
 export interface SiteConfig {
   name: string;
+  shortName?: string;
   description: string;
+  tagline?: string;
   url: string;
   ogImage: string;
   author: {
     name: string;
     email: string;
+    bio?: string;
   };
   social: {
     twitter?: string;
     linkedin?: string;
     github?: string;
   };
+  keywords?: string[];
+  categories?: string[];
 }

@@ -1,14 +1,41 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://ai4dev.blog/sitemap.xml
+# High-priority crawling for important content
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
 
-# Crawl-delay for respectful crawling
+User-agent: Bingbot
+Allow: /
 Crawl-delay: 1
 
 # Block sensitive or unnecessary paths
 Disallow: /api/
 Disallow: /_next/
 Disallow: /admin/
+Disallow: /private/
+Disallow: /temp/
 Disallow: *.json$
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+Disallow: /search?
+
+# Allow important assets
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.gif$
+Allow: /*.webp$
+Allow: /*.svg$
+
+# Sitemap
+Sitemap: https://ai4dev.blog/sitemap.xml
+
+# RSS Feed
+Sitemap: https://ai4dev.blog/feed.xml
+
+# Crawl-delay for other bots
+Crawl-delay: 2

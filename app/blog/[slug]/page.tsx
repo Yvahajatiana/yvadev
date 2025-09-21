@@ -18,6 +18,7 @@ import { TableOfContents } from '@/components/blog/TableOfContents';
 import { CodeBlock } from '@/components/mdx/CodeBlock';
 import { Callout } from '@/components/mdx/Callout';
 import { Image as CustomImage } from '@/components/mdx/Image';
+import { ArticleStructuredData, BreadcrumbStructuredData } from '@/components/seo/StructuredData';
 
 const mdxComponents = {
   pre: ({ children, ...props }: any) => {
@@ -95,12 +96,21 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
   const tableOfContents = generateTableOfContents(post.content);
   const postUrl = `${siteConfig.url}/blog/${post.slug}`;
 
+  const breadcrumbItems = [
+    { name: 'Home', url: siteConfig.url },
+    { name: 'Blog', url: `${siteConfig.url}/blog` },
+    { name: post.title, url: postUrl },
+  ];
+
   const shareLinks = {
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(postUrl)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`,
   };
 
   return (
+    <>
+      <ArticleStructuredData post={post} url={postUrl} />
+      <BreadcrumbStructuredData items={breadcrumbItems} />
     <div className="min-h-screen">
       {/* Breadcrumb */}
       <div className="border-b border-border bg-muted/50">
@@ -309,5 +319,6 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
         </section>
       )}
     </div>
+    </>
   );
 }
