@@ -27,12 +27,24 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Redirects
+# Redirects - www to non-www
 [[redirects]]
   from = "https://www.ai4dev.blog/*"
   to = "https://ai4dev.blog/:splat"
   status = 301
   force = true
+
+# Handle trailing slashes and ensure proper redirects
+[[redirects]]
+  from = "/blog/"
+  to = "/blog"
+  status = 301
+
+# Catch-all for 404 pages - use Next.js not-found page
+[[redirects]]
+  from = "/*"
+  to = "/not-found"
+  status = 404
 
 # API rate limiting (if needed)
 [[edge_functions]]

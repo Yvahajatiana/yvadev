@@ -34,8 +34,8 @@ Allow: /*.svg$
 # Sitemap
 Sitemap: https://ai4dev.blog/sitemap.xml
 
-# RSS Feed
-Sitemap: https://ai4dev.blog/feed.xml
+# RSS Feed - commented out until implemented
+# Sitemap: https://ai4dev.blog/feed.xml
 
 # Crawl-delay for other bots
 Crawl-delay: 2

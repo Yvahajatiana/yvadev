@@ -211,13 +211,9 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                 <div className="flex flex-wrap gap-2 mb-6">
                   <span className="text-sm font-medium text-foreground">Tags:</span>
                   {post.tags.map((tag) => (
-                    <Link
-                      key={tag}
-                      href={`/blog/tag/${tag.toLowerCase()}`}
-                      className="text-sm text-primary hover:underline"
-                    >
-                      #{tag}
-                    </Link>
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
                   ))}
                 </div>
 

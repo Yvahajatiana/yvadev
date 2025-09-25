@@ -31,15 +31,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.7,
     }));
 
-  // Tag pages (if you have them)
-  const allTags = posts.flatMap(post => post.tags || []);
-  const uniqueTags = Array.from(new Set(allTags));
-  const tagUrls = uniqueTags.map(tag => ({
-    url: `${siteConfig.url}/blog/tag/${encodeURIComponent(tag.toLowerCase())}`,
-    lastModified: currentDate,
-    changeFrequency: 'weekly' as const,
-    priority: 0.6,
-  }));
+  // Tag pages - commented out until routes are implemented
+  // const allTags = posts.flatMap(post => post.tags || []);
+  // const uniqueTags = Array.from(new Set(allTags));
+  // const tagUrls = uniqueTags.map(tag => ({
+  //   url: `${siteConfig.url}/blog/tag/${encodeURIComponent(tag.toLowerCase())}`,
+  //   lastModified: currentDate,
+  //   changeFrequency: 'weekly' as const,
+  //   priority: 0.6,
+  // }));
 
   const staticUrls = [
     {
@@ -60,26 +60,26 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     },
-    // Add important AI development categories
-    {
-      url: `${siteConfig.url}/blog/category/tutorials`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${siteConfig.url}/blog/category/ai-integration`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
-    {
-      url: `${siteConfig.url}/blog/category/machine-learning`,
-      lastModified: currentDate,
-      changeFrequency: 'weekly' as const,
-      priority: 0.8,
-    },
+    // Category pages - commented out until routes are implemented
+    // {
+    //   url: `${siteConfig.url}/blog/category/tutorials`,
+    //   lastModified: currentDate,
+    //   changeFrequency: 'weekly' as const,
+    //   priority: 0.8,
+    // },
+    // {
+    //   url: `${siteConfig.url}/blog/category/ai-integration`,
+    //   lastModified: currentDate,
+    //   changeFrequency: 'weekly' as const,
+    //   priority: 0.8,
+    // },
+    // {
+    //   url: `${siteConfig.url}/blog/category/machine-learning`,
+    //   lastModified: currentDate,
+    //   changeFrequency: 'weekly' as const,
+    //   priority: 0.8,
+    // },
   ];
 
-  return [...staticUrls, ...featuredPosts, ...regularPosts, ...tagUrls];
+  return [...staticUrls, ...featuredPosts, ...regularPosts];
 }
