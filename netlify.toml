@@ -27,8 +27,14 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# All redirects removed to avoid conflicts with Next.js routing
-# Next.js and Netlify plugin will handle all routing automatically
+# Essential SEO redirect only - www to non-www
+[[redirects]]
+  from = "https://www.ai4dev.blog/*"
+  to = "https://ai4dev.blog/:splat"
+  status = 301
+  force = true
+
+# Let Next.js handle all internal routing and 404s
 
 # API rate limiting (if needed)
 [[edge_functions]]
