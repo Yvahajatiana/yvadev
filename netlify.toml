@@ -27,21 +27,8 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Redirects - www to non-www
-[[redirects]]
-  from = "https://www.ai4dev.blog/*"
-  to = "https://ai4dev.blog/:splat"
-  status = 301
-  force = true
-
-# Handle trailing slashes
-[[redirects]]
-  from = "/blog/"
-  to = "/blog"
-  status = 301
-
-# Note: Removed catch-all 404 redirect as it conflicts with Next.js routing
-# Next.js will handle 404s automatically with the not-found.tsx page
+# All redirects removed to avoid conflicts with Next.js routing
+# Next.js and Netlify plugin will handle all routing automatically
 
 # API rate limiting (if needed)
 [[edge_functions]]
