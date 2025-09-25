@@ -34,17 +34,14 @@
   status = 301
   force = true
 
-# Handle trailing slashes and ensure proper redirects
+# Handle trailing slashes
 [[redirects]]
   from = "/blog/"
   to = "/blog"
   status = 301
 
-# Catch-all for 404 pages - use Next.js not-found page
-[[redirects]]
-  from = "/*"
-  to = "/not-found"
-  status = 404
+# Note: Removed catch-all 404 redirect as it conflicts with Next.js routing
+# Next.js will handle 404s automatically with the not-found.tsx page
 
 # API rate limiting (if needed)
 [[edge_functions]]
