@@ -1,0 +1,203 @@
+---
+title: "Build Autonomous AI Agents in C#: Practical Guide to Tool Calling Integration with LM-Kit.NET and Enterprise Apps"
+excerpt: "Dive into LM-Kit.NET to create secure, local AI agents in C#. Learn tool calling with hands-on examples for enterprise data workflows, compare with Python, and migrate prototypes to scalable .NET applications."
+date: "2025-10-22"
+author: "AI4Dev Team"
+tags: ["AI Agents", "C#", "LM-Kit.NET", "Tool Calling", "Enterprise", "Python Migration"]
+coverImage: "/images/posts/csharp-ai-agents.png"
+coverImageAlt: "C# code for AI agent tool calling on a laptop screen"
+featured: true
+---
+
+# Build Autonomous AI Agents in C#: Practical Guide to Tool Calling Integration with LM-Kit.NET and Enterprise Apps
+
+As artificial intelligence (AI) reshapes enterprise workflows, **autonomous AI agents** are becoming essential for automating complex tasks. Picture an agent that processes data, calls external APIs, and generates reports—all running locally, without cloud dependencies. This is where **LM-Kit.NET**, an open-source SDK for .NET, shines, enabling developers to build secure, scalable AI agents with **tool calling** in C#.
+
+In this guide, we’ll walk you through creating **local AI agents** using LM-Kit.NET, complete with practical examples for enterprise data workflows. We’ll compare its capabilities with Python frameworks like LangChain and show how to migrate a Python-based agentic prototype to a production-ready .NET application. Whether you’re a .NET developer or exploring AI agent frameworks, this tutorial is your starting point.
+
+> **Why LM-Kit.NET?** It offers on-device execution, GDPR/HIPAA compliance, and predictable latency—perfect for enterprise-grade, scalable applications. 
+
+## What is LM-Kit.NET and Why Build Local AI Agents in C#?
+
+**LM-Kit.NET** is a powerful SDK for .NET, designed to integrate multimodal AI capabilities into C# and VB.NET applications. It supports local inference of models like Mistral, LLaMA, or GPT-OSS and excels at **tool calling**, where models autonomously decide when to invoke functions, pass valid JSON arguments, and incorporate results into their outputs. 
+
+### Benefits of Local AI Agents in C#
+- **Security and Privacy**: Local execution keeps sensitive data off the cloud.
+- **Scalability**: Seamless integration with ASP.NET, Blazor, or Azure Functions.
+- **Performance**: Low-latency tool calls (2-5 ms) with hardware acceleration (CUDA, Vulkan).
+- **Compliance**: Built-in safety features like `MaxCallsPerTurn` to prevent runaway loops.
+
+Unlike cloud-based solutions, LM-Kit.NET eliminates per-token costs and ensures offline availability, making it ideal for industries like finance, healthcare, and manufacturing.
+
+## Setting Up Your Environment for LM-Kit.NET
+
+To get started, install the LM-Kit.NET package via NuGet:
+
+```bash
+dotnet add package LM-Kit.NET --version 2025.10.4
+```
+
+Download a compatible model (GGUF or LMK format), such as `gptoss:20b`, from Hugging Face. Ensure you have 6-16 GB of VRAM for smooth performance. 
+
+Create a new .NET 8+ console project:
+
+```bash
+dotnet new console -o AgentIAExample
+cd AgentIAExample
+```
+
+Add the required namespaces:
+
+```csharp
+using LMKit.Model;
+using LMKit.TextGeneration;
+using LMKit.Agents.Tools;
+using System.Text.Json;
+```
+
+## Building a Basic AI Agent with Tool Calling
+
+Let’s create a simple agent that plans a weekend trip by checking the weather using a custom tool.
+
+### Step 1: Load the Model and Initialize the Conversation
+```csharp
+var model = LM.LoadFromModelID("gptoss:20b");
+if (!model.HasToolCalls)
+{
+    throw new InvalidOperationException("Model does not support tool calling.");
+}
+
+using var chat = new MultiTurnConversation(model);
+chat.ToolPolicy.Choice = ToolChoice.Auto; // Model decides when to call tools
+chat.ToolPolicy.MaxCallsPerTurn = 3; // Safety limit
+```
+
+### Step 2: Define and Register a Tool
+Use the `[LMFunction]` attribute for rapid tool prototyping:
+
+```csharp
+public sealed class WeatherTools
+{
+    [LMFunction("get_weather", "Fetches current weather for a city. Returns temperature and conditions.")]
+    public string GetWeather(string city)
+    {
+        // Simulated API call (replace with real API integration)
+        var weather = new { city, temperature = 22.5, conditions = "Sunny" };
+        return JsonSerializer.Serialize(weather);
+    }
+}
+
+var tools = LMFunctionToolBinder.FromType<WeatherTools>();
+chat.Tools.Register(tools);
+```
+
+### Step 3: Submit a Query and Get a Response
+```csharp
+var response = chat.Submit("Plan my weekend in Seattle and check the weather.");
+Console.WriteLine(response.Content);
+// Output: "For your weekend in Seattle: Sunny at 22.5°C on Saturday, perfect for a hike..."
+```
+
+The agent automatically calls the tool, validates arguments via JSON Schema, and integrates the result into its response. 
+
+## Tool Calling for Enterprise Data Workflows
+
+For real-world enterprise applications, let’s explore how to use tool calling for **data workflows**, such as extracting invoice details or analyzing sales reports.
+
+### Example: Agent for Invoice Data Extraction
+Leverage LM-Kit’s prebuilt skills to process PDFs locally.
+
+```csharp
+public static class EnterpriseSkills
+{
+    [LMFunction("extract_invoice", "Extracts key fields from an invoice PDF: number, total, date.")]
+    public static object ExtractInvoice(string filePath)
+    {
+        // Simulate PDF parsing (integrate with iTextSharp or similar)
+        return new { invoiceNumber = "INV-2025-001", total = 1234.56m, date = "2025-10-22" };
+    }
+
+    [LMFunction("analyze_report", "Analyzes a sales report and calculates totals.")]
+    public static object AnalyzeReport(string filePath)
+    {
+        // Simulate report parsing and computation
+        return new { totalSales = 15000.0, growth = "+15%" };
+    }
+}
+
+// Register in the agent
+var skills = LMFunctionToolBinder.FromType<EnterpriseSkills>();
+chat.Tools.Register(skills);
+
+var result = chat.Submit("Extract data from the invoice at C:\\docs\\invoice.pdf and analyze the attached report.");
+Console.WriteLine(result.Content);
+```
+
+LM-Kit’s multimodal capabilities natively handle images and PDFs, making this agent ideal for automating tasks like accounts payable. 
+
+### Advanced Execution Modes
+- **Simple Function**: Single sequential tool call (`MaxCallsPerTurn = 1`).
+- **Parallel Function**: Concurrent calls to compare data from multiple sources.
+- **Multiple Function**: Automatic tool chaining (e.g., extract → analyze → report).
+
+Add observability with hooks:
+
+```csharp
+chat.BeforeToolInvocation += (sender, e) =>
+{
+    if (e.ToolCall.Name == "extract_invoice" && !HumanAuthorization())
+        e.Cancel = true;
+};
+```
+
+## Comparing with Python: LangChain vs. LM-Kit.NET
+
+Python dominates AI development with frameworks like **LangChain**, but C# offers superior scalability for .NET ecosystems. Here’s a comparison:
+
+| Aspect                  | LangChain (Python)                          | LM-Kit.NET (C#)                             |
+|-------------------------|---------------------------------------------|---------------------------------------------|
+| **Execution**           | Often cloud-based (OpenAI), local via Llama.cpp | 100% local, no external dependencies      |
+| **Tool Calling**        | Prompt-based, limited parallel modes        | Native JSON Schema, 4 execution modes      |
+| **Security**            | Relies on provider, manual hooks            | Built-in policies, human-in-the-loop hooks |
+| **Integration**         | Great for prototyping, less scalable        | Native .NET for enterprise apps           |
+| **Performance**         | Variable latency                            | Predictable, hardware-accelerated          |
+| **Migration**           | -                                           | Binders for easy porting                  |
+
+LangChain is excellent for rapid prototyping, but LM-Kit.NET excels in production with persistent memory and prebuilt skills. 
+
+## Migrating a Python Agentic Prototype to C#
+
+Migrating from a Python-based agent (e.g., LangChain) to C# is straightforward with LM-Kit.NET’s unified APIs. Consider this simple LangChain prototype:
+
+### Python Prototype (LangChain)
+```python
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain.tools import tool
+from langchain_openai import ChatOpenAI
+
+@tool
+def get_weather(city: str) -> str:
+    """Fetches weather for a city."""
+    return f"Weather in {city}: 22°C, sunny."
+
+llm = ChatOpenAI(model="gpt-4o")
+tools = [get_weather]
+agent = create_tool_calling_agent(llm, tools, prompt)
+executor = AgentExecutor(agent=agent, tools=tools)
+result = executor.invoke({"input": "What's the weather in Seattle?"})
+```
+
+### Migrating to C# (LM-Kit.NET)
+1. **Map Tools**: Convert `@tool` to `[LMFunction]`.
+2. **Replace LLM**: Use `LM.LoadFromModelID` for a local model.
+3. **Adapt Conversation**: Replace `AgentExecutor` with `MultiTurnConversation`.
+
+The C# equivalent is shown in the earlier example. Benefits include automatic JSON validation and built-in safety policies. For complex chains, import Python-based MCP catalogs via JSON-RPC. Check GitHub samples for migration templates. 
+
+## Conclusion: Start Building Scalable AI Agents in .NET
+
+**LM-Kit.NET** makes it easy to develop **autonomous AI agents in C#**, from secure data workflows to seamless Python migrations. Its local execution and enterprise-ready features position it as a game-changer for .NET developers.
+
+Ready to dive in? Clone the LM-Kit.NET samples on GitHub and start experimenting. For more resources, visit [lm-kit.com](https://lm-kit.com).
+
+*Published October 22, 2025. Follow [ai4dev.blog](https://ai4dev.blog) for more AI and .NET tutorials.*
