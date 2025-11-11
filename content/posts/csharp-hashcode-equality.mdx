@@ -1,0 +1,247 @@
+---
+title: "Mastering GetHashCode() and Equals() in C#: Dictionaries, Collisions, and Production Pitfalls"
+excerpt: "Deep dive into object equality in C# — why default GetHashCode() breaks Dictionary, how to avoid collisions, and real-world finance examples with custom structs."
+date: "2025-11-11"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET 8", "GetHashCode", "Equals", "Dictionary", "Hash Collision", "Performance", "Equality"]
+coverImage: "/images/posts/csharp-hashcode-equality.png"
+coverImageAlt: "C# Dictionary with custom structs showing hash distribution and collision chains"
+featured: false
+---
+
+# Mastering `GetHashCode()` and `Equals()` in C#: Dictionaries, Collisions, and Production Pitfalls
+
+In C#, **two objects can be logically equal but have different hash codes** — and that’s a **silent performance killer** in `Dictionary<TKey, TValue>`. This guide explains how equality works under the hood, why collisions happen, and how to implement bulletproof `GetHashCode()` and `Equals()` with real-world financial domain examples.
+
+The Golden Rule of Equality in .NET
+
+> **If two objects are equal (`a.Equals(b)` returns `true`), they MUST have the same hash code.**
+
+```csharp
+public override bool Equals(object? obj) => ...
+public override int GetHashCode() => ...
+```
+
+Breaking this rule → **Dictionary lookup fails**, even if the key exists.
+
+Default Behavior: Reference vs Value Types
+
+### Reference Types (class)
+```csharp
+var p1 = new Person { Id = 1, Name = "Alice" };
+var p2 = new Person { Id = 1, Name = "Alice" };
+
+Console.WriteLine(p1 == p2);        // false (reference)
+Console.WriteLine(p1.Equals(p2));   // false (default: reference equality)
+```
+
+### Value Types (struct)
+```csharp
+var t1 = new Tick { Symbol = "AAPL", Price = 150.5m };
+var t2 = new Tick { Symbol = "AAPL", Price = 150.5m };
+
+Console.WriteLine(t1.Equals(t2)); // true (ValueType reflects all fields)
+```
+
+> **Warning**: `ValueType.Equals()` uses **reflection** → **slow** in hot paths.
+
+Why `Dictionary` Depends on `GetHashCode()`
+
+```csharp
+var dict = new Dictionary<Person, decimal>();
+dict[new Person { Id = 1 }] = 100.0m;
+
+var lookup = dict.TryGetValue(new Person { Id = 1 }, out var value); // false!
+```
+
+Even though `Id` is the same, **different hash codes** → different buckets → **miss**.
+
+### Internal Bucket Structure
+```text
+Dictionary Buckets:
+[0] → null
+[1] → [Person(Id=1)] → [Person(Id=2)]
+[2] → null
+[3] → [Person(Id=1)] ← collision chain
+```
+
+Hash code determines **bucket**. Equal objects in different buckets → **not found**.
+
+How Hash Collisions Work (and Why They’re Normal)
+
+A **collision** occurs when two **different keys** produce the **same hash code**.
+
+```csharp
+GetHashCode("AA") == GetHashCode("BB") // possible!
+```
+
+### .NET’s Strategy
+1. Compute `GetHashCode()` → bucket index
+2. If bucket has entries → walk chain and call `Equals()`
+3. Collision = **slow linear search**
+
+### Performance Impact
+| Collision Rate | Avg Lookup Time |
+|----------------|-----------------|
+| 0%             | O(1)            |
+| 10%            | ~1.1x slower    |
+| 50%            | ~3x slower      |
+| 90%            | ~10x slower     |
+
+> In finance: **10µs → 100µs** per lookup = **lost arbitrage opportunity**
+
+Implementing Correct `GetHashCode()` and `Equals()`
+
+### Example: `TradeKey` in a Matching Engine
+
+```csharp
+public readonly struct TradeKey : IEquatable<TradeKey>
+{
+    public string Symbol { get; }
+    public decimal Price { get; }
+    public long Quantity { get; }
+
+    public TradeKey(string symbol, decimal price, long quantity)
+    {
+        Symbol = symbol;
+        Price = price;
+        Quantity = quantity;
+    }
+
+    public bool Equals(TradeKey other)
+    {
+        return Symbol == other.Symbol &&
+               Price == other.Price &&
+               Quantity == other.Quantity;
+    }
+
+    public override bool Equals(object? obj) =>
+        obj is TradeKey other && Equals(other);
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hash = 17;
+            hash = hash * 31 + (Symbol?.GetHashCode() ?? 0);
+            hash = hash * 31 + Price.GetHashCode();
+            hash = hash * 31 + Quantity.GetHashCode();
+            return hash;
+        }
+    }
+
+    public static bool operator ==(TradeKey left, TradeKey right) => left.Equals(right);
+    public static bool operator !=(TradeKey left, TradeKey right) => !left.Equals(right);
+}
+```
+
+### Why This Works
+- **Prime multipliers** (`17`, `31`) reduce collision clustering
+- **`unchecked`** prevents overflow exceptions
+- **All fields** used in both `Equals` and `GetHashCode`
+
+Common Pitfalls That Break Dictionaries
+
+### 1. **Mutable Keys**
+```csharp
+public class BadKey
+{
+    public string Symbol { get; set; }
+    public override int GetHashCode() => Symbol.GetHashCode();
+}
+
+var dict = new Dictionary<BadKey, decimal>();
+var key = new BadKey { Symbol = "AAPL" };
+dict[key] = 100m;
+
+key.Symbol = "MSFT"; // Hash code changed! Key is now LOST
+dict.ContainsKey(key); // false — but value still in memory!
+```
+
+> **Never mutate dictionary keys**
+
+### 2. **Using Only Part of the Key**
+```csharp
+public override int GetHashCode() => Id.GetHashCode(); // Ignores Name!
+```
+
+→ Two different people with same `Id` → same hash → **collision chain grows**
+
+### 3. **Returning Constant Hash Code**
+```csharp
+public override int GetHashCode() => 42; // DON'T
+```
+
+→ **All keys in one bucket** → O(n) lookup
+
+Best Practices Summary
+
+| Rule | Why |
+|------|-----|
+| **Override both** `Equals` and `GetHashCode` | Contract requirement |
+| **Use `readonly struct`** for keys | Immutability + stack allocation |
+| **Include all fields** used in `Equals` | Consistency |
+| **Use prime numbers** in hash combining | Better distribution |
+| **Never mutate keys** in `Dictionary` | Prevents lost entries |
+
+Performance: Custom Struct vs Class
+
+```csharp
+var dictStruct = new Dictionary<TradeKey, Order>(100_000);
+var dictClass = new Dictionary<Trade, Order>(100_000);
+```
+
+| Type | Memory | Lookup Speed |
+|------|--------|--------------|
+| `struct` | ~40% less | ~15% faster |
+| `class`  | GC pressure | Slower indirection |
+
+> Use `struct` for **high-frequency keys** (ticks, orders)
+
+Advanced: Custom Hashing with `HashCode` (C# 7.3+)
+
+```csharp
+public override int GetHashCode()
+{
+    var hash = new HashCode();
+    hash.Add(Symbol);
+    hash.Add(Price);
+    hash.Add(Quantity);
+    return hash.ToHashCode();
+}
+```
+
+**Pros**: Thread-safe, cleaner  
+**Cons**: Slightly slower than manual
+
+5 Interview Questions on Equality & Hashing
+
+### 1. **What happens if `GetHashCode()` returns different values for equal objects?**
+> **Answer**: `Dictionary` may fail to find existing keys → `KeyNotFoundException` or silent misses.
+
+### 2. **Can two different objects have the same hash code?**
+> **Answer**: Yes — it's a **collision**. `Equals()` is used to resolve it.
+
+### 3. **Why shouldn’t you use `RuntimeHelpers.GetHashCode()` in `Dictionary` keys?**
+> **Answer**: It returns **identity hash** (memory address). Equal objects → different hashes → lookup fails.
+
+### 4. **Is it safe to use a `List<int>` as a `Dictionary` key?**
+> **Answer**: No — default `Equals` compares references, not contents. Use `ImmutableArray<int>` or custom comparer.
+
+### 5. **How does `string.GetHashCode()` behave across app domains or .NET versions?**
+> **Answer**: **Not stable**. Never rely on string hash codes persisting across runs or app domains.
+
+Final Checklist Before Using Custom Keys in `Dictionary`
+
+- [ ] `Equals()` compares **all logical fields**
+- [ ] `GetHashCode()` uses **same fields**
+- [ ] Key is **immutable** (`readonly struct` or immutable class)
+- [ ] `==` and `!=` operators overloaded
+- [ ] Tested with **10,000+ random entries**
+
+Stay Sharp with C# Performance
+
+Join **3,000+ engineers** getting weekly .NET deep dives:
+
+**Share if you’ve been burned by a bad `GetHashCode()`**  
+→ [Tweet](https://twitter.com/intent/tweet?text=Never%20break%20Dictionary%20again%3A%20Master%20GetHashCode()%20%26%20Equals()%20in%20C%23%20https://ai4dev.blog/posts/csharp-hashcode-equality)
