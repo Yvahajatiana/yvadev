@@ -1,9 +1,9 @@
-import { ArrowRight, Bot, Code, Zap } from 'lucide-react';
+import { ArrowRight, Bot, Cpu, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { NewsletterForm } from '@/components/ui/NewsletterForm';
 import { CodeBlock } from '@/components/ui/CodeBlock';
-import { PostList } from '@/components/blog/PostList';
+import { PostCard } from '@/components/blog/PostCard';
 import { getFeaturedPosts, getLatestPosts } from '@/lib/posts';
 import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT } from '@/lib/constants';
 
@@ -18,43 +18,43 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="inline-flex items-center space-x-2 px-4 py-2 bg-muted rounded-full text-sm text-secondary">
             <Bot className="h-4 w-4" />
-            <span>AI Integration Made Simple</span>
+            <span>AI · C# · .NET · Production</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-6xl font-bold text-foreground text-balance">
-            Master AI Integration in Your Apps
+            Build smarter apps with AI and modern .NET
           </h1>
-          
+
           <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto text-balance">
-            Learn to integrate AI into your applications with practical tutorials, 
-            code examples, and the latest AI development news.
+            Deep-dive tutorials on AI integration, C# patterns, and .NET development.
+            Real-world code, production-ready — no fluff.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
             <Button asChild size="lg">
               <Link href="/blog">
-                Explore Tutorials
+                Browse Articles
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link href="/about">Learn More</Link>
+              <Link href="/about">About AI4Dev</Link>
             </Button>
           </div>
 
           {/* Statistics Section */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 pt-8 border-t border-muted">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">3+</div>
+              <div className="text-2xl md:text-3xl font-bold text-primary">8+</div>
+              <div className="text-sm text-secondary">Technical Guides</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl md:text-3xl font-bold text-primary">4</div>
               <div className="text-sm text-secondary">AI Tutorials</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">5+</div>
-              <div className="text-sm text-secondary">API Integrations</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">1000+</div>
-              <div className="text-sm text-secondary">Lines of Code</div>
+              <div className="text-2xl md:text-3xl font-bold text-primary">5</div>
+              <div className="text-sm text-secondary">C# & .NET Deep Dives</div>
             </div>
             <div className="text-center">
               <div className="text-2xl md:text-3xl font-bold text-primary">100%</div>
@@ -64,53 +64,52 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Topics Section */}
       <section className="bg-muted/50 py-16">
         <div className="container">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
-              Everything You Need for AI Development
+              What You&apos;ll Find Here
             </h2>
             <p className="text-secondary max-w-2xl mx-auto">
-              From beginner tutorials to advanced integration patterns, 
-              we cover all aspects of AI development.
+              Practical, in-depth content for developers who want to build with AI and write better .NET code.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center space-y-4">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-lg">
-                <Code className="h-6 w-6 text-white" />
+                <Bot className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                React & Next.js Integration
+                AI Integration
               </h3>
               <p className="text-secondary">
-                Complete tutorials for integrating OpenAI, Claude, and other AI APIs into React applications with TypeScript support.
+                Integrate GPT-4, Claude, and local LLMs into your apps with battle-tested C# and JavaScript examples.
               </p>
             </div>
 
             <div className="text-center space-y-4">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-accent rounded-lg">
-                <Zap className="h-6 w-6 text-white" />
+                <Cpu className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                API Comparisons & Performance
+                C# & .NET
               </h3>
               <p className="text-secondary">
-                Side-by-side comparisons of GPT-4, Claude, and Gemini APIs with performance benchmarks and cost analysis.
+                Modern C# patterns, .NET 10 features, performance optimization, and enterprise development practices.
               </p>
             </div>
 
             <div className="text-center space-y-4">
               <div className="inline-flex items-center justify-center w-12 h-12 bg-secondary rounded-lg">
-                <Bot className="h-6 w-6 text-white" />
+                <Zap className="h-6 w-6 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-foreground">
-                Production Best Practices
+                Production Practices
               </h3>
               <p className="text-secondary">
-                Error handling, rate limiting, token optimization, and security practices for production AI applications.
+                Background processing, error handling, API security, and architecture patterns for production systems.
               </p>
             </div>
           </div>
@@ -124,39 +123,37 @@ export default function HomePage() {
             Production-Ready Code Examples
           </h2>
           <p className="text-secondary max-w-2xl mx-auto">
-            Every tutorial includes complete, tested code that you can use directly in your projects.
+            Every tutorial includes complete, tested code you can use directly in your projects.
           </p>
         </div>
 
         <div className="max-w-4xl mx-auto">
           <CodeBlock
-            language="typescript"
-            title="TypeScript + OpenAI API"
-            code={`import OpenAI from 'openai';
+            language="csharp"
+            title="C# + ASP.NET Core"
+            code={`// ASP.NET Core Channels — Lightweight Background Processing
+var channel = Channel.CreateUnbounded<WorkItem>(
+    new UnboundedChannelOptions { SingleReader = false });
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Producer: enqueue work from your API endpoints
+await channel.Writer.WriteAsync(new WorkItem
+{
+    Id = Guid.NewGuid(),
+    Payload = request.Data
 });
 
-export async function generateResponse(prompt: string) {
-  try {
-    const completion = await client.chat.completions.create({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.7,
-    });
-
-    return completion.choices[0]?.message?.content;
-  } catch (error) {
-    console.error('OpenAI API error:', error);
-    throw new Error('Failed to generate response');
-  }
+// Consumer: background service processes items without blocking
+await foreach (var item in channel.Reader.ReadAllAsync(stoppingToken))
+{
+    await _processor.HandleAsync(item, stoppingToken);
 }`}
           />
           <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-secondary">✓ Error handling • ✓ TypeScript • ✓ Environment variables</span>
+            <span className="text-xs text-secondary">
+              ✓ No external queues &nbsp;·&nbsp; ✓ Built-in .NET &nbsp;·&nbsp; ✓ Production-ready
+            </span>
             <Button variant="outline" size="sm" asChild>
-              <Link href="/blog/getting-started-gpt4-api">
+              <Link href="/blog/aspnet-core-channels-background-processing">
                 View Full Tutorial
                 <ArrowRight className="ml-1 h-3 w-3" />
               </Link>
@@ -187,28 +184,7 @@ export async function generateResponse(prompt: string) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredPosts.map((post) => (
-              <div key={post.slug} className="group">
-                <Link href={`/blog/${post.slug}`} className="block">
-                  <div className="space-y-3">
-                    <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                      <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                        <Bot className="h-12 w-12 text-primary" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-sm text-secondary line-clamp-2">
-                        {post.excerpt}
-                      </p>
-                      <div className="text-xs text-secondary">
-                        {post.readingTime}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </div>
+              <PostCard key={post.slug} post={post} />
             ))}
           </div>
         </section>
@@ -223,7 +199,7 @@ export async function generateResponse(prompt: string) {
                 Latest Articles
               </h2>
               <p className="text-secondary">
-                Fresh content about AI development
+                Fresh content on AI, C#, and .NET development
               </p>
             </div>
             <Button variant="outline" asChild>
@@ -236,31 +212,7 @@ export async function generateResponse(prompt: string) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {latestPosts.slice(0, 6).map((post) => (
-              <div key={post.slug} className="group">
-                <Link href={`/blog/${post.slug}`} className="block">
-                  <div className="space-y-3 p-6 border border-border rounded-lg hover:shadow-md transition-shadow">
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {post.tags.slice(0, 2).map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 text-xs bg-muted text-secondary rounded"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-                      {post.title}
-                    </h3>
-                    <p className="text-sm text-secondary line-clamp-2">
-                      {post.excerpt}
-                    </p>
-                    <div className="text-xs text-secondary">
-                      {post.readingTime} • {new Date(post.date).toLocaleDateString()}
-                    </div>
-                  </div>
-                </Link>
-              </div>
+              <PostCard key={post.slug} post={post} />
             ))}
           </div>
         </section>
@@ -274,48 +226,50 @@ export async function generateResponse(prompt: string) {
               Frequently Asked Questions
             </h2>
             <p className="text-secondary">
-              Common questions about AI integration and development
+              Everything you need to know about AI4Dev
             </p>
           </div>
 
           <div className="space-y-6">
             <div className="border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">
-                How do I get started with AI API integration?
+                Is this blog for C# developers or AI developers?
               </h3>
               <p className="text-secondary">
-                Start with our "Getting Started with GPT-4 API" tutorial. It covers API key setup,
-                basic requests, error handling, and TypeScript integration. You'll have a working AI feature in under 30 minutes.
+                Both! AI4Dev bridges the gap between .NET development and AI. Most of our content
+                covers C# and .NET in depth — while also teaching how to integrate modern AI APIs
+                and models into your applications.
               </p>
             </div>
 
             <div className="border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">
-                Which AI API should I choose for my project?
+                What C# and .NET topics do you cover?
               </h3>
               <p className="text-secondary">
-                It depends on your use case. GPT-4 excels at general tasks and coding, Claude is great for analysis and safety,
-                while Gemini offers competitive pricing. Check our detailed API comparison guide for specific recommendations.
+                We cover .NET 10 and C# 14 new features, delegates (Func, Action, Predicate),
+                ASP.NET Core Channels for background processing, object equality (GetHashCode/Equals),
+                performance patterns, and enterprise architecture practices.
               </p>
             </div>
 
             <div className="border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">
-                How do I handle API costs and rate limits?
+                Do your AI tutorials include C# examples?
               </h3>
               <p className="text-secondary">
-                Implement request caching, token counting, user rate limiting, and choose the right model for your task.
-                Our production best practices guide covers cost optimization strategies that can reduce expenses by 60-80%.
+                Yes — our AI Agents guide uses C# with LM-Kit.NET for local, enterprise-grade inference.
+                We also cover GPT-4 and Claude integrations in TypeScript/JavaScript for web developers.
               </p>
             </div>
 
             <div className="border border-border rounded-lg p-6">
               <h3 className="text-lg font-semibold text-foreground mb-3">
-                Are these tutorials suitable for production use?
+                Are the code examples production-ready?
               </h3>
               <p className="text-secondary">
-                Absolutely! Every code example includes proper error handling, security best practices, TypeScript types,
-                and production-ready patterns. We focus on real-world implementation, not just proof-of-concepts.
+                Absolutely. Every example includes proper error handling, strong typing, and real-world
+                patterns — not just proof-of-concepts. We focus on code you can actually ship.
               </p>
             </div>
           </div>
@@ -327,18 +281,15 @@ export async function generateResponse(prompt: string) {
         <div className="container">
           <div className="max-w-2xl mx-auto text-center space-y-6">
             <h2 className="text-3xl font-bold text-foreground">
-              Stay Updated
+              Stay Ahead in AI & .NET
             </h2>
             <p className="text-secondary">
-              Get the latest AI development tutorials and news delivered to your inbox. 
-              No spam, unsubscribe at any time.
+              Get new tutorials on C#, .NET, and AI development delivered to your inbox.
+              No spam, unsubscribe anytime.
             </p>
             <div className="flex justify-center">
               <NewsletterForm />
             </div>
-            <p className="text-xs text-secondary">
-              Join 1,000+ developers who trust AI4Dev for their AI learning journey.
-            </p>
           </div>
         </div>
       </section>
