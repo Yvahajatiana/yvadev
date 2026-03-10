@@ -15,8 +15,8 @@ export function Footer() {
               <span className="text-xl font-bold text-foreground">YvaDev</span>
             </Link>
             <p className="max-w-md text-secondary">
-              Refonte du blog sur une base Next.js unique pour publier des articles tech,
-              piloter le deploiement avec Docker, et industrialiser l'hebergement sur Hetzner Cloud.
+              Blog technique sur le software engineering, le .NET, l architecture logicielle,
+              le cloud engineering et l intelligence artificielle appliquee.
             </p>
             <div className="flex space-x-4">
               {siteConfig.social.github && (
@@ -52,16 +52,16 @@ export function Footer() {
           <div>
             <h3 className="mb-4 font-semibold text-foreground">Themes</h3>
             <ul className="space-y-2 text-secondary">
-              <li>AI Engineering</li>
+              <li>Software Engineering</li>
               <li>.NET & architecture</li>
-              <li>DevOps & IaC</li>
-              <li>Cloud delivery</li>
+              <li>Cloud & DevOps</li>
+              <li>AI Engineering</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border pt-8 text-sm text-secondary md:flex-row md:items-center">
-          <p>© {new Date().getFullYear()} {siteConfig.shortName}. Built from the AI4Dev codebase.</p>
+          <p>© {new Date().getFullYear()} {siteConfig.shortName}. Tous droits reserves.</p>
           <p>{siteConfig.tagline}</p>
         </div>
       </div>

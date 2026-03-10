@@ -195,7 +195,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                       <div>
                         <h4 className="mb-1 font-semibold text-foreground">{post.author}</h4>
                         <p className="text-sm text-secondary">
-                          Contenu conserve depuis la base AI4Dev et republié dans l'environnement YvaDev pour accompagner la refonte du site.
+                          Articles techniques sur le software engineering, le .NET, le cloud et l'intelligence artificielle appliquee aux applications.
                         </p>
                       </div>
                     </div>
@@ -205,7 +205,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                     <div className="text-center">
                       <h3 className="mb-2 text-xl font-bold text-foreground">Recevoir les prochaines publications YvaDev</h3>
                       <p className="mb-4 text-secondary">
-                        Articles sur l'IA, le .NET, le cloud et la chaine de delivery envoyes directement par email.
+                        Analyses techniques, architectures concretes et retours d experience envoyes directement par email.
                       </p>
                       <div className="flex justify-center">
                         <NewsletterForm />
@@ -266,3 +266,4 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     </>
   );
 }
+

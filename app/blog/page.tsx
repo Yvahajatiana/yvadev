@@ -10,10 +10,10 @@ import { BlogStructuredData } from '@/components/seo/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Articles',
-  description: 'Parcourez les articles YvaDev sur l IA, le .NET, l architecture logicielle et le delivery cloud.',
+  description: 'Parcourez les articles YvaDev sur le software engineering, le .NET, l architecture logicielle, le cloud et l AI engineering.',
   openGraph: {
     title: `Articles | ${siteConfig.name}`,
-    description: 'Catalogue des articles YvaDev issus de la base AI4Dev et de la nouvelle ligne editoriale.',
+    description: 'Catalogue d articles techniques sur l ingenierie logicielle, le cloud et les architectures applicatives.',
     type: 'website',
   },
 };
@@ -39,7 +39,7 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
             <p className="mb-8 text-lg text-secondary">
               {searchQuery
                 ? `${posts.length} resultat${posts.length !== 1 ? 's' : ''} pour "${searchQuery}"`
-                : 'Le contenu existant AI4Dev reste disponible pendant la transition vers le nouveau positionnement YvaDev.'}
+                : 'Des articles pour approfondir le software engineering, le .NET, l architecture logicielle, le cloud et l AI engineering.'}
             </p>
 
             <div className="mx-auto max-w-md">
@@ -93,7 +93,7 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
             <div className="py-16 text-center">
               <h3 className="mb-4 text-xl font-semibold text-foreground">Aucun article trouve</h3>
               <p className="mb-6 text-secondary">
-                Aucun contenu ne correspond a "{searchQuery}". Essaie avec d'autres mots-clefs.
+                Aucun contenu ne correspond a "{searchQuery}". Essaie avec d autres mots-clefs.
               </p>
               <Button variant="outline" asChild>
                 <Link href="/blog">Voir tous les articles</Link>

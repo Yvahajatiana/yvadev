@@ -9,18 +9,18 @@ import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT } from '@/lib/constants';
 
 const focusAreas = [
   {
-    title: 'AI products',
-    description: 'Designing useful AI features, integrating APIs, and shipping workflows that survive production constraints.',
+    title: 'Software Engineering',
+    description: 'Architecture de services robustes, maintainability, quality gates, performance et pratiques de production.',
     icon: Sparkles,
   },
   {
-    title: '.NET systems',
-    description: 'Clean application layers, async processing, performance work, and modern C# patterns for maintainable services.',
+    title: '.NET Engineering',
+    description: 'Conception d applications avec C#, ASP.NET Core, messaging, patterns d architecture et code evolutif.',
     icon: Cpu,
   },
   {
-    title: 'Cloud delivery',
-    description: 'Docker, CI/CD, Terraform and Ansible setups that keep deployments repeatable from laptop to Hetzner.',
+    title: 'Cloud & DevOps',
+    description: 'Infrastructure cloud, automatisation, observabilite, delivery engineering et systemes distribues.',
     icon: Cloud,
   },
 ];
@@ -36,16 +36,16 @@ export default function HomePage() {
           <div className="space-y-8">
             <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
               <GitBranch className="mr-2 h-4 w-4" />
-              Refonte YvaDev basee sur le socle AI4Dev
+              Software Engineering, .NET, Cloud, AI
             </div>
 
             <div className="space-y-5">
               <h1 className="max-w-4xl text-balance text-5xl font-extrabold text-foreground md:text-7xl">
-                Un blog engineering unique pour l'IA, le .NET et l'infrastructure.
+                Un blog d ingenierie logicielle moderne pour les developpeurs.
               </h1>
               <p className="max-w-2xl text-lg text-secondary md:text-xl">
-                YvaDev reprend la meme base applicative que `ai4dev`, puis l'etend pour devenir
-                une plateforme editoriale et deploiement-ready: contenu, Docker, CI/CD, Terraform et Ansible.
+                YvaDev est un blog dedie au software engineering moderne : .NET, architecture logicielle,
+                cloud infrastructure et intelligence artificielle appliquee aux applications.
               </p>
             </div>
 
@@ -57,22 +57,22 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/about">Voir la vision YvaDev</Link>
+                <Link href="/about">Explorer les domaines couverts</Link>
               </Button>
             </div>
 
             <div className="grid gap-4 border-t border-border pt-8 sm:grid-cols-3">
               <div>
-                <div className="text-3xl font-bold text-primary">1</div>
-                <p className="text-sm text-secondary">Codebase Next.js commune avec AI4Dev</p>
+                <div className="text-3xl font-bold text-primary">4</div>
+                <p className="text-sm text-secondary">Domaines couverts par le blog</p>
               </div>
               <div>
-                <div className="text-3xl font-bold text-primary">Docker</div>
-                <p className="text-sm text-secondary">Runtime portable pour local et production</p>
+                <div className="text-3xl font-bold text-primary">.NET</div>
+                <p className="text-sm text-secondary">Applications, patterns et architecture</p>
               </div>
               <div>
-                <div className="text-3xl font-bold text-primary">IaC</div>
-                <p className="text-sm text-secondary">Provisioning Hetzner avec Terraform et Ansible</p>
+                <div className="text-3xl font-bold text-primary">Prod</div>
+                <p className="text-sm text-secondary">Systemes fiables, observables et scalables</p>
               </div>
             </div>
           </div>
@@ -81,36 +81,36 @@ export default function HomePage() {
             <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
             <div className="relative space-y-6">
               <div className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70">
-                delivery blueprint
+                engineering focus
               </div>
               <div className="space-y-3">
-                <h2 className="text-2xl font-bold">From commit to Hetzner</h2>
+                <h2 className="text-2xl font-bold">Des concepts appliques au reel</h2>
                 <p className="text-sm text-white/70">
-                  Une seule base applicative pour produire le site, construire l'image Docker,
-                  deployer automatiquement et garder l'infra versionnee.
+                  Le blog partage des architectures concretes, des retours d experience et des decisions techniques utiles
+                  pour construire des applications maintenables en production.
                 </p>
               </div>
               <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70">app</span>
-                  <span>Next.js 14</span>
+                  <span className="text-white/70">software</span>
+                  <span>Architecture & quality</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70">container</span>
-                  <span>Multi-stage Docker</span>
+                  <span className="text-white/70">.net</span>
+                  <span>C# & ASP.NET Core</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70">pipeline</span>
-                  <span>GitHub Actions</span>
+                  <span className="text-white/70">cloud</span>
+                  <span>Distributed systems</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70">infra</span>
-                  <span>Terraform + Ansible</span>
+                  <span className="text-white/70">ai</span>
+                  <span>Applied AI engineering</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm">
                 <Server className="h-4 w-4 text-primary" />
-                Base parfaite pour migrer le contenu WordPress vers un front moderne.
+                Des sujets pour les developpeurs qui veulent aller du code aux contraintes de production.
               </div>
             </div>
           </div>
@@ -131,30 +131,28 @@ export default function HomePage() {
 
       <section className="container py-8">
         <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-foreground">Meme moteur, nouveau positionnement</h2>
+          <h2 className="mb-4 text-3xl font-bold text-foreground">Ce que tu trouveras sur YvaDev</h2>
           <p className="mx-auto max-w-2xl text-secondary">
-            Le coeur reste le blog AI4Dev: MDX, SEO, cartes d'articles, recherche et pages detaillees.
-            La refonte YvaDev ajoute une ligne editoriale plus large, orientee engineering de bout en bout.
+            Des articles techniques sur la conception logicielle, les architectures distribuees, le cloud engineering,
+            l automatisation et l integration de l IA dans des applications reelles.
           </p>
         </div>
 
         <div className="mx-auto max-w-4xl">
           <CodeBlock
-            language="yaml"
-            title="Delivery flow"
-            code={`name: yvadev-release
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build-and-release:
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm ci && npm run build
-      - run: docker build -t ghcr.io/yvahajatiana/yvadev:$GITHUB_SHA .
-      - run: terraform apply -auto-approve
-      - run: ansible-playbook infra/ansible/playbooks/deploy.yml`}
+            language="csharp"
+            title="Production-oriented .NET"
+            code={`public sealed class OrderProjectionWorker : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        await foreach (var message in _stream.ReadAllAsync(stoppingToken))
+        {
+            using var activity = _activitySource.StartActivity("project-order");
+            await _projection.ApplyAsync(message, stoppingToken);
+        }
+    }
+}`}
           />
         </div>
       </section>
@@ -163,8 +161,8 @@ jobs:
         <section className="container">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <h2 className="mb-2 text-3xl font-bold text-foreground">Articles a mettre en avant</h2>
-              <p className="text-secondary">Le contenu existant reste exploitable tel quel pendant la migration.</p>
+              <h2 className="mb-2 text-3xl font-bold text-foreground">Articles a la une</h2>
+              <p className="text-secondary">Guides approfondis sur l ingenierie logicielle, le cloud et les systemes applicatifs.</p>
             </div>
             <Button variant="outline" asChild>
               <Link href="/blog">
@@ -187,7 +185,7 @@ jobs:
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
               <h2 className="mb-2 text-3xl font-bold text-foreground">Dernieres publications</h2>
-              <p className="text-secondary">Une base d'articles immediate pendant la refonte du contenu WordPress.</p>
+              <p className="text-secondary">Nouveaux articles sur .NET, architecture, cloud engineering et AI engineering.</p>
             </div>
           </div>
 
@@ -202,10 +200,10 @@ jobs:
       <section className="container py-16">
         <div className="grid gap-6 rounded-[2rem] border border-border bg-muted/60 p-8 md:grid-cols-2 md:p-12">
           <div>
-            <h2 className="mb-4 text-3xl font-bold text-foreground">Suite logique de la migration</h2>
+            <h2 className="mb-4 text-3xl font-bold text-foreground">Un contenu oriente pratique</h2>
             <p className="text-secondary">
-              Une fois les contenus WordPress migres, on pourra ajouter des pages service, cas clients,
-              une taxonomie plus fine et un back-office editorial si besoin.
+              Le fil conducteur du blog reste le meme : expliquer des choix techniques concrets,
+              montrer des implementations applicables et relier chaque concept aux contraintes de production.
             </p>
           </div>
           <div className="flex items-center justify-center md:justify-end">
