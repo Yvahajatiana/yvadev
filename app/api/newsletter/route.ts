@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         api_key: newsletterApiKey,
         email: email,
-        tags: ['ai4dev-blog'],
+        tags: ['yvadev-blog'],
       }),
     });
 

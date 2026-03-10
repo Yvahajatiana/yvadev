@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,7 +7,7 @@
     font-size: 16px;
     scroll-behavior: smooth;
   }
-  
+
   @media (min-width: 768px) {
     html {
       font-size: 17px;
@@ -17,16 +15,20 @@
   }
 
   body {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-plus-jakarta), sans-serif;
     line-height: 1.75;
     color: theme('colors.foreground');
     background-color: theme('colors.background');
+    background-image:
+      radial-gradient(circle at top left, rgba(194, 65, 12, 0.10), transparent 30%),
+      radial-gradient(circle at top right, rgba(15, 118, 110, 0.10), transparent 35%),
+      linear-gradient(180deg, #fff9f0 0%, #fffdf8 100%);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
-    line-height: 1.25;
-    letter-spacing: -0.025em;
+    font-weight: 700;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
   }
 
   h1 {
@@ -57,15 +59,15 @@
 
   @media (min-width: 768px) {
     h1 {
-      font-size: 3rem;
+      font-size: 3.5rem;
     }
 
     h2 {
-      font-size: 2.25rem;
+      font-size: 2.4rem;
     }
 
     h3 {
-      font-size: 1.875rem;
+      font-size: 1.9rem;
     }
   }
 }
@@ -84,15 +86,15 @@
   }
 
   .button-primary {
-    @apply inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary/90 focus-ring;
+    @apply inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 font-medium text-white transition-colors hover:bg-primary/90 focus-ring;
   }
 
   .button-secondary {
-    @apply inline-flex items-center justify-center rounded-lg border border-border bg-background px-6 py-3 font-medium text-foreground transition-colors hover:bg-muted focus-ring;
+    @apply inline-flex items-center justify-center rounded-full border border-border bg-background px-6 py-3 font-medium text-foreground transition-colors hover:bg-muted focus-ring;
   }
 
   .input-field {
-    @apply flex h-12 w-full rounded-lg border border-border bg-background px-4 py-2 text-foreground placeholder:text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+    @apply flex h-12 w-full rounded-full border border-border bg-background px-4 py-2 text-foreground placeholder:text-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
   }
 }
 
@@ -102,7 +104,6 @@
   }
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -120,19 +121,16 @@
   background: theme('colors.secondary');
 }
 
-/* Print styles */
 @media print {
   .no-print {
     display: none !important;
   }
 }
 
-
-/* Monokai theme for MDX blog posts */
 .hljs-monokai {
   background: #272822 !important;
   color: #f8f8f2;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-ibm-plex-mono), monospace;
 }
 
 .hljs-monokai .hljs-keyword,
@@ -189,10 +187,7 @@
   font-weight: bold;
 }
 
-.hljs-monokai .hljs-tag {
-  color: #f92672;
-}
-
+.hljs-monokai .hljs-tag,
 .hljs-monokai .hljs-name {
   color: #f92672;
 }

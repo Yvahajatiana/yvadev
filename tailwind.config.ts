@@ -9,17 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        primary: '#2563eb',
-        secondary: '#64748b',
-        accent: '#8b5cf6',
-        background: '#ffffff',
-        foreground: '#0a0a0a',
-        muted: '#f1f5f9',
-        border: '#e2e8f0',
+        primary: '#c2410c',
+        secondary: '#475569',
+        accent: '#0f766e',
+        background: '#fff9f0',
+        foreground: '#111827',
+        muted: '#f3eadb',
+        border: '#e8dac2',
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['var(--font-plus-jakarta)', 'sans-serif'],
+        mono: ['var(--font-ibm-plex-mono)', 'monospace'],
       },
       maxWidth: {
         content: '720px',

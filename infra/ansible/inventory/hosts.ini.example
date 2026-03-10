@@ -1,0 +1,2 @@
+[web]
+yvadev ansible_host=your-server-ip ansible_user=root

@@ -6,40 +6,43 @@ import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'Blog', href: '/blog' },
-  { name: 'About', href: '/about' },
+  { name: 'Accueil', href: '/' },
+  { name: 'Articles', href: '/blog' },
+  { name: 'A propos', href: '/about' },
 ];
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
       <nav className="container flex h-16 items-center justify-between">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white font-bold text-lg">
-              AI
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20">
+              YD
             </div>
-            <span className="font-bold text-xl text-foreground">AI4Dev</span>
+            <div>
+              <span className="block text-lg font-bold text-foreground">YvaDev</span>
+              <span className="hidden text-xs uppercase tracking-[0.24em] text-secondary sm:block">
+                Code to cloud
+              </span>
+            </div>
           </Link>
         </div>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden items-center space-x-8 md:flex">
           {navigation.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="text-secondary hover:text-foreground transition-colors font-medium"
+              className="text-sm font-medium text-secondary transition-colors hover:text-foreground"
             >
               {item.name}
             </Link>
           ))}
         </div>
 
-        {/* Mobile menu button */}
         <div className="md:hidden">
           <button
             type="button"
@@ -56,17 +59,13 @@ export function Header() {
         </div>
       </nav>
 
-      {/* Mobile Navigation */}
-      <div className={cn(
-        'md:hidden',
-        mobileMenuOpen ? 'block' : 'hidden'
-      )}>
-        <div className="border-t border-border bg-background px-4 py-6 space-y-4">
+      <div className={cn('md:hidden', mobileMenuOpen ? 'block' : 'hidden')}>
+        <div className="space-y-4 border-t border-border bg-background px-4 py-6">
           {navigation.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className="block text-secondary hover:text-foreground transition-colors font-medium"
+              className="block text-secondary transition-colors hover:text-foreground"
               onClick={() => setMobileMenuOpen(false)}
             >
               {item.name}

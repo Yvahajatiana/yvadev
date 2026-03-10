@@ -12,15 +12,13 @@ export function getAllPostSlugs(): string[] {
   }
 
   const fileNames = fs.readdirSync(postsDirectory);
-  return fileNames
-    .filter((name) => name.endsWith('.mdx'))
-    .map((name) => name.replace(/\.mdx$/, ''));
+  return fileNames.filter((name) => name.endsWith('.mdx')).map((name) => name.replace(/\.mdx$/, ''));
 }
 
 export function getPostBySlug(slug: string): Post | null {
   try {
     const fullPath = path.join(postsDirectory, `${slug}.mdx`);
-    
+
     if (!fs.existsSync(fullPath)) {
       return null;
     }
@@ -35,7 +33,7 @@ export function getPostBySlug(slug: string): Post | null {
       excerpt: data.excerpt || '',
       date: data.date || '',
       updatedAt: data.updatedAt,
-      author: data.author || 'AI4Dev Team',
+      author: data.author || 'Yva Hajatiana',
       tags: data.tags || [],
       coverImage: data.coverImage || '/images/default-cover.jpg',
       coverImageAlt: data.coverImageAlt || data.title || '',
@@ -51,24 +49,20 @@ export function getPostBySlug(slug: string): Post | null {
 
 export function getAllPosts(): PostMetadata[] {
   const slugs = getAllPostSlugs();
-  const posts = slugs
+  return slugs
     .map((slug) => {
       const post = getPostBySlug(slug);
       if (!post) return null;
-      
+
       const { content, ...metadata } = post;
       return metadata;
     })
     .filter((post): post is PostMetadata => post !== null)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-  return posts;
 }
 
 export function getFeaturedPosts(count: number = 3): PostMetadata[] {
-  return getAllPosts()
-    .filter((post) => post.featured)
-    .slice(0, count);
+  return getAllPosts().filter((post) => post.featured).slice(0, count);
 }
 
 export function getLatestPosts(count: number = 6): PostMetadata[] {
@@ -76,28 +70,18 @@ export function getLatestPosts(count: number = 6): PostMetadata[] {
 }
 
 export function getPostsByTag(tag: string): PostMetadata[] {
-  return getAllPosts().filter((post) => 
-    post.tags.some((postTag) => 
-      postTag.toLowerCase() === tag.toLowerCase()
-    )
-  );
+  return getAllPosts().filter((post) => post.tags.some((postTag) => postTag.toLowerCase() === tag.toLowerCase()));
 }
 
 export function getRelatedPosts(currentPost: PostMetadata, count: number = 3): PostMetadata[] {
   const allPosts = getAllPosts().filter((post) => post.slug !== currentPost.slug);
-  
-  const relatedPosts = allPosts.filter((post) =>
-    post.tags.some((tag) => currentPost.tags.includes(tag))
-  );
+  const relatedPosts = allPosts.filter((post) => post.tags.some((tag) => currentPost.tags.includes(tag)));
 
   if (relatedPosts.length >= count) {
     return relatedPosts.slice(0, count);
   }
 
-  const remainingPosts = allPosts.filter(
-    (post) => !relatedPosts.find((related) => related.slug === post.slug)
-  );
-
+  const remainingPosts = allPosts.filter((post) => !relatedPosts.find((related) => related.slug === post.slug));
   return [...relatedPosts, ...remainingPosts].slice(0, count);
 }
 
@@ -119,13 +103,7 @@ export function searchPosts(query: string): PostMetadata[] {
   const searchQuery = query.toLowerCase();
 
   return allPosts.filter((post) => {
-    const searchableText = [
-      post.title,
-      post.excerpt,
-      post.tags.join(' '),
-      post.author,
-    ].join(' ').toLowerCase();
-
+    const searchableText = [post.title, post.excerpt, post.tags.join(' '), post.author].join(' ').toLowerCase();
     return searchableText.includes(searchQuery);
   });
 }

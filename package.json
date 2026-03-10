@@ -1,14 +1,15 @@
 {
-  "name": "ai4dev-blog",
+  "name": "yvadev",
   "version": "1.0.0",
-  "description": "AI4Dev - AI Tutorials & News for Developers",
+  "description": "YvaDev - Engineering blog for AI, .NET, cloud, and platform delivery",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "clsx": "^2.1.1",

@@ -1,0 +1,10 @@
+app_name: yvadev
+app_dir: /opt/yvadev
+app_image: ghcr.io/yvahajatiana/yvadev:latest
+app_container_name: yvadev
+app_port: 3000
+app_environment: production
+next_public_site_url: https://yvadev.fr
+domain_name: yvadev.fr
+ghcr_username: your-ghcr-username
+ghcr_token: your-ghcr-token

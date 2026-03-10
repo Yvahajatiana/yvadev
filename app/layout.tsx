@@ -1,15 +1,22 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { IBM_Plex_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
 import { siteConfig } from '@/lib/constants';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { WebsiteStructuredData } from '@/components/seo/StructuredData';
 
-const inter = Inter({
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-inter',
+  variable: '--font-plus-jakarta',
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600'],
+  variable: '--font-ibm-plex-mono',
 });
 
 export const metadata: Metadata = {
@@ -18,7 +25,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.shortName || siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: siteConfig.keywords || ['AI', 'Artificial Intelligence', 'Development', 'Tutorials', 'Programming', 'Machine Learning', 'API'],
+  keywords: siteConfig.keywords || ['AI', '.NET', 'Cloud', 'DevOps'],
   authors: [{ name: siteConfig.author.name, url: siteConfig.url }],
   creator: siteConfig.author.name,
   publisher: siteConfig.author.name,
@@ -31,7 +38,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: 'website',
-    locale: 'en_US',
+    locale: 'fr_FR',
     url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
@@ -50,8 +57,6 @@ export const metadata: Metadata = {
     title: siteConfig.name,
     description: siteConfig.description,
     images: [siteConfig.ogImage],
-    creator: '@ai4dev',
-    site: '@ai4dev',
   },
   robots: {
     index: true,
@@ -73,7 +78,7 @@ export const metadata: Metadata = {
     yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION,
   },
   category: 'technology',
-  classification: 'AI Development Blog',
+  classification: 'Engineering Blog',
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
@@ -97,7 +102,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="fr" className={`${plusJakarta.variable} ${ibmPlexMono.variable}`}>
       <head>
         <WebsiteStructuredData />
       </head>

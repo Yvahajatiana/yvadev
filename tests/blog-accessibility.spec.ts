@@ -13,7 +13,7 @@ test.describe('Blog Page Accessibility Tests', () => {
 
     // Verify page title contains expected text
     const title = await page.title();
-    expect(title).toContain('AI4Dev');
+    expect(title).toContain('YvaDev');
 
     // Take a screenshot to verify page appearance
     await page.screenshot({
@@ -34,7 +34,7 @@ test.describe('Blog Page Accessibility Tests', () => {
     await expect(navigation).toBeVisible();
 
     // Verify no console errors related to redirects
-    const logs = [];
+    const logs: string[] = [];
     page.on('console', msg => {
       if (msg.type() === 'error') {
         logs.push(msg.text());
@@ -109,3 +109,4 @@ test.describe('Blog Page Accessibility Tests', () => {
     console.log('Navigation accessibility test completed successfully!');
   });
 });
+

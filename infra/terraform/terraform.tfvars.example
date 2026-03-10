@@ -1,0 +1,5 @@
+hcloud_token   = "replace-me"
+ssh_public_key = "ssh-ed25519 AAAA..."
+domain_name    = "yvadev.fr"
+server_type    = "cpx11"
+location       = "fsn1"

@@ -17,12 +17,8 @@ export function WebsiteStructuredData({ url = siteConfig.url }: WebsiteStructure
     name: siteConfig.name,
     alternateName: siteConfig.shortName,
     description: siteConfig.description,
-    url: url,
-    sameAs: [
-      siteConfig.social.twitter,
-      siteConfig.social.linkedin,
-      siteConfig.social.github,
-    ].filter(Boolean),
+    url,
+    sameAs: [siteConfig.social.twitter, siteConfig.social.linkedin, siteConfig.social.github].filter(Boolean),
     publisher: {
       '@type': 'Organization',
       name: siteConfig.author.name,
@@ -35,11 +31,7 @@ export function WebsiteStructuredData({ url = siteConfig.url }: WebsiteStructure
         width: 512,
         height: 512,
       },
-      sameAs: [
-        siteConfig.social.twitter,
-        siteConfig.social.linkedin,
-        siteConfig.social.github,
-      ].filter(Boolean),
+      sameAs: [siteConfig.social.twitter, siteConfig.social.linkedin, siteConfig.social.github].filter(Boolean),
     },
     potentialAction: {
       '@type': 'SearchAction',
@@ -51,12 +43,7 @@ export function WebsiteStructuredData({ url = siteConfig.url }: WebsiteStructure
     },
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }} />;
 }
 
 export function BlogStructuredData() {
@@ -64,7 +51,7 @@ export function BlogStructuredData() {
     '@context': 'https://schema.org',
     '@type': 'Blog',
     name: `${siteConfig.shortName} Blog`,
-    description: 'Expert AI development tutorials and insights',
+    description: 'Engineering notes about AI, .NET, cloud infrastructure and delivery automation.',
     url: `${siteConfig.url}/blog`,
     publisher: {
       '@type': 'Organization',
@@ -76,17 +63,12 @@ export function BlogStructuredData() {
       '@type': 'WebPage',
       '@id': `${siteConfig.url}/blog`,
     },
-    inLanguage: 'en-US',
-    genre: ['Technology', 'Artificial Intelligence', 'Programming', 'Software Development'],
+    inLanguage: 'fr-FR',
+    genre: ['Technology', 'Artificial Intelligence', 'Programming', 'Software Delivery'],
     keywords: siteConfig.keywords?.join(', '),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }} />;
 }
 
 export function ArticleStructuredData({ post, url }: ArticleStructuredDataProps) {
@@ -123,7 +105,7 @@ export function ArticleStructuredData({ post, url }: ArticleStructuredDataProps)
       '@type': 'WebPage',
       '@id': url,
     },
-    url: url,
+    url,
     isPartOf: {
       '@type': 'Blog',
       '@id': `${siteConfig.url}/blog`,
@@ -135,18 +117,13 @@ export function ArticleStructuredData({ post, url }: ArticleStructuredDataProps)
     wordCount: post.content.split(' ').length,
     timeRequired: post.readingTime,
     articleSection: 'Technology',
-    about: post.tags.map(tag => ({
+    about: post.tags.map((tag) => ({
       '@type': 'Thing',
       name: tag,
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }} />;
 }
 
 export function BreadcrumbStructuredData({ items }: { items: Array<{ name: string; url: string }> }) {
@@ -161,19 +138,14 @@ export function BreadcrumbStructuredData({ items }: { items: Array<{ name: strin
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }} />;
 }
 
 export function FAQStructuredData({ faqs }: { faqs: Array<{ question: string; answer: string }> }) {
   const structuredData = {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faqs.map(faq => ({
+    mainEntity: faqs.map((faq) => ({
       '@type': 'Question',
       name: faq.question,
       acceptedAnswer: {
@@ -183,10 +155,5 @@ export function FAQStructuredData({ faqs }: { faqs: Array<{ question: string; an
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
-    />
-  );
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }} />;
 }

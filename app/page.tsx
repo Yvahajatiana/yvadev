@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, Cpu, Zap } from 'lucide-react';
+import { ArrowRight, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { NewsletterForm } from '@/components/ui/NewsletterForm';
@@ -7,182 +7,174 @@ import { PostCard } from '@/components/blog/PostCard';
 import { getFeaturedPosts, getLatestPosts } from '@/lib/posts';
 import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT } from '@/lib/constants';
 
+const focusAreas = [
+  {
+    title: 'AI products',
+    description: 'Designing useful AI features, integrating APIs, and shipping workflows that survive production constraints.',
+    icon: Sparkles,
+  },
+  {
+    title: '.NET systems',
+    description: 'Clean application layers, async processing, performance work, and modern C# patterns for maintainable services.',
+    icon: Cpu,
+  },
+  {
+    title: 'Cloud delivery',
+    description: 'Docker, CI/CD, Terraform and Ansible setups that keep deployments repeatable from laptop to Hetzner.',
+    icon: Cloud,
+  },
+];
+
 export default function HomePage() {
   const featuredPosts = getFeaturedPosts(FEATURED_POSTS_COUNT);
   const latestPosts = getLatestPosts(LATEST_POSTS_COUNT);
 
   return (
     <div className="space-y-16 pb-16">
-      {/* Hero Section */}
       <section className="container py-16 md:py-24">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center space-x-2 px-4 py-2 bg-muted rounded-full text-sm text-secondary">
-            <Bot className="h-4 w-4" />
-            <span>AI · C# · .NET · Production</span>
+        <div className="grid items-center gap-12 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-8">
+            <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
+              <GitBranch className="mr-2 h-4 w-4" />
+              Refonte YvaDev basee sur le socle AI4Dev
+            </div>
+
+            <div className="space-y-5">
+              <h1 className="max-w-4xl text-balance text-5xl font-extrabold text-foreground md:text-7xl">
+                Un blog engineering unique pour l'IA, le .NET et l'infrastructure.
+              </h1>
+              <p className="max-w-2xl text-lg text-secondary md:text-xl">
+                YvaDev reprend la meme base applicative que `ai4dev`, puis l'etend pour devenir
+                une plateforme editoriale et deploiement-ready: contenu, Docker, CI/CD, Terraform et Ansible.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-4 sm:flex-row">
+              <Button asChild size="lg">
+                <Link href="/blog">
+                  Lire les articles
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/about">Voir la vision YvaDev</Link>
+              </Button>
+            </div>
+
+            <div className="grid gap-4 border-t border-border pt-8 sm:grid-cols-3">
+              <div>
+                <div className="text-3xl font-bold text-primary">1</div>
+                <p className="text-sm text-secondary">Codebase Next.js commune avec AI4Dev</p>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-primary">Docker</div>
+                <p className="text-sm text-secondary">Runtime portable pour local et production</p>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-primary">IaC</div>
+                <p className="text-sm text-secondary">Provisioning Hetzner avec Terraform et Ansible</p>
+              </div>
+            </div>
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-foreground text-balance">
-            Build smarter apps with AI and modern .NET
-          </h1>
-
-          <p className="text-lg md:text-xl text-secondary max-w-2xl mx-auto text-balance">
-            Deep-dive tutorials on AI integration, C# patterns, and .NET development.
-            Real-world code, production-ready — no fluff.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
-            <Button asChild size="lg">
-              <Link href="/blog">
-                Browse Articles
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/about">About AI4Dev</Link>
-            </Button>
-          </div>
-
-          {/* Statistics Section */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 pt-8 border-t border-muted">
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">8+</div>
-              <div className="text-sm text-secondary">Technical Guides</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">4</div>
-              <div className="text-sm text-secondary">AI Tutorials</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">5</div>
-              <div className="text-sm text-secondary">C# & .NET Deep Dives</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary">100%</div>
-              <div className="text-sm text-secondary">Production Ready</div>
+          <div className="relative overflow-hidden rounded-[2rem] border border-border bg-foreground px-6 py-8 text-white shadow-2xl shadow-primary/10">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
+            <div className="relative space-y-6">
+              <div className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70">
+                delivery blueprint
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-2xl font-bold">From commit to Hetzner</h2>
+                <p className="text-sm text-white/70">
+                  Une seule base applicative pour produire le site, construire l'image Docker,
+                  deployer automatiquement et garder l'infra versionnee.
+                </p>
+              </div>
+              <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">app</span>
+                  <span>Next.js 14</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">container</span>
+                  <span>Multi-stage Docker</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">pipeline</span>
+                  <span>GitHub Actions</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white/70">infra</span>
+                  <span>Terraform + Ansible</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm">
+                <Server className="h-4 w-4 text-primary" />
+                Base parfaite pour migrer le contenu WordPress vers un front moderne.
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Topics Section */}
-      <section className="bg-muted/50 py-16">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              What You&apos;ll Find Here
-            </h2>
-            <p className="text-secondary max-w-2xl mx-auto">
-              Practical, in-depth content for developers who want to build with AI and write better .NET code.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-lg">
-                <Bot className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">
-                AI Integration
-              </h3>
-              <p className="text-secondary">
-                Integrate GPT-4, Claude, and local LLMs into your apps with battle-tested C# and JavaScript examples.
-              </p>
+      <section className="container grid gap-6 md:grid-cols-3">
+        {focusAreas.map(({ title, description, icon: Icon }) => (
+          <article key={title} className="rounded-[1.75rem] border border-border bg-background/90 p-6 shadow-sm shadow-primary/5">
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <Icon className="h-6 w-6" />
             </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-accent rounded-lg">
-                <Cpu className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">
-                C# & .NET
-              </h3>
-              <p className="text-secondary">
-                Modern C# patterns, .NET 10 features, performance optimization, and enterprise development practices.
-              </p>
-            </div>
-
-            <div className="text-center space-y-4">
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-secondary rounded-lg">
-                <Zap className="h-6 w-6 text-white" />
-              </div>
-              <h3 className="text-xl font-semibold text-foreground">
-                Production Practices
-              </h3>
-              <p className="text-secondary">
-                Background processing, error handling, API security, and architecture patterns for production systems.
-              </p>
-            </div>
-          </div>
-        </div>
+            <h2 className="mb-3 text-2xl font-semibold text-foreground">{title}</h2>
+            <p className="text-secondary">{description}</p>
+          </article>
+        ))}
       </section>
 
-      {/* Code Preview Section */}
-      <section className="container py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            Production-Ready Code Examples
-          </h2>
-          <p className="text-secondary max-w-2xl mx-auto">
-            Every tutorial includes complete, tested code you can use directly in your projects.
+      <section className="container py-8">
+        <div className="mb-12 text-center">
+          <h2 className="mb-4 text-3xl font-bold text-foreground">Meme moteur, nouveau positionnement</h2>
+          <p className="mx-auto max-w-2xl text-secondary">
+            Le coeur reste le blog AI4Dev: MDX, SEO, cartes d'articles, recherche et pages detaillees.
+            La refonte YvaDev ajoute une ligne editoriale plus large, orientee engineering de bout en bout.
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto max-w-4xl">
           <CodeBlock
-            language="csharp"
-            title="C# + ASP.NET Core"
-            code={`// ASP.NET Core Channels — Lightweight Background Processing
-var channel = Channel.CreateUnbounded<WorkItem>(
-    new UnboundedChannelOptions { SingleReader = false });
+            language="yaml"
+            title="Delivery flow"
+            code={`name: yvadev-release
+on:
+  push:
+    branches: [main]
 
-// Producer: enqueue work from your API endpoints
-await channel.Writer.WriteAsync(new WorkItem
-{
-    Id = Guid.NewGuid(),
-    Payload = request.Data
-});
-
-// Consumer: background service processes items without blocking
-await foreach (var item in channel.Reader.ReadAllAsync(stoppingToken))
-{
-    await _processor.HandleAsync(item, stoppingToken);
-}`}
+jobs:
+  build-and-release:
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci && npm run build
+      - run: docker build -t ghcr.io/yvahajatiana/yvadev:$GITHUB_SHA .
+      - run: terraform apply -auto-approve
+      - run: ansible-playbook infra/ansible/playbooks/deploy.yml`}
           />
-          <div className="mt-4 flex items-center justify-between">
-            <span className="text-xs text-secondary">
-              ✓ No external queues &nbsp;·&nbsp; ✓ Built-in .NET &nbsp;·&nbsp; ✓ Production-ready
-            </span>
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/blog/aspnet-core-channels-background-processing">
-                View Full Tutorial
-                <ArrowRight className="ml-1 h-3 w-3" />
-              </Link>
-            </Button>
-          </div>
         </div>
       </section>
 
-      {/* Featured Posts */}
       {featuredPosts.length > 0 && (
         <section className="container">
-          <div className="flex items-center justify-between mb-8">
+          <div className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">
-                Featured Articles
-              </h2>
-              <p className="text-secondary">
-                Our most popular and comprehensive guides
-              </p>
+              <h2 className="mb-2 text-3xl font-bold text-foreground">Articles a mettre en avant</h2>
+              <p className="text-secondary">Le contenu existant reste exploitable tel quel pendant la migration.</p>
             </div>
             <Button variant="outline" asChild>
               <Link href="/blog">
-                View All
+                Tout parcourir
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featuredPosts.map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
@@ -190,27 +182,16 @@ await foreach (var item in channel.Reader.ReadAllAsync(stoppingToken))
         </section>
       )}
 
-      {/* Latest Posts */}
       {latestPosts.length > 0 && (
         <section className="container">
-          <div className="flex items-center justify-between mb-8">
+          <div className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-2">
-                Latest Articles
-              </h2>
-              <p className="text-secondary">
-                Fresh content on AI, C#, and .NET development
-              </p>
+              <h2 className="mb-2 text-3xl font-bold text-foreground">Dernieres publications</h2>
+              <p className="text-secondary">Une base d'articles immediate pendant la refonte du contenu WordPress.</p>
             </div>
-            <Button variant="outline" asChild>
-              <Link href="/blog">
-                View All
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {latestPosts.slice(0, 6).map((post) => (
               <PostCard key={post.slug} post={post} />
             ))}
@@ -218,78 +199,17 @@ await foreach (var item in channel.Reader.ReadAllAsync(stoppingToken))
         </section>
       )}
 
-      {/* FAQ Section */}
       <section className="container py-16">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Frequently Asked Questions
-            </h2>
+        <div className="grid gap-6 rounded-[2rem] border border-border bg-muted/60 p-8 md:grid-cols-2 md:p-12">
+          <div>
+            <h2 className="mb-4 text-3xl font-bold text-foreground">Suite logique de la migration</h2>
             <p className="text-secondary">
-              Everything you need to know about AI4Dev
+              Une fois les contenus WordPress migres, on pourra ajouter des pages service, cas clients,
+              une taxonomie plus fine et un back-office editorial si besoin.
             </p>
           </div>
-
-          <div className="space-y-6">
-            <div className="border border-border rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">
-                Is this blog for C# developers or AI developers?
-              </h3>
-              <p className="text-secondary">
-                Both! AI4Dev bridges the gap between .NET development and AI. Most of our content
-                covers C# and .NET in depth — while also teaching how to integrate modern AI APIs
-                and models into your applications.
-              </p>
-            </div>
-
-            <div className="border border-border rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">
-                What C# and .NET topics do you cover?
-              </h3>
-              <p className="text-secondary">
-                We cover .NET 10 and C# 14 new features, delegates (Func, Action, Predicate),
-                ASP.NET Core Channels for background processing, object equality (GetHashCode/Equals),
-                performance patterns, and enterprise architecture practices.
-              </p>
-            </div>
-
-            <div className="border border-border rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">
-                Do your AI tutorials include C# examples?
-              </h3>
-              <p className="text-secondary">
-                Yes — our AI Agents guide uses C# with LM-Kit.NET for local, enterprise-grade inference.
-                We also cover GPT-4 and Claude integrations in TypeScript/JavaScript for web developers.
-              </p>
-            </div>
-
-            <div className="border border-border rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-foreground mb-3">
-                Are the code examples production-ready?
-              </h3>
-              <p className="text-secondary">
-                Absolutely. Every example includes proper error handling, strong typing, and real-world
-                patterns — not just proof-of-concepts. We focus on code you can actually ship.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Newsletter Section */}
-      <section className="bg-primary/5 py-16">
-        <div className="container">
-          <div className="max-w-2xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl font-bold text-foreground">
-              Stay Ahead in AI & .NET
-            </h2>
-            <p className="text-secondary">
-              Get new tutorials on C#, .NET, and AI development delivered to your inbox.
-              No spam, unsubscribe anytime.
-            </p>
-            <div className="flex justify-center">
-              <NewsletterForm />
-            </div>
+          <div className="flex items-center justify-center md:justify-end">
+            <NewsletterForm />
           </div>
         </div>
       </section>
