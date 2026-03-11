@@ -1,0 +1,61 @@
+---
+title: "Protocole Model Contextuel (MCP) : relier l IA aux donnees sans bricoler les integrations"
+excerpt: "Le Model Context Protocol cherche a standardiser la facon dont un modele accede a des outils et a du contexte externe. Son interet est surtout architectural."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["MCP", "AI Engineering", "LLM", "Architecture", "Integration"]
+coverImage: "/images/posts/csharp-ai-agents.png"
+coverImageAlt: "Integration standardisee entre un modele et des sources de contexte"
+featured: false
+filename: "protocole-model-contextuel-mcp-ia-donnees"
+---
+
+Un modele de langage n'est utile dans une application que s'il peut travailler avec du contexte reel:
+
+- documents
+- bases de connaissances
+- APIs internes
+- outils metier
+
+Le probleme est que chaque integration a longtemps ete implemente comme un cas particulier. Le Model Context Protocol (MCP) cherche a corriger cela en proposant une facon plus standard de brancher un modele sur des sources de contexte et des outils.
+
+## Pourquoi MCP est interessant
+
+L'interet de MCP n'est pas uniquement fonctionnel. Il est architectural.
+
+Il permet de mieux separer:
+
+- le modele
+- les outils disponibles
+- la maniere de decrire les capacites
+- l'acces au contexte
+
+Au lieu de coder une integration ad hoc pour chaque application, on tend vers une interface plus uniforme.
+
+## Le vrai gain
+
+Le gain principal est la reduction du couplage entre:
+
+- le client IA
+- les donnees
+- les outils
+- le runtime de l'application
+
+Cette standardisation est importante des qu'on veut faire evoluer une plateforme IA sans reecrire chaque connexion.
+
+## Ce que MCP ne regle pas tout seul
+
+MCP ne supprime pas:
+
+- les sujets de securite
+- la gouvernance des donnees
+- les droits d'acces
+- la qualite du contexte fourni
+- la validation metier des actions
+
+Il fournit un cadre d'integration. Il ne remplace pas les gardes applicatifs.
+
+## Conclusion
+
+MCP devient interessant des qu'on traite l'IA comme une capacite systemique et non comme une simple API de texte. Son apport principal est d'aider a structurer les integrations et a rendre l'acces au contexte moins artisanal.
+
