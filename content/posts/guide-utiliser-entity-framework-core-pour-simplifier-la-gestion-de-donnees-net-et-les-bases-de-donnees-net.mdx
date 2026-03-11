@@ -1,0 +1,57 @@
+---
+title: "Guide : utiliser Entity Framework Core sans perdre le controle sur la persistence"
+excerpt: "Entity Framework Core accelere la productivite en .NET, mais il faut comprendre clairement ce qu il abstrait et ce qu il faut continuer a maitriser."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["Entity Framework Core", ".NET", "Persistence", "Database", "Architecture"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Utilisation de Entity Framework Core pour la persistence .NET"
+featured: false
+filename: "guide-utiliser-entity-framework-core-pour-simplifier-la-gestion-de-donnees-net-et-les-bases-de-donnees-net"
+---
+
+Entity Framework Core simplifie beaucoup de taches de persistence en .NET:
+
+- mapping objet-relationnel
+- migrations
+- suivi des entites
+- requetes LINQ
+
+Mais cette simplification peut devenir dangereuse si elle donne l'illusion que la persistence n'a plus de cout.
+
+## Ce qu'EF Core fait tres bien
+
+EF Core est excellent pour:
+
+- accelerer la mise en place d'un modele
+- centraliser la configuration de mapping
+- faciliter les migrations
+- reduire le code boilerplate d'acces aux donnees
+
+Pour une grande partie des applications metier, cela apporte une vraie productivite.
+
+## Ce qu'il faut continuer a surveiller
+
+Même avec EF Core, il faut garder la maitrise sur:
+
+- la forme des requetes SQL
+- le nombre d'aller-retours base de donnees
+- le chargement eager, explicite ou lazy
+- la taille des projections
+- les transactions
+
+Une requete LINQ lisible peut produire un SQL couteux. C'est pourquoi il faut observer ce qui se passe reellement.
+
+## Le bon usage
+
+EF Core est plus utile quand:
+
+- les aggregate roots sont clairs
+- les projections sont choisies explicitement
+- les repositories ou queries encapsulent l'acces utile
+- les decisions de transaction restent visibles
+
+## Conclusion
+
+Entity Framework Core simplifie la persistence, mais il ne remplace pas la comprehension de la base de donnees. Bien utilise, il augmente la vitesse de delivery. Mal maitrise, il masque des couts qui reapparaissent plus tard sous forme de latence et de dette.
+
