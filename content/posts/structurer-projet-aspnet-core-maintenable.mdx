@@ -1,0 +1,214 @@
+---
+title: "Comment structurer un projet ASP.NET Core pour rester maintenable"
+excerpt: "Une approche concrete pour organiser un projet ASP.NET Core de maniere lisible, testable et maintenable, meme quand l equipe et le code grossissent."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["ASP.NET Core", "Maintainability", "Architecture", ".NET", "Backend"]
+coverImage: "/images/posts/aspnet-core-channels-background-processing.png"
+coverImageAlt: "Projet ASP.NET Core structure pour rester maintenable dans le temps"
+featured: true
+filename: "structurer-projet-aspnet-core-maintenable"
+---
+
+Un projet ASP.NET Core devient rarement ingerable du jour au lendemain. Il se degrade progressivement: controllers trop gros, services qui font tout, dependances circulaires, conventions incoherentes et logique metier dispersee.
+
+La maintenabilite n'est donc pas une qualite abstraite. C'est le resultat d'une structure explicite qui aide les developpeurs a savoir ou mettre le code et ou chercher quand quelque chose casse.
+
+## Le probleme n'est pas la taille, c'est la confusion
+
+Beaucoup de codebases supportent tres bien des centaines de fichiers tant que la structure reste coherente. L'inverse est aussi vrai: une petite application peut devenir penible a faire evoluer si tout melange transport HTTP, logique metier, acces aux donnees et integrations externes.
+
+Les symptomes sont connus:
+
+- controllers de 400 lignes
+- services nommes `Helper`, `Manager`, `Processor`
+- repository generique utilise partout
+- duplication de validation
+- logique metier cachee dans des handlers HTTP
+
+## Une structure de base qui marche bien
+
+Une structure maintenable doit separer l'intention metier des details techniques.
+
+```text
+src/
+  Project.Api/
+    Endpoints/
+    Contracts/
+    Middleware/
+    DependencyInjection/
+  Project.Application/
+    Commands/
+    Queries/
+    Validators/
+    Services/
+  Project.Domain/
+    Entities/
+    ValueObjects/
+    Enums/
+    Events/
+  Project.Infrastructure/
+    Persistence/
+    Messaging/
+    ExternalServices/
+```
+
+Cette organisation n'est pas magique, mais elle donne des frontieres utiles.
+
+## Regle 1: les controllers et endpoints doivent rester minces
+
+Un endpoint ASP.NET Core ne devrait pas prendre de decisions metier. Il traduit une requete HTTP en action applicative.
+
+```csharp
+app.MapPost("/orders", async (
+    CreateOrderRequest request,
+    CreateOrderHandler handler,
+    CancellationToken ct) =>
+{
+    var result = await handler.HandleAsync(new CreateOrderCommand(
+        request.CustomerId,
+        request.Items), ct);
+
+    return Results.Created($"/orders/{result.OrderId}", result);
+});
+```
+
+Si tu vois de la logique de pricing, de validation complexe, de transactions ou d'appels externes ici, la structure s'ecarte deja de la maintenabilite.
+
+## Regle 2: les noms doivent decrire une responsabilite
+
+Le mot "service" n'explique rien. Une base maintainable prefere des noms orientes action ou domaine:
+
+- `CreateOrderHandler`
+- `InvoiceNumberGenerator`
+- `PaymentRetryPolicy`
+- `CustomerEligibilityService`
+
+Ces noms disent ce que fait le composant. Cela reduit le besoin de documentation implicite.
+
+## Regle 3: un use case = une entree claire
+
+Pour rester lisible, chaque besoin metier important devrait correspondre a une commande ou une query clairement identifiee.
+
+```csharp
+public sealed record PublishInvoiceCommand(Guid InvoiceId);
+
+public sealed class PublishInvoiceHandler
+{
+    public async Task HandleAsync(PublishInvoiceCommand command, CancellationToken ct)
+    {
+        // orchestration du use case
+    }
+}
+```
+
+Cette approche rend les flux applicatifs plus evidents, facilite les tests et evite les gros services fourre-tout.
+
+## Regle 4: centraliser les conventions de validation et d'erreur
+
+Une application ASP.NET Core vieillit mal quand chaque endpoint gere ses erreurs differemment. La maintenabilite passe par des conventions:
+
+- middleware global de gestion des exceptions
+- objets de reponse coherents
+- validation centralisee
+- journalisation standardisee
+
+Si chaque controller invente sa propre facon de renvoyer une erreur, la dette augmente vite.
+
+## Regle 5: isoler l'infrastructure sans la rendre invisible
+
+L'infrastructure doit etre claire dans la solution. Base de donnees, cache, file de messages, providers externes: tout cela doit avoir une place evidente.
+
+Exemple de dossier `Infrastructure/Persistence`:
+
+```text
+Persistence/
+  AppDbContext.cs
+  Configurations/
+  Repositories/
+  Migrations/
+```
+
+Exemple de dossier `Infrastructure/ExternalServices`:
+
+```text
+ExternalServices/
+  OpenAiClient.cs
+  StripeClient.cs
+  StorageClient.cs
+```
+
+Le but est simple: un nouveau developpeur doit comprendre ou vivent les details techniques en quelques minutes.
+
+## Regle 6: eviter les projets "utilitaires" sans frontiere claire
+
+Les projets `Common`, `Shared`, `Utils` deviennent souvent des zones de contamination. Du code de tous types finit par y vivre, sans responsabilite claire.
+
+Il vaut mieux:
+
+- garder un petit noyau de primitives techniques bien delimitees
+- placer le code partage dans le domaine ou l'application quand il a un contexte metier
+- dupliquer legerement si cela evite un coupling artificiel
+
+La duplication locale est parfois moins couteuse qu'une mauvaise abstraction globale.
+
+## Regle 7: structurer aussi les tests
+
+Une application maintainable ne se limite pas au code de production. Les tests doivent epouser la structure du projet.
+
+Par exemple:
+
+- tests de domaine pour les invariants
+- tests d'application pour les use cases
+- tests d'integration pour la persistence et les APIs externes
+- tests d'API pour les contrats HTTP
+
+Cette separation evite les suites de tests lentes et peu fiables.
+
+## Exemple de dossier par feature
+
+Pour certains projets, une structure par feature fonctionne encore mieux:
+
+```text
+Application/
+  Orders/
+    Create/
+      CreateOrderCommand.cs
+      CreateOrderHandler.cs
+      CreateOrderValidator.cs
+    Cancel/
+      CancelOrderCommand.cs
+      CancelOrderHandler.cs
+```
+
+Cette approche est tres efficace quand le produit grossit et que les features ont des comportements riches.
+
+## Les signaux d'alerte
+
+Tu peux anticiper les problemes en observant ces signaux:
+
+- tu dois ouvrir cinq dossiers pour comprendre un cas d'usage simple
+- une modification HTTP casse du code metier
+- des services ont trop de dependances injectees
+- des objets EF Core circulent partout dans l'application
+- les nouveaux developpeurs hesitent constamment sur l'emplacement du code
+
+Ce ne sont pas des details. Ce sont des symptomes structurels.
+
+## Une checklist simple de maintenabilite
+
+Avant d'ajouter une nouvelle fonctionnalite, verifie:
+
+- ou vit le use case ?
+- ou vivent les regles metier ?
+- ou vivent les details d'infrastructure ?
+- le nom des classes est-il explicite ?
+- le test correspondant est-il simple a ecrire ?
+
+Si la reponse est floue, la structure doit etre clarifiee avant d'ajouter plus de code.
+
+## Conclusion
+
+Structurer un projet ASP.NET Core pour rester maintenable n'est pas une question de mode. C'est une discipline de conception.
+
+Une bonne structure rend les decisions visibles, reduit les effets de bord et permet a l'equipe de faire evoluer l'application sans multiplier les regressions. C'est exactement ce qu'on attend d'un projet qui doit durer.

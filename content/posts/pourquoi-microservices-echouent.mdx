@@ -1,0 +1,158 @@
+---
+title: "Pourquoi la plupart des microservices echouent"
+excerpt: "Les microservices ne ratent pas pour des raisons technologiques, mais parce qu ils sont adoptes sans discipline de domaine, sans maturite operationnelle et sans couts clairement assumes."
+date: "2026-03-13"
+author: "Yva Hajatiana"
+tags: ["Microservices", "Architecture", "Distributed Systems", "DevOps", "Software Engineering"]
+coverImage: "/images/posts/default-csharp.png"
+coverImageAlt: "Architecture microservices et complexite des systemes distribues"
+featured: false
+filename: "pourquoi-microservices-echouent"
+---
+
+Les microservices sont souvent presentes comme une solution naturelle a la croissance d'un systeme. En pratique, beaucoup d'organisations les adoptent trop tot, avec de mauvaises frontieres et sans la maturite operationnelle necessaire. Ce n'est pas le style architectural qui echoue. C'est son adoption.
+
+## Les microservices amplifient tout
+
+Dans un monolithe mal concu, un probleme reste local. Dans un systeme distribue, le meme probleme se propage:
+
+- latence reseau
+- erreurs partielles
+- incoherence de donnees
+- observabilite plus complexe
+- orchestration inter-services
+- gestion du deploiement multi-composants
+
+Les microservices amplifient les bonnes pratiques, mais aussi les mauvaises.
+
+## Premier echec: decouper par couches techniques
+
+Un anti-pattern classique consiste a creer:
+
+- un service `users`
+- un service `orders`
+- un service `emails`
+- un service `payments`
+
+sans vraie analyse de domaine.
+
+Le resultat:
+
+- trop d'appels synchrones entre services
+- donnees eparpillees
+- responsabilites floues
+- changements metier qui touchent plusieurs equipes
+
+Un microservice viable doit epouser une capacite metier coherente, pas un simple nom de table ou un detail technique.
+
+## Deuxieme echec: distribuer avant de modulariser
+
+Si une equipe ne sait pas modulariser un monolithe, elle ne saura pas modulariser un systeme distribue. Elle obtiendra seulement une version plus fragile du meme probleme.
+
+Avant d'extraire des services, il faut deja maitriser:
+
+- des frontieres de module nettes
+- des contrats explicites
+- des dependances claires
+- des tests fiables
+- une ownership par domaine
+
+Sans cela, les microservices deviennent un monolithe distribue.
+
+## Troisieme echec: sous-estimer les couts operationnels
+
+Les microservices exigent une discipline d'exploitation bien superieure:
+
+- tracing distribue
+- logs correles
+- gestion des timeouts et retries
+- strategie de deploiement
+- dashboards utiles
+- alerting pertinent
+
+Si ton organisation ne maitrise pas deja ces sujets, les incidents vont simplement devenir plus difficiles a comprendre.
+
+## Quatrieme echec: trop d'appels synchrones
+
+Une architecture microservices echoue souvent parce qu'elle remplace des appels de methode par des appels HTTP en chaine.
+
+Exemple:
+
+- `CheckoutService` appelle `PricingService`
+- qui appelle `InventoryService`
+- qui appelle `CustomerService`
+- qui appelle `PromotionService`
+
+Chaque etape ajoute:
+
+- de la latence
+- des points de panne
+- du couplage temporel
+
+Si plusieurs services doivent etre vivants au meme instant pour qu'un use case fonctionne, le systeme devient fragile.
+
+## Cinquieme echec: partage de base de donnees ou duplication mal pensee
+
+Deux erreurs reviennent souvent:
+
+- plusieurs services partagent la meme base de donnees
+- aucune duplication de donnees n'est toleree, donc tout passe par des appels reseau
+
+La premiere casse l'autonomie. La seconde casse la performance et la resilence.
+
+Un systeme distribue sain accepte une part de duplication et de synchronisation asynchrone quand cela clarifie les frontieres.
+
+## Sixieme echec: equipes trop petites ou trop generales
+
+Les microservices ne sont pas seulement un choix technique. Ils supposent aussi une organisation capable de porter plusieurs services dans le temps.
+
+Si la meme petite equipe gere tout:
+
+- chaque changement devient transversal
+- les responsabilites sont diffuses
+- la dette se propage partout
+
+Une architecture distribuee fonctionne mieux quand ownership, domaine et flux de decision sont clairs.
+
+## Quand les microservices ont du sens
+
+Ils deviennent pertinents quand plusieurs conditions sont reunies:
+
+- produit assez grand pour justifier des frontieres stables
+- equipes capables de porter des services en autonomie
+- besoins de scalabilite differencies
+- contraintes de deploiement distinctes
+- maturite DevOps et observabilite suffisante
+
+Autrement dit, les microservices sont une reponse a une certaine echelle organisationnelle et technique. Pas un point de depart par defaut.
+
+## Une meilleure trajectoire dans beaucoup de cas
+
+Pour beaucoup de produits, la meilleure option est:
+
+1. commencer par un monolithe modulaire
+2. travailler les frontieres de domaine
+3. instrumenter correctement
+4. identifier les points de friction reels
+5. extraire seulement les modules qui le justifient
+
+Cette trajectoire retarde la complexite distribuee jusqu'au moment ou elle devient vraiment utile.
+
+## Les vraies questions a poser
+
+Avant d'adopter des microservices, demande:
+
+- quelles frontieres metier sont stables ?
+- quelles equipes possederont quels services ?
+- quels flux doivent rester synchrones ?
+- quelles donnees peuvent etre dupliquees ?
+- quel niveau d'observabilite avons-nous aujourd'hui ?
+- quel probleme concret la distribution resout-elle ?
+
+Si ces questions n'ont pas de reponse solide, la migration vers des microservices est prematuree.
+
+## Conclusion
+
+La plupart des microservices echouent parce qu'ils sont adoptes comme une promesse de scalabilite abstraite, alors qu'ils demandent plus de discipline, plus de clarte metier et plus d'excellence operationnelle qu'un monolithe modulaire.
+
+Les microservices ne sont pas une preuve de maturite. Ils sont une consequence d'une maturite deja acquise.

@@ -1,0 +1,201 @@
+---
+title: "Construire une architecture .NET moderne en 2025"
+excerpt: "Comment concevoir une architecture .NET moderne, modulaire et evolutive en 2025, sans tomber dans la sur-ingenierie ni les couches inutiles."
+date: "2026-03-10"
+author: "Yva Hajatiana"
+tags: [".NET", "Architecture", "ASP.NET Core", "Software Engineering", "Backend"]
+coverImage: "/images/posts/dotnet10-csharp14.png"
+coverImageAlt: "Architecture .NET moderne avec C# et composants applicatifs"
+featured: true
+filename: "construire-architecture-dotnet-moderne-2025"
+---
+
+Construire une architecture .NET moderne en 2025 ne consiste pas a empiler des patterns ou a multiplier les projets dans la solution. Le vrai objectif est plus simple: permettre a une application de rester lisible, testable et evolutive pendant plusieurs annees, tout en absorbant des changements metier frequents.
+
+Une bonne architecture n'est pas une collection de schemas. C'est une serie de decisions qui reduisent le couplage, clarifient les responsabilites et rendent les evolutions previsibles.
+
+## Ce qu'on attend d'une architecture moderne
+
+Une architecture backend serieuse doit couvrir cinq besoins:
+
+- separer clairement les regles metier de l'infrastructure
+- rendre les flux applicatifs explicites
+- limiter les dependances transverses
+- permettre des tests rapides et utiles
+- preparer le passage a l'echelle sans complexite prematuree
+
+En .NET, cela conduit souvent vers une architecture en couches explicites:
+
+- `Domain`: entites, value objects, regles metier, invariants
+- `Application`: use cases, orchestration, validation, contrats
+- `Infrastructure`: base de donnees, messaging, services externes
+- `Api`: endpoints HTTP, auth, serialization, composition root
+
+## Une architecture utile n'est pas forcement "clean architecture"
+
+Beaucoup d'equipes appliquent une version mecanique de la Clean Architecture et se retrouvent avec trop de projets, trop d'interfaces et trop de ceremonie. Le resultat est souvent contre-productif.
+
+La bonne question n'est pas: "Quel pattern est a la mode ?"
+
+La bonne question est: "Quelles decisions doivent etre stables, et lesquelles vont changer souvent ?"
+
+Si ton domaine evolue vite, protege le domaine. Si ton application integre beaucoup de systemes externes, isole l'infrastructure. Si ton produit est encore jeune, ne cree pas dix abstractions pour un seul provider.
+
+## Une structure pragmatique de solution
+
+Voici une structure qui reste simple tout en offrant une vraie separation:
+
+```text
+src/
+  YvaDev.Api/
+  YvaDev.Application/
+  YvaDev.Domain/
+  YvaDev.Infrastructure/
+
+tests/
+  YvaDev.Domain.Tests/
+  YvaDev.Application.Tests/
+  YvaDev.Api.Tests/
+```
+
+Cette organisation permet de raisonner vite:
+
+- les regles metier vivent dans `Domain`
+- les cas d'usage vivent dans `Application`
+- les details techniques vivent dans `Infrastructure`
+- le point d'entree web reste dans `Api`
+
+## Le domaine doit rester pauvre en dependances, pas pauvre en logique
+
+Une erreur classique consiste a transformer le domaine en simple conteneur de DTO. C'est l'inverse de ce qu'il faut faire.
+
+Le domaine doit porter les invariants importants.
+
+```csharp
+public sealed class Subscription
+{
+    public SubscriptionStatus Status { get; private set; }
+    public DateOnly RenewalDate { get; private set; }
+
+    public void Renew(DateOnly renewalDate)
+    {
+        if (Status != SubscriptionStatus.Active)
+        {
+            throw new InvalidOperationException("Only active subscriptions can be renewed.");
+        }
+
+        if (renewalDate <= RenewalDate)
+        {
+            throw new ArgumentException("Renewal date must move forward.");
+        }
+
+        RenewalDate = renewalDate;
+    }
+}
+```
+
+Cette logique n'a rien a faire dans un controller, ni dans un repository, ni dans un service utilitaire.
+
+## La couche Application orchestre, elle ne pense pas a la place du domaine
+
+La couche application sert a decrire les flux. Elle recupere les donnees, invoque le domaine, persiste les changements, publie des evenements si necessaire.
+
+```csharp
+public sealed class RenewSubscriptionHandler
+{
+    private readonly ISubscriptionRepository _repository;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public async Task HandleAsync(RenewSubscriptionCommand command, CancellationToken ct)
+    {
+        var subscription = await _repository.GetByIdAsync(command.SubscriptionId, ct)
+            ?? throw new InvalidOperationException("Subscription not found.");
+
+        subscription.Renew(command.NewRenewalDate);
+
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+}
+```
+
+Le handler ne decide pas des regles metier. Il coordonne.
+
+## L'infrastructure doit rester remplaçable, mais pas abstraite a l'exces
+
+Dans beaucoup de projets .NET, l'infrastructure devient un cimetière de wrappers inutiles. Une architecture moderne evite cela.
+
+Quelques regles simples:
+
+- abstraire les dependances qui changent ou qui doivent etre mockees utilement
+- ne pas creer d'interface pour une classe qui n'a qu'une implementation et aucune raison de varier
+- garder les details techniques dans `Infrastructure`
+- exposer des contrats orientes metier, pas des APIs generiques
+
+Un `ICustomerRepository` a du sens. Un `IGenericRepository<T>` cree souvent plus de confusion qu'autre chose.
+
+## L'API doit etre mince
+
+Une API HTTP bien structuree ne fait que trois choses:
+
+- recevoir une requete
+- traduire la requete en commande ou query
+- renvoyer un resultat HTTP coherent
+
+```csharp
+app.MapPost("/subscriptions/{id:guid}/renew", async (
+    Guid id,
+    RenewSubscriptionRequest request,
+    RenewSubscriptionHandler handler,
+    CancellationToken ct) =>
+{
+    await handler.HandleAsync(new RenewSubscriptionCommand(id, request.NewRenewalDate), ct);
+    return Results.NoContent();
+});
+```
+
+Le controller ou l'endpoint minimal ne doit pas contenir de logique metier cachee.
+
+## Les sujets transverses doivent etre explicites
+
+En 2025, une architecture backend moderne doit prendre au serieux:
+
+- la validation
+- l'observabilite
+- la gestion des erreurs
+- l'idempotence
+- la securite
+- la resilence face aux services externes
+
+Ces sujets ne doivent pas etre repartis au hasard dans les couches. Ils doivent etre traites par des conventions claires, des middleware, des pipelines ou des composants dedies.
+
+## Quand preparer la scalabilite
+
+Il ne faut pas concevoir tout de suite une plateforme distribuee si le produit n'en a pas besoin. En revanche, il faut preparer la possibilite de grandir.
+
+Cela signifie:
+
+- isoler les ecritures importantes
+- separer clairement lecture et ecriture quand cela devient utile
+- decoupler les integrations externes
+- utiliser des evenements metier quand ils ont un vrai sens
+- conserver des frontieres de module nettes
+
+Une architecture modulaire et monolithique reste souvent la meilleure base pour un produit qui grandit.
+
+## Checklist simple
+
+Avant de valider ton architecture, pose ces questions:
+
+- ou vivent les regles metier ?
+- peut-on comprendre un use case sans lire l'infrastructure ?
+- les dependances pointent-elles dans le bon sens ?
+- les tests applicatifs sont-ils rapides ?
+- un changement de base de donnees ou d'API externe impacte-t-il tout le code ?
+
+Si la reponse est mauvaise sur ces points, l'architecture est probablement trop couplee.
+
+## Conclusion
+
+Une architecture .NET moderne en 2025 n'a pas besoin d'etre spectaculaire. Elle doit etre lisible, stable sous pression et suffisamment modulaire pour absorber les changements metier.
+
+Le bon niveau d'architecture est celui qui aide l'equipe a avancer plus vite avec moins de regressions. C'est cela, une architecture moderne.

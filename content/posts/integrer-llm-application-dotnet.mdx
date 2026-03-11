@@ -1,0 +1,202 @@
+---
+title: "Comment integrer un LLM dans une application .NET"
+excerpt: "Une methode pragmatique pour integrer un LLM dans une application .NET avec des frontieres claires, de la securite et des usages utiles en production."
+date: "2026-03-12"
+author: "Yva Hajatiana"
+tags: ["LLM", ".NET", "AI Engineering", "C#", "ASP.NET Core"]
+coverImage: "/images/posts/csharp-ai-agents.png"
+coverImageAlt: "Integration d un LLM dans une application .NET avec C#"
+featured: true
+filename: "integrer-llm-application-dotnet"
+---
+
+L'integration d'un LLM dans une application .NET ne consiste pas a appeler une API et afficher du texte. En production, un modele de langage devient une capacite supplementaire du systeme. Il faut donc le traiter comme un composant applicatif avec ses limites, ses contrats et ses risques.
+
+La bonne approche est de partir du cas d'usage, pas du modele.
+
+## Commencer par le besoin produit
+
+Un LLM peut servir a beaucoup de choses:
+
+- assister la recherche documentaire
+- resumer des tickets ou des emails
+- classer du contenu
+- extraire des donnees structurees
+- orchestrer des actions via tool calling
+
+Mais tous les cas d'usage ne justifient pas un LLM. Avant d'integrer quoi que ce soit, il faut definir:
+
+- quelle valeur metier est attendue ?
+- quel niveau de precision est acceptable ?
+- que se passe-t-il si la sortie est mauvaise ?
+- quelles donnees peuvent etre envoyees au modele ?
+
+## Une bonne integration repose sur une frontiere applicative claire
+
+Le modele ne doit pas etre appele directement depuis un controller. L'integration doit passer par une abstraction metier explicite.
+
+```csharp
+public interface ICustomerSupportAssistant
+{
+    Task<SupportReply> DraftReplyAsync(SupportRequest request, CancellationToken ct);
+}
+```
+
+Ensuite, une implementation concrete peut utiliser OpenAI, Azure OpenAI ou un modele local. L'application depend du contrat, pas du provider.
+
+## Garder la logique de prompt hors des endpoints
+
+Le prompt est une partie du comportement applicatif. Il doit donc etre structure et versionnable.
+
+```csharp
+public sealed class DraftSupportReplyPrompt
+{
+    public string Build(SupportRequest request) => $"""
+        You are assisting a support engineer.
+        Produce a concise answer.
+        Customer message: {request.Message}
+        Product area: {request.ProductArea}
+        Constraints: do not invent unsupported actions.
+        """;
+}
+```
+
+Cela permet de tester, faire evoluer et relire les instructions du modele comme n'importe quel autre composant.
+
+## Ne pas tout deleguer au LLM
+
+Le LLM doit etre utilise la ou il est bon:
+
+- generation ou reformulation de texte
+- extraction semi-structuree
+- classement contextuel
+- raisonnement souple sur du langage naturel
+
+Il ne doit pas decider seul de tout ce qui est deterministe.
+
+Par exemple:
+
+- les droits d'acces restent dans le code
+- les calculs de prix restent dans le code
+- la validation stricte reste dans le code
+- les operations irreversibles restent sous controle explicite
+
+## Un pipeline simple et robuste
+
+Une integration saine suit souvent ce schema:
+
+1. preparer le contexte utile
+2. filtrer les donnees sensibles
+3. construire le prompt
+4. appeler le modele
+5. valider ou transformer la sortie
+6. journaliser les metadonnees utiles
+
+```csharp
+public sealed class CustomerSupportAssistant : ICustomerSupportAssistant
+{
+    private readonly IChatCompletionClient _client;
+    private readonly DraftSupportReplyPrompt _prompt;
+
+    public async Task<SupportReply> DraftReplyAsync(SupportRequest request, CancellationToken ct)
+    {
+        var completion = await _client.CompleteAsync(
+            _prompt.Build(request),
+            temperature: 0.2,
+            cancellationToken: ct);
+
+        return new SupportReply(completion.Text.Trim());
+    }
+}
+```
+
+Le code reste comprehensible. Le modele est encapsule. Le comportement est observable.
+
+## Structurer la sortie du modele
+
+Des qu'un LLM doit alimenter une logique applicative, il faut privilegier une sortie structuree.
+
+```json
+{
+  "intent": "refund_request",
+  "priority": "high",
+  "requires_human_review": true
+}
+```
+
+En .NET, il est simple de deserialiser et valider cela:
+
+```csharp
+public sealed record TicketClassification(string Intent, string Priority, bool RequiresHumanReview);
+```
+
+La sortie libre peut etre utile pour l'UX. La sortie structuree est meilleure pour les flux applicatifs.
+
+## Gerer les risques reels
+
+Integrer un LLM en production pose toujours les memes sujets:
+
+- hallucinations
+- fuite d'informations sensibles
+- latence
+- cout
+- derive du prompt dans le temps
+- manque de reproductibilite
+
+Pour limiter ces risques:
+
+- reduire le contexte au strict necessaire
+- imposer un format de reponse
+- utiliser une temperature basse pour les workflows critiques
+- enregistrer prompt, version du modele et resultat lorsque c'est autorise
+- definir des chemins de fallback
+
+## Le tool calling en .NET
+
+Quand le modele doit invoquer des actions, il faut garder un cadre strict. Le LLM propose, l'application verifie et execute.
+
+Exemple typique:
+
+- recuperer le statut d'une commande
+- chercher un article dans une base documentaire
+- generer un brouillon a partir de donnees internes
+
+Le modele ne doit jamais avoir un acces implicite aux operations critiques. Chaque outil doit avoir:
+
+- un schema d'entree clair
+- des gardes metier
+- une journalisation
+- une limite de profondeur ou de nombre d'appels
+
+## Observabilite et mesure
+
+Si tu ne mesures pas le comportement du LLM, tu ne peux pas l'ameliorer.
+
+Surveille au minimum:
+
+- temps de reponse
+- volume de tokens
+- taux d'erreur
+- taux de fallback
+- feedback utilisateur
+- taux de validation humaine quand il existe
+
+L'AI engineering devient rapidement un probleme de fiabilite operationnelle, pas seulement d'API.
+
+## Quand utiliser RAG
+
+Le RAG n'est pas un pre-requis universel. Il est utile quand le modele doit repondre a partir d'une base documentaire actualisee ou specialisee.
+
+Il est moins utile quand:
+
+- le cas d'usage est purement generatif
+- le contexte tient en peu de donnees stables
+- le cout de retrieval depasse la valeur du cas d'usage
+
+Il faut donc l'introduire pour une raison concrete, pas parce que c'est la pile standard du moment.
+
+## Conclusion
+
+Integrer un LLM dans une application .NET est un sujet d'architecture applicative, de securite et d'operabilite. Le modele doit rester encapsule dans une frontiere claire, alimente par un contexte utile et controle par des regles deterministes.
+
+La question n'est pas "comment appeler un modele ?". La vraie question est: "comment faire de l'IA une capacite fiable du systeme ?"
