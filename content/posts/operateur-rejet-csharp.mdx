@@ -1,0 +1,113 @@
+---
+title: "Operateur de rejet (_) en C# : quand il clarifie le code"
+excerpt: "L operateur discard (_) est utile pour rendre une intention explicite, mais il devient vite un cache-misere lorsqu il masque un mauvais design ou une API confuse."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Language Features", "Readability", "Clean Code"]
+coverImage: "/images/posts/csharp-hashcode-equality.png"
+coverImageAlt: "Utilisation de l operateur de rejet en C# pour clarifier une intention"
+featured: false
+filename: "operateur-rejet-csharp"
+---
+
+L'operateur discard `_` en C# parait simple. Il sert a ignorer une valeur dont on n'a pas besoin. Pourtant, comme beaucoup de petites fonctionnalites de langage, sa vraie valeur depend du contexte.
+
+Bien utilise, il rend l'intention plus explicite. Mal utilise, il cache une API mal pensee ou un manque de clarte dans le flux applicatif.
+
+## Ce que signifie vraiment `_`
+
+Un discard indique une chose precise:
+
+**cette valeur existe, mais je choisis explicitement de ne pas l'utiliser.**
+
+Exemple:
+
+```csharp
+if (int.TryParse(input, out _))
+{
+    // on ne garde pas la valeur, on valide seulement le format
+}
+```
+
+Ici, `_` rend l'intention tres claire. On ne veut pas exploiter l'entier parse. On veut seulement savoir si le parsing reussit.
+
+## Les cas d'usage les plus utiles
+
+### 1. Validation sans conservation de la valeur
+
+Le cas le plus classique.
+
+```csharp
+var isValid = Guid.TryParse(id, out _);
+```
+
+### 2. Deconstruction partielle
+
+```csharp
+var (_, status, lastUpdated) = result;
+```
+
+Quand certaines informations ne servent pas, le discard evite d'introduire des variables inutiles.
+
+### 3. Pattern matching
+
+```csharp
+if (message is OrderCreated(_, var customerId, _))
+{
+    // seul customerId compte ici
+}
+```
+
+Ce style fonctionne bien quand la structure est connue mais qu'une partie seulement du contenu est utile.
+
+## Pourquoi c'est utile
+
+Le principal gain n'est pas de gagner quelques caracteres. Le principal gain est de supprimer le bruit.
+
+Au lieu d'ecrire:
+
+```csharp
+Guid ignored;
+var ok = Guid.TryParse(id, out ignored);
+```
+
+on ecrit directement l'intention:
+
+```csharp
+var ok = Guid.TryParse(id, out _);
+```
+
+Moins de variables parasites, moins de confusion, moins de tentation de reutiliser une valeur sans vraie raison.
+
+## Quand le discard devient un mauvais signal
+
+Le discard ne doit pas servir a masquer un probleme de design.
+
+Si tu te retrouves souvent a ignorer la moitie des valeurs retournees par une methode, il faut te demander si le contrat est bien concu.
+
+Exemple douteux:
+
+```csharp
+var (_, _, _, discountCode, _, _, _) = pricingResult;
+```
+
+Ce code compile, mais il crie surtout que la structure retournee n'est pas adaptee au besoin du consommateur.
+
+Dans ce cas, mieux vaut:
+
+- revoir le type de retour
+- introduire un contrat plus cible
+- simplifier l'API appelee
+
+## Discard et lisibilite
+
+Le discard est utile tant qu'il rend la lecture plus simple. Il devient nuisible quand il oblige le lecteur a reconstruire mentalement des positions anonymes.
+
+Par exemple, dans une deconstruction tres longue, `_` repete plusieurs fois peut nuire a la comprehension. Dans ce cas, un type nomme ou un acces par propriete reste souvent preferable.
+
+## Conclusion
+
+L'operateur `_` en C# est une petite fonctionnalite, mais une bonne petite fonctionnalite: il rend explicite ce qu'on choisit de ne pas utiliser. Son meilleur usage consiste a clarifier l'intention. Son mauvais usage consiste a cacher un contrat ou une structure mal pensee.
+
+Comme souvent, la question n'est pas "peut-on l'utiliser ?". La vraie question est: "est-ce que cela rend le code plus lisible ?"
+
