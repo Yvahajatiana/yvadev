@@ -1,0 +1,54 @@
+---
+title: "Guide : optimiser les performances des applications .NET"
+excerpt: "L optimisation en .NET n est utile que lorsqu elle part de mesures fiables. Le vrai travail consiste a trouver les goulets d etranglement et a reduire les couts dominants."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: [".NET", "Performance", "Profiling", "Backend", "Optimization"]
+coverImage: "/images/posts/csharp-multithreading-finance.png"
+coverImageAlt: "Optimisation de performances dans une application .NET"
+featured: false
+filename: "guide-optimiser-les-performances-des-applications-net"
+---
+
+Optimiser une application .NET ne consiste pas a appliquer une liste de micro-optimisations. Une demarche serieuse commence par la mesure, puis par la comprehension des couts dominants.
+
+## Mesurer avant de changer
+
+Les premiers reflexes doivent etre:
+
+- profiler CPU
+- observer allocations memoire
+- mesurer latence et throughput
+- verifier les acces I/O
+- identifier les appels reseau ou base de donnees dominants
+
+Sans ces mesures, on optimise souvent la mauvaise chose.
+
+## Les sources classiques de lenteur
+
+Dans les applications .NET, les problemes frequents sont:
+
+- allocations inutiles
+- requetes SQL trop nombreuses
+- serializations repetitives
+- contention sur ressources partagees
+- appels synchrones dans des flux asynchrones
+- traitement reseau trop verbeux
+
+Les problemes d'architecture comptent souvent plus que les details syntaxiques.
+
+## La bonne approche
+
+Un plan d'optimisation efficace suit souvent cet ordre:
+
+1. mesurer
+2. identifier le goulet dominant
+3. corriger a la source
+4. remesurer
+
+Cette discipline evite les optimisations cosmetiques.
+
+## Conclusion
+
+La performance en .NET est un sujet d'observabilite et d'architecture avant d'etre un sujet de tricks. Ce qui compte, c'est de reduire les couts dominants la ou ils penaliseent vraiment le service.
+
