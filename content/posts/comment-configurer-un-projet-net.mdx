@@ -1,0 +1,77 @@
+---
+title: "Comment configurer un projet .NET pour tenir dans la duree"
+excerpt: "Un projet .NET durable depend moins du template initial que de conventions claires sur la structure, la configuration, les tests et l exploitation."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: [".NET", "Project Setup", "Architecture", "Maintainability", "Software Engineering"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Configuration initiale d un projet .NET durable"
+featured: false
+filename: "comment-configurer-un-projet-net"
+---
+
+La configuration initiale d'un projet .NET influence fortement sa capacite a rester lisible quand l'equipe, les features et les integrations augmentent. Pourtant, beaucoup de projets sont demarres avec une bonne intention mais sans conventions assez claires.
+
+Configurer un projet .NET pour le long terme consiste surtout a preparer:
+
+- une structure de solution comprehensible
+- des dependances claires
+- une configuration multi-environnements propre
+- une strategie de tests
+- des conventions de logging et d'observabilite
+
+## 1. Fixer des frontieres de projet
+
+Une structure simple fonctionne deja tres bien:
+
+```text
+src/
+  Project.Api/
+  Project.Application/
+  Project.Domain/
+  Project.Infrastructure/
+tests/
+  Project.UnitTests/
+  Project.IntegrationTests/
+```
+
+Cette separation aide a eviter que tout remonte dans l'API.
+
+## 2. Standardiser la configuration
+
+Un projet .NET vieillit mal quand la configuration devient diffuse. Il faut centraliser:
+
+- `appsettings.json`
+- `appsettings.Development.json`
+- variables d'environnement
+- secrets locaux
+
+La regle doit etre simple: le code lit des options typées, pas des chaines magiques partout.
+
+## 3. Poser une strategie de dependances
+
+Avant meme d'ecrire les features, il faut clarifier:
+
+- ou vivent les contrats
+- ou vivent les clients externes
+- comment se fait l'injection de dependances
+- comment on introduit une nouvelle integration
+
+Cette clarte evite les dependances transverses difficiles a corriger plus tard.
+
+## 4. Activer les qualites de base
+
+Un projet qui doit durer devrait demarrer avec:
+
+- linting
+- type safety
+- tests
+- conventions de logs
+- gestion des erreurs centralisee
+
+Ce n'est pas du luxe. C'est un minimum pour maintenir un rythme soutenable.
+
+## Conclusion
+
+Configurer un projet .NET pour le long terme, c'est reduire tres tot les zones d'ambiguite. Un bon demarrage ne garantit pas une bonne architecture, mais un mauvais demarrage fabrique presque toujours de la dette.
+
