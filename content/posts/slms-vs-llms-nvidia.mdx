@@ -1,0 +1,225 @@
+---
+title: "SLMs vs LLMs : quel choix pour une application reelle ?"
+excerpt: "Le bon modele n est pas toujours le plus grand. Entre SLMs et LLMs, le choix depend surtout de la latence, du cout, de la precision attendue et du contexte d integration."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["AI Engineering", "LLM", "SLM", "Architecture", "Inference"]
+coverImage: "/images/posts/csharp-ai-agents.png"
+coverImageAlt: "Comparaison entre petits modeles de langage et grands modeles de langage"
+featured: false
+filename: "slms-vs-llms-nvidia"
+---
+
+Le debat entre SLMs et LLMs est souvent mal pose. Il est frequemment resume a une opposition trop simple:
+
+- les grands modeles seraient plus intelligents
+- les petits modeles seraient plus rapides
+
+Cette lecture est insuffisante pour prendre une decision d'architecture. Dans une application reelle, le choix d'un modele de langage est un arbitrage entre qualite, cout, latence, gouvernance des donnees et complexite d'exploitation.
+
+La vraie question n'est donc pas: **quel modele est le plus impressionnant ?**
+
+La vraie question est: **quel modele est suffisant pour le probleme a resoudre ?**
+
+## Que recouvrent vraiment SLM et LLM
+
+Les termes varient selon les acteurs, mais l'idee generale reste stable.
+
+### SLM
+
+Un `Small Language Model` est un modele plus compact, souvent mieux adapte a:
+
+- des usages cibles
+- des environnements contraints
+- une inference locale ou edge
+- des flux a faible latence
+
+### LLM
+
+Un `Large Language Model` vise des capacites plus generales:
+
+- plus de couverture de connaissances
+- meilleure capacite de raisonnement dans certains cas
+- plus de souplesse sur des taches tres variees
+
+En contrepartie, il implique souvent:
+
+- plus de cout
+- plus de latence
+- plus de consommation GPU ou API
+- plus de travail de cadrage pour un usage fiable
+
+## Ce qu'un architecte doit regarder en premier
+
+Quand on integre un modele dans une application, quatre criteres dominent.
+
+### 1. La nature exacte de la tache
+
+Tous les usages n'ont pas besoin d'un grand modele.
+
+Exemples ou un SLM peut suffire:
+
+- classification de tickets
+- extraction de champs
+- routage de demandes
+- reformulation simple
+- etiquetage de contenu
+
+Exemples ou un LLM peut etre plus pertinent:
+
+- synthese longue et nuancee
+- generation de contenu plus ouvert
+- raisonnement multi-etapes
+- tool calling complexe
+- assistance a l'analyse sur contexte riche
+
+Si le probleme est etroit et bien borne, un SLM peut offrir un meilleur rapport valeur / cout.
+
+### 2. La latence acceptable
+
+Dans un workflow interactif, la latence change completement l'experience.
+
+Un chatbot interne peut tolerer quelques secondes.
+Un autocomplete de code, beaucoup moins.
+Un routage automatique dans une API temps reel encore moins.
+
+Les petits modeles sont souvent plus interessants quand:
+
+- la reponse doit etre quasi immediate
+- le volume de requetes est eleve
+- le cout unitaire doit rester tres bas
+
+### 3. Le cout d'exploitation
+
+Le cout ne se limite pas au prix API ou au besoin GPU.
+
+Il faut prendre en compte:
+
+- le trafic moyen
+- les pics de charge
+- la longueur du contexte
+- le nombre d'appels par workflow
+- le taux de retry
+- l'eventuelle supervision humaine
+
+Un modele trop gros pour le besoin peut rendre un cas d'usage non rentable, meme s'il fonctionne bien techniquement.
+
+### 4. La gouvernance des donnees
+
+Si les donnees sont sensibles ou si l'environnement impose des contraintes fortes, les SLMs prennent parfois un avantage important, surtout lorsqu'ils peuvent tourner localement ou dans un perimetre mieux maitrise.
+
+Le choix de modele devient alors aussi un sujet de:
+
+- conformite
+- localisation des donnees
+- auditabilite
+- maitrise du risque fournisseur
+
+## Le piege du benchmark generique
+
+Comparer SLMs et LLMs sur des benchmarks publics est utile, mais insuffisant.
+
+Ces scores ne disent pas:
+
+- si le modele est bon sur tes donnees
+- s'il respecte ton format de sortie
+- s'il tient la charge
+- s'il reste stable dans ton workflow
+- s'il est economiquement tenable
+
+En AI engineering, un modele mediocre sur benchmark peut etre excellent dans un cas d'usage etroit. A l'inverse, un modele top niveau peut etre inutilement cher pour une tache repetitive et simple.
+
+## Une strategie souvent plus intelligente : la hierarchie de modeles
+
+Dans beaucoup de systemes, il n'est pas necessaire de choisir un seul modele pour tout.
+
+Une architecture plus mature consiste a utiliser:
+
+- un SLM pour le tri, la classification ou le pre-traitement
+- un LLM pour les cas complexes ou ambigus
+
+Exemple:
+
+1. un petit modele classe une demande client
+2. si le score de confiance est eleve, le workflow continue
+3. sinon, un modele plus capable prend le relais
+
+Cette strategie permet de controler le cout sans sacrifier la qualite la ou elle compte vraiment.
+
+## Les SLMs ne sont pas seulement des \"petits LLMs\"
+
+Une erreur frequente consiste a voir les SLMs comme une version degradee des grands modeles. Ce n'est pas toujours juste.
+
+Un petit modele bien choisi peut etre meilleur sur un usage cible si:
+
+- il a ete specialise
+- il tourne plus pres des donnees
+- il offre une latence beaucoup plus faible
+- son comportement est plus stable dans un cadre etroit
+
+En pratique, beaucoup de workflows applicatifs n'ont pas besoin d'un raisonnement ouvert sur tout le web. Ils ont besoin d'une sortie propre, rapide et predicible.
+
+## Quand un LLM reste le bon choix
+
+Les grands modeles gardent un avantage net dans plusieurs cas:
+
+- conversations ouvertes avec contexte riche
+- syntheses complexes
+- generation multi-contrainte
+- raisonnement a plusieurs etapes
+- orchestration de tool calling plus riche
+
+Ils sont aussi utiles quand le cout d'une erreur est plus eleve que le cout d'inference.
+
+Exemple:
+
+- assistance a l'analyse technique
+- support expert
+- exploration documentaire avancee
+
+Dans ces cas, payer plus cher pour une meilleure capacite peut etre une decision rationnelle.
+
+## Les questions a poser avant de choisir
+
+Avant d'arreter ton choix entre SLM et LLM, pose ces questions:
+
+- quel est le niveau minimal de qualite necessaire ?
+- quelle latence maximale est acceptable ?
+- quel budget par requete est soutenable ?
+- les donnees peuvent-elles sortir du perimetre controle ?
+- la tache est-elle generale ou tres contrainte ?
+- faut-il privilegier la rapidite, la finesse ou la robustesse ?
+
+Ces questions donnent une base de decision beaucoup plus utile qu'une simple comparaison de taille de modele.
+
+## Evaluer sur ton propre workflow
+
+Le choix doit etre valide par une evaluation locale, sur des exemples proches de la production.
+
+Il faut tester:
+
+- la qualite de sortie
+- la regularite
+- le taux d'erreur
+- la latence
+- le cout
+- la facilite d'integration
+
+Une evaluation minimale avec un jeu de cas representatifs vaut plus qu'un long debat theoriqe sur les modeles.
+
+## Une grille de decision simple
+
+Tu peux raisonner ainsi:
+
+- si la tache est simple, repetitive, structuree: commencer par un SLM
+- si la tache est ambigue, riche en contexte, exigeante: envisager un LLM
+- si le volume est tres grand: privilegier un SLM ou une architecture hybride
+- si la criticite est forte: evaluer les deux sur des jeux de cas reels
+
+Cette approche limite les choix ideologiques.
+
+## Conclusion
+
+Le choix entre SLMs et LLMs n'est pas un debat abstrait sur la puissance des modeles. C'est un sujet de design applicatif et de compromis d'exploitation.
+
+Un bon systeme n'utilise pas le modele le plus grand possible. Il utilise le modele le plus adapte a la tache, au niveau de service attendu et aux contraintes du produit.
