@@ -1,0 +1,84 @@
+---
+title: "Simplifier vos API REST en .NET avec Refit"
+excerpt: "Refit permet de declarer des clients HTTP plus lisibles en .NET, mais il faut l utiliser comme un outil d integration propre, pas comme une couche magique."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: [".NET", "Refit", "HTTP", "API", "Integration"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Client HTTP .NET simplifie avec Refit"
+featured: false
+filename: "simplifier-api-net-refit"
+---
+
+L'integration avec des APIs externes est un point de friction classique dans les applications .NET. Beaucoup de codebases accumulent des `HttpClient` mal encapsules, des routes concatenees a la main, des erreurs de serialization et des conventions heterogenes.
+
+Refit apporte une reponse interessante: decrire un client HTTP via une interface declarative.
+
+## Pourquoi Refit est utile
+
+Avec Refit, tu transformes un contrat HTTP en interface .NET:
+
+```csharp
+public interface IGitHubApi
+{
+    [Get("/users/{user}")]
+    Task<UserDto> GetUserAsync(string user);
+}
+```
+
+Puis tu enregistres ce client:
+
+```csharp
+services
+    .AddRefitClient<IGitHubApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
+```
+
+Le gain principal est la lisibilite.
+
+## Ce que Refit simplifie vraiment
+
+Refit est utile pour:
+
+- centraliser les contrats HTTP
+- reduire le code boilerplate
+- clarifier routes, verbes et payloads
+- standardiser les integrations
+
+Il est particulierement efficace quand une equipe consomme plusieurs APIs externes et veut garder des contrats propres.
+
+## Ce que Refit ne doit pas remplacer
+
+Refit ne remplace pas:
+
+- la gestion metier des erreurs
+- les retries et timeouts
+- les politiques de resilience
+- la journalisation
+- la modelisation des DTO
+
+Refit simplifie le client. Il ne resout pas toute l'integration.
+
+## Une bonne pratique
+
+Expose Refit derriere une frontiere applicative plus stable:
+
+```csharp
+public sealed class PaymentGateway
+{
+    private readonly IPaymentApi _api;
+
+    public async Task<PaymentResult> AuthorizeAsync(PaymentRequest request, CancellationToken ct)
+    {
+        var response = await _api.AuthorizeAsync(request, ct);
+        return Map(response);
+    }
+}
+```
+
+Cela evite de faire remonter partout les details de l'API externe.
+
+## Conclusion
+
+Refit est un bon outil pour simplifier les integrations REST en .NET, tant qu'il reste a sa place: une couche declarative de contrat HTTP. Utilise correctement, il rend le code plus lisible. Utilise comme substitut a une vraie conception d'integration, il deplace seulement le probleme.
+
