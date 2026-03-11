@@ -1,0 +1,67 @@
+---
+title: "Injection de dependance en Angular : comprendre ce qui se passe vraiment"
+excerpt: "L injection de dependance en Angular est souvent utilisee par habitude. Pourtant, bien la comprendre aide a mieux structurer les services, les scopes et les frontieres applicatives."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["Angular", "Dependency Injection", "Frontend", "Architecture", "TypeScript"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Injection de dependance et structuration des services Angular"
+featured: false
+filename: "injection-de-dependance-angular"
+---
+
+L'injection de dependance est au coeur d'Angular, mais elle est souvent consommee comme une mecanique automatique. On injecte un service dans un composant, cela fonctionne, et on passe au sujet suivant. Le probleme est qu'une mauvaise comprehension de ce mecanisme produit rapidement des scopes incoherents, des services mal places et des effets de bord difficiles a tracer.
+
+## Ce que l'injection apporte
+
+L'objectif de l'injection de dependance est simple:
+
+- separer l'utilisation d'un service de sa creation
+- rendre les composants plus testables
+- centraliser les responsabilites partagées
+
+Angular pousse cette logique tres loin avec son systeme d'injecteurs hierarchiques.
+
+## Le point important: le scope
+
+La vraie question n'est pas "comment injecter un service ?". La vraie question est:
+
+**a quel niveau ce service doit-il vivre ?**
+
+Un service peut etre:
+
+- global a l'application
+- limite a un module ou une feature
+- limite a un composant ou une sous-arborescence
+
+Un mauvais choix de scope cree souvent:
+
+- etat partage non voulu
+- duplication de services
+- comportements difficiles a reproduire
+
+## Quand utiliser `providedIn: 'root'`
+
+`root` est pratique quand un service porte:
+
+- une logique transverse
+- un client d'API
+- un cache global
+- un service applicatif reutilise partout
+
+Mais tout mettre en `root` finit par creer un espace global implicite.
+
+## Quand limiter un provider
+
+Un provider local est utile quand le service doit etre:
+
+- isole a une feature
+- reconstruit avec le composant
+- decouple d'un etat global
+
+Cela aide a mieux borner certaines logiques d'ecran ou de workflow.
+
+## Conclusion
+
+Bien utiliser l'injection de dependance en Angular, c'est surtout bien choisir les frontieres et les scopes. Le mecanisme technique est simple. La difficulte reelle se situe dans la structuration des responsabilites.
+
