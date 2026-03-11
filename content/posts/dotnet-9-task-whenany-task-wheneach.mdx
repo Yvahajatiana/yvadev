@@ -1,0 +1,133 @@
+---
+title: "Task.WhenAny vs Task.WhenEach : quand utiliser quoi en .NET 9"
+excerpt: "Task.WhenAny et Task.WhenEach ne resolvent pas le meme probleme. L un aide a reagir au premier resultat disponible, l autre simplifie le traitement progressif d un ensemble de taches."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: [".NET 9", "C#", "Async", "Concurrency", "Performance"]
+coverImage: "/images/posts/csharp-multithreading-finance.png"
+coverImageAlt: "Traitement concurrent et orchestration de taches asynchrones en C#"
+featured: false
+filename: "dotnet-9-task-whenany-task-wheneach"
+---
+
+La concurrence applicative en .NET devient difficile quand plusieurs taches doivent etre orchestrees avec des comportements differents: attendre la premiere reponse, traiter les resultats au fil de l'eau, annuler les retardataires ou aggregator proprement les erreurs.
+
+Dans ce contexte, `Task.WhenAny` et `Task.WhenEach` paraissent proches, mais ils servent des objectifs differents.
+
+## Ce que fait vraiment Task.WhenAny
+
+`Task.WhenAny` retourne des qu'une tache est terminee parmi une collection. Cela ne signifie pas que les autres s'arretent. Cela signifie seulement que tu peux reactir au premier resultat disponible.
+
+```csharp
+var tasks = new[]
+{
+    FetchFromPrimaryAsync(ct),
+    FetchFromReplicaAsync(ct),
+    FetchFromCacheAsync(ct)
+};
+
+var firstCompleted = await Task.WhenAny(tasks);
+var result = await firstCompleted;
+```
+
+Ce pattern est utile pour:
+
+- hedging requests
+- fallback rapide
+- lecture depuis plusieurs sources
+- arbitrage sur la premiere reponse exploitable
+
+## Le piege le plus classique avec WhenAny
+
+Une erreur frequente consiste a oublier que les autres taches continuent de tourner. Il faut donc se poser la question de leur gestion:
+
+- faut-il les annuler ?
+- faut-il ignorer proprement leur resultat ?
+- faut-il journaliser les echecs ?
+
+Sans cela, `WhenAny` peut laisser vivre des traitements inutiles plus longtemps que necessaire.
+
+## Ce que change Task.WhenEach
+
+`Task.WhenEach` permet de consommer les taches a mesure qu'elles se terminent, sans avoir a reconstruire une boucle manuelle autour de `WhenAny`.
+
+```csharp
+await foreach (var task in Task.WhenEach(tasks))
+{
+    var result = await task;
+    Console.WriteLine(result);
+}
+```
+
+Cette approche est tres utile quand:
+
+- l'ordre final n'a pas d'importance
+- chaque resultat peut etre traite independamment
+- on veut commencer le travail sans attendre la fin globale
+
+## Quand preferer WhenEach
+
+`WhenEach` est plus lisible que `WhenAny` pour:
+
+- pipeline de fan-out / fan-in
+- chargement parallele de donnees
+- enrichissement progressif d'un document
+- traitement par lot avec rendu partiel
+
+Le benefice n'est pas seulement syntaxique. Il clarifie l'intention: **traiter chaque fin de tache, pas seulement la premiere**.
+
+## Une comparaison simple
+
+`Task.WhenAny`
+
+- reagit a la premiere tache terminee
+- utile pour le racing ou le fallback
+- demande souvent une gestion manuelle des autres taches
+
+`Task.WhenEach`
+
+- expose les taches au fil de leur completion
+- utile pour le traitement progressif
+- reduit le code d'orchestration repetitif
+
+## Gestion des erreurs
+
+Dans les deux cas, il faut rester explicite sur les exceptions.
+
+Avec `WhenEach`, chaque `await task` peut lever une exception. Il est donc souvent preferable de traiter erreur et succes au meme endroit:
+
+```csharp
+await foreach (var task in Task.WhenEach(tasks))
+{
+    try
+    {
+        var item = await task;
+        await ProcessAsync(item, ct);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogWarning(ex, "Parallel task failed.");
+    }
+}
+```
+
+Cette granularite est souvent meilleure qu'un echec global unique.
+
+## Performance et lisibilite
+
+Le gain principal de `WhenEach` n'est pas une revolution de performance. C'est une amelioration de lisibilite pour des patterns frequents d'orchestration asynchrone.
+
+Quand le code concurrent devient lisible:
+
+- il est plus simple a relire
+- il est plus facile a tester
+- il devient moins risqué a faire evoluer
+
+En engineering, ce gain vaut souvent autant qu'une micro-optimisation.
+
+## Conclusion
+
+`Task.WhenAny` et `Task.WhenEach` ne sont pas concurrents. Ils repondent a deux besoins distincts.
+
+Utilise `WhenAny` quand seule la premiere completion compte. Utilise `WhenEach` quand tu veux traiter un ensemble de taches a mesure qu'elles se terminent. Le bon choix depend de l'intention du flux, pas d'une preference de syntaxe.
+
