@@ -1,0 +1,59 @@
+---
+title: "Transactions distribuees : comprendre le pattern Inbox / Outbox"
+excerpt: "Le pattern Inbox / Outbox permet de rendre les integrations asynchrones plus fiables sans dependance a une transaction distribuee globale."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["Distributed Systems", "Architecture", ".NET", "Messaging", "Reliability"]
+coverImage: "/images/posts/aspnet-core-channels-background-processing.png"
+coverImageAlt: "Fiabilisation des messages avec le pattern Inbox Outbox"
+featured: false
+filename: "transactions-distribuees-inbox-outbox"
+---
+
+Dans un systeme distribue, une operation metier implique souvent plusieurs effets:
+
+- ecriture en base
+- publication d'un evenement
+- appel d'un autre service
+
+Le probleme apparait quand l'un reussit et l'autre echoue. La base est mise a jour, mais le message n'est jamais envoye. Ou l'inverse.
+
+Le pattern Inbox / Outbox est une reponse pragmatique a ce probleme.
+
+## L'idee de l'Outbox
+
+Au lieu d'ecrire en base **puis** publier un message de maniere separee, l'application:
+
+1. enregistre les donnees metier
+2. enregistre aussi le message a publier dans une table Outbox
+3. committe le tout dans la meme transaction locale
+
+Ensuite, un processus distinct lit l'Outbox et publie les messages.
+
+Le benefice est clair: la verite transactionnelle est conservee dans la base applicative.
+
+## L'idee de l'Inbox
+
+Du cote consommateur, l'Inbox sert a enregistrer les messages deja traites pour eviter:
+
+- les doublons
+- les replays dangereux
+- les effets de bord non idempotents
+
+Chaque message recu est marque comme traite avec une cle unique.
+
+## Pourquoi ce pattern reste pertinent
+
+Le pattern Inbox / Outbox permet:
+
+- d'eviter une transaction distribuee globale
+- de fiabiliser les evenements
+- de rendre les retries plus surs
+- d'ameliorer l'idempotence
+
+Il ne supprime pas toute la complexite, mais il la rend gérable.
+
+## Conclusion
+
+Inbox / Outbox n'est pas un pattern "avance" reserve aux architectures exotiques. C'est un mecanisme de fiabilite tres utile des qu'une application doit synchroniser etat metier et messaging sans perdre en cohérence.
+
