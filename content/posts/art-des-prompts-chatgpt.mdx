@@ -1,0 +1,176 @@
+---
+title: "L art des prompts : ecrire des instructions utiles pour ChatGPT"
+excerpt: "Un bon prompt n est pas un tour de magie. C est une specification concise qui reduit l ambiguite, structure la sortie et cadre le comportement du modele."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["Prompt Engineering", "ChatGPT", "AI Engineering", "LLM", "Productivity"]
+coverImage: "/images/posts/gpt4-api-guide.png"
+coverImageAlt: "Conception de prompts efficaces pour un modele de langage"
+featured: false
+filename: "art-des-prompts-chatgpt"
+---
+
+Le prompt engineering est souvent traite comme un ensemble d'astuces. Cette approche est insuffisante des qu'un modele de langage entre dans un workflow serieux. Un prompt utile doit etre pense comme une interface entre une intention humaine et un systeme probabiliste.
+
+L'objectif n'est pas d'impressionner le modele. L'objectif est de reduire l'ambiguite.
+
+## Un prompt est une specification
+
+Un bon prompt dit au modele:
+
+- quel role adopter
+- quelle tache accomplir
+- quel contexte utiliser
+- quel format de sortie respecter
+- quelles limites ne pas franchir
+
+Exemple faible:
+
+```text
+Resume ce document.
+```
+
+Exemple exploitable:
+
+```text
+Tu es un assistant technique.
+Resume ce document pour une equipe backend.
+Fais 5 points maximum.
+Mets en avant les risques, les decisions et les dependances.
+N invente rien si une information manque.
+```
+
+La seconde version ne rend pas le modele "plus intelligent". Elle rend l'attente plus claire.
+
+## Les 5 blocs d'un prompt robuste
+
+Pour la plupart des cas d'usage, un prompt serieux contient cinq blocs.
+
+### 1. Le role
+
+Le role fixe la perspective:
+
+- assistant technique
+- relecteur de code
+- analyste produit
+- support engineer
+
+### 2. La tache
+
+La tache doit etre explicite:
+
+- resumer
+- extraire
+- classer
+- generer
+- reformuler
+
+### 3. Le contexte
+
+Le contexte doit etre utile, pas massif. Plus de contexte n'est pas toujours mieux.
+
+### 4. Les contraintes
+
+Exemples:
+
+- ne pas inventer d'informations
+- utiliser un ton professionnel
+- respecter une longueur maximale
+- repondre en JSON
+
+### 5. Le format de sortie
+
+Si la sortie doit etre exploitee par une application, le format doit etre impose.
+
+## La plupart des mauvais prompts echouent pour des raisons previsibles
+
+Les causes d'echec les plus frequentes sont:
+
+- objectif flou
+- contexte incomplet
+- consignes contradictoires
+- absence de format attendu
+- attente implicite de raisonnement metier non fourni
+
+Quand un modele repond mal, le probleme n'est pas toujours le modele. C'est souvent une specification pauvre.
+
+## Quand il faut imposer un format strict
+
+Des qu'une sortie alimente un autre composant logiciel, il faut privilegier une structure stable.
+
+```text
+Retourne strictement un JSON avec:
+- intent: string
+- confidence: number
+- requires_human_review: boolean
+```
+
+Dans un systeme de production, une reponse structuree vaut mieux qu'une prose elegante mais difficile a parser.
+
+## Le bon niveau de detail
+
+Un prompt trop court laisse trop d'interpretation. Un prompt trop long dilue le signal.
+
+La bonne pratique est de donner:
+
+- assez de contexte pour cadrer
+- assez peu de bruit pour garder la tache lisible
+
+Il faut donc supprimer tout ce qui ne change pas reellement la qualite de la sortie.
+
+## Les exemples sont utiles, mais pas toujours
+
+Le few-shot prompting fonctionne bien quand tu veux montrer:
+
+- le style attendu
+- le niveau de detail
+- le schema de sortie
+- la distinction entre bon et mauvais resultat
+
+Mais si la tache est deja claire et stable, multiplier les exemples peut augmenter le cout et la latence sans gain significatif.
+
+## Prompt engineering et architecture applicative
+
+Dans une application, le prompt ne doit pas vivre cache dans un controller. Il doit etre:
+
+- versionne
+- relu
+- teste
+- rattache a un use case precis
+
+Exemple:
+
+```csharp
+public sealed class TicketSummaryPrompt
+{
+    public string Build(string ticketText) => $"""
+        You are a support assistant.
+        Summarize the following ticket in 4 bullet points.
+        Mention urgency if visible.
+        Do not invent technical causes.
+
+        Ticket:
+        {ticketText}
+        """;
+}
+```
+
+Ici, le prompt devient un composant applicatif maintenable.
+
+## Ce qu'un prompt ne corrigera jamais
+
+Un bon prompt n'efface pas:
+
+- un mauvais cas d'usage
+- un manque de contexte fiable
+- une sortie impossible a verifier
+- une integration applicative mal pensee
+
+Le prompt engineering n'est pas un substitut a l'architecture.
+
+## Conclusion
+
+L'art des prompts consiste moins a trouver la formule parfaite qu'a ecrire des instructions claires, testables et orientees resultat. Plus le systeme est important, plus le prompt doit etre traite comme une specification technique.
+
+Un bon prompt ne cherche pas a "convaincre" le modele. Il cherche a rendre la tache difficile a mal comprendre.
+
