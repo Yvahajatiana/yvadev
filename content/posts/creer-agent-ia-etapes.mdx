@@ -1,0 +1,106 @@
+---
+title: "Creer un agent IA en 8 etapes utiles"
+excerpt: "Construire un agent IA ne consiste pas a brancher un modele a quelques outils. Il faut cadrer le probleme, limiter l autonomie et concevoir un workflow observable."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["AI Agents", "AI Engineering", "LLM", "Architecture", "Automation"]
+coverImage: "/images/posts/csharp-ai-agents.png"
+coverImageAlt: "Conception d un agent IA avec outils et workflow controle"
+featured: false
+filename: "creer-agent-ia-etapes"
+---
+
+Le terme "agent IA" est souvent utilise pour decrire n'importe quelle application qui combine un LLM avec des appels de fonctions. Cette definition est trop large. Un agent utile est un composant logiciel capable de raisonner dans un cadre borne, d'utiliser des outils et de produire un resultat exploitable sans sortir de son perimetre.
+
+Le point critique n'est pas l'autonomie. C'est le controle.
+
+## 1. Definir une tache precise
+
+Un agent n'est pas fait pour "tout faire". Il doit traiter une responsabilite delimitee:
+
+- rechercher une information
+- preparer un brouillon
+- classer une demande
+- executer un workflow d'assistance
+
+Plus le probleme est flou, plus l'agent devient instable.
+
+## 2. Identifier les outils necessaires
+
+Un agent ne devrait disposer que des outils indispensables:
+
+- recherche documentaire
+- lecture d'un statut
+- creation d'un brouillon
+- appel d'une API interne
+
+Trop d'outils augmentent la surface d'erreur et la complexite de validation.
+
+## 3. Encadrer les permissions
+
+Chaque outil doit avoir:
+
+- un schema d'entree clair
+- des gardes metier
+- des limites d'usage
+- une journalisation
+
+Le modele propose une action. L'application verifie avant d'executer.
+
+## 4. Structurer le contexte
+
+Un agent efficace travaille avec un contexte cible:
+
+- donnees pertinentes
+- historique utile
+- instructions stables
+- contraintes metier
+
+Un contexte trop large degrade souvent la qualite et augmente le cout.
+
+## 5. Prevoir un nombre limite de tours
+
+Un agent ne doit pas tourner indefiniment. Il faut limiter:
+
+- le nombre d'appels outils
+- la profondeur de raisonnement
+- la duree maximale d'execution
+
+Ces garde-fous sont indispensables en production.
+
+## 6. Prevoir les cas de fallback
+
+Un agent utile doit pouvoir dire:
+
+- je ne sais pas
+- j'ai besoin d'un humain
+- le contexte est insuffisant
+- l'outil n'est pas disponible
+
+L'echec propre vaut mieux qu'une autonomie mal controlee.
+
+## 7. Mesurer ce qui se passe
+
+Sans mesure, impossible d'ameliorer un agent. Il faut suivre:
+
+- taux de succes
+- latence
+- nombre d'appels outils
+- taux de fallback
+- erreurs fonctionnelles
+
+## 8. Evaluer sur des cas reels
+
+Un agent doit etre teste sur des scenarios proches de la production:
+
+- demandes simples
+- demandes ambiguës
+- erreurs d'outils
+- contexte incomplet
+
+La qualite d'un agent se juge dans les cas limites, pas uniquement dans les demos.
+
+## Conclusion
+
+Creer un agent IA utile revient a construire un workflow applicatif contraint, observable et defendable. La sophistication du modele compte. Mais la robustesse du cadre compte encore plus.
+
