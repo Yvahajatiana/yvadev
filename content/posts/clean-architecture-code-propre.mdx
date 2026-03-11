@@ -1,0 +1,78 @@
+---
+title: "Clean Architecture : une methode utile ou une ceremonie de plus ?"
+excerpt: "La Clean Architecture peut clarifier une application, mais elle devient vite contre-productive lorsqu elle est appliquee comme un schema rigide au lieu d une discipline de frontieres."
+date: "2026-03-11"
+author: "Yva Hajatiana"
+tags: ["Clean Architecture", "Architecture", ".NET", "Maintainability", "Software Engineering"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Organisation d une application selon les principes de Clean Architecture"
+featured: false
+filename: "clean-architecture-code-propre"
+---
+
+La Clean Architecture est devenue une reference dans de nombreux projets .NET. Elle promet une separation nette entre domaine, application, infrastructure et presentation. Sur le principe, cette promesse est saine. En pratique, beaucoup d'equipes transforment cette idee en mecanique de duplication et de couches vides.
+
+Le sujet n'est donc pas de "faire de la Clean Architecture". Le sujet est de savoir si les frontieres introduites aident reellement l'equipe a faire evoluer le systeme.
+
+## Ce que la Clean Architecture cherche a proteger
+
+L'idee centrale est simple:
+
+- le domaine ne doit pas dependre des details techniques
+- l'infrastructure doit rester remplaçable
+- les flux applicatifs doivent etre explicites
+
+Quand ces objectifs sont atteints, les benefices sont concrets:
+
+- regles metier plus lisibles
+- tests plus simples
+- code applicatif moins couple a la base de donnees ou aux APIs externes
+
+## La version utile
+
+La version utile de la Clean Architecture consiste a:
+
+- isoler les invariants metier
+- rendre les cas d'usage explicites
+- repousser les details techniques vers la peripherie
+
+Une structure simple suffit souvent:
+
+```text
+Domain/
+Application/
+Infrastructure/
+Api/
+```
+
+Inutile d'ajouter dix projets si quatre frontieres claires suffisent.
+
+## La version dogmatique
+
+La version dogmatique produit souvent:
+
+- une interface pour chaque classe
+- des DTO partout
+- des mappings excessifs
+- des services applicatifs vides
+- des repositories generiques
+
+Le resultat est un codebase plus ceremoniel, pas forcement plus clair.
+
+## Le bon critere
+
+Une architecture est bonne si elle rend les evolutions moins risquées.
+
+Pose simplement ces questions:
+
+- peut-on comprendre un use case sans lire toute la pile ?
+- les regles metier sont-elles testables sans infrastructure ?
+- un changement d'outil technique force-t-il un changement global ?
+- l'equipe gagne-t-elle en lisibilite ou perd-elle du temps en ceremonie ?
+
+Si les reponses sont mauvaises, la structure doit etre simplifiee.
+
+## Conclusion
+
+La Clean Architecture n'est ni une mode a rejeter, ni une recette a appliquer aveuglement. C'est un ensemble de principes utiles pour mieux separer les responsabilites. Elle vaut par les frontieres qu'elle clarifie, pas par le nombre de couches qu'elle ajoute.
+
