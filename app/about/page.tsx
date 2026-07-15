@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { Cloud, Code2, Rocket, Sparkles } from 'lucide-react';
+import { Cloud, Code2, Github, Rocket, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { siteConfig } from '@/lib/constants';
 
@@ -63,6 +63,39 @@ export default function AboutPage() {
               <li>Cloud, observabilité et pratiques DevOps.</li>
               <li>Ingénierie de l'IA pour intégrer des capacités intelligentes dans des applications métier.</li>
             </ul>
+          </div>
+        </section>
+
+        <section className="grid gap-8 rounded-[2rem] border border-border bg-muted/40 p-8 md:grid-cols-[0.8fr_1.2fr] md:p-12">
+          <div>
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-xl font-bold text-white">
+              YH
+            </div>
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary">Auteur et mainteneur</p>
+            <h2 className="mt-3 text-3xl font-bold text-foreground">Yva Hajatiana</h2>
+            <p className="mt-3 text-secondary">{siteConfig.author.bio}</p>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">Des contenus signés, révisables et reliés au code</h2>
+              <p className="mt-3 text-secondary">
+                Les articles YvaDev sont rédigés pour rendre les décisions techniques discutables et applicables.
+                Chaque publication distingue le principe, son contexte d'utilisation, ses compromis et les risques à surveiller en production.
+              </p>
+            </div>
+            <ul className="grid gap-3 text-secondary sm:grid-cols-2">
+              <li className="rounded-xl border border-border bg-background p-4">Exemples centrés sur C# et .NET.</li>
+              <li className="rounded-xl border border-border bg-background p-4">Choix d'architecture explicités.</li>
+              <li className="rounded-xl border border-border bg-background p-4">Limites et coûts opérationnels abordés.</li>
+              <li className="rounded-xl border border-border bg-background p-4">Code source du site accessible publiquement.</li>
+            </ul>
+            <Button variant="outline" asChild>
+              <a href={siteConfig.social.github} target="_blank" rel="noopener noreferrer">
+                <Github className="mr-2 h-4 w-4" />
+                Consulter le dépôt GitHub
+              </a>
+            </Button>
           </div>
         </section>
 
