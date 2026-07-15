@@ -44,28 +44,28 @@ export default function HomePage() {
           <div className="space-y-8">
             <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
               <GitBranch className="mr-2 h-4 w-4" />
-              Software Engineering, .NET, Cloud, AI
+              Ingénierie logicielle · .NET · Cloud · IA
             </div>
 
             <div className="space-y-5">
               <h1 className="max-w-4xl text-balance text-5xl font-extrabold text-foreground md:text-7xl">
-                Un blog d'ingénierie logicielle moderne pour les développeurs
+                Des choix d'architecture .NET expliqués pour la production
               </h1>
               <p className="max-w-2xl text-lg text-secondary md:text-xl">
-                YvaDev partage des retours d'expérience et des guides approfondis sur .NET, l'architecture logicielle,
-                le cloud et l'intelligence artificielle appliquée aux applications.
+                YvaDev documente des décisions techniques concrètes : structuration d'applications C#, systèmes distribués,
+                observabilité, cloud et intégration fiable de l'intelligence artificielle.
               </p>
             </div>
 
             <div className="flex flex-col gap-4 sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/blog">
-                  Lire les articles
+                  Explorer les guides techniques
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/about">Explorer les domaines couverts</Link>
+                <Link href="/about">Découvrir la ligne éditoriale</Link>
               </Button>
             </div>
 
@@ -92,10 +92,10 @@ export default function HomePage() {
                 Priorités d'ingénierie
               </div>
               <div className="space-y-3">
-                <h2 className="text-2xl font-bold">Des concepts appliqués au réel</h2>
+                <h2 className="text-2xl font-bold">De la décision technique à la production</h2>
                 <p className="text-sm text-white/70">
-                  Le blog partage des architectures concrètes, des retours d'expérience et des décisions techniques utiles
-                  pour construire des applications maintenables en production.
+                  Chaque guide relie une pratique d'ingénierie à ses compromis : maintenabilité, fiabilité,
+                  performance, coût opérationnel et évolution du système.
                 </p>
               </div>
               <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm">
@@ -118,7 +118,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm">
                 <Server className="h-4 w-4 text-primary" />
-                Des sujets pour les développeurs qui veulent aller du code jusqu'aux contraintes de production.
+                Pour les développeurs qui veulent comprendre pourquoi une solution tient — ou échoue — en production.
               </div>
             </div>
           </div>
