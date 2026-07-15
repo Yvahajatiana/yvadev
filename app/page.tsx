@@ -2,7 +2,6 @@ import { Metadata } from 'next';
 import { ArrowRight, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { NewsletterForm } from '@/components/ui/NewsletterForm';
 import { CodeBlock } from '@/components/ui/CodeBlock';
 import { PostCard } from '@/components/blog/PostCard';
 import { getFeaturedPosts, getLatestPosts } from '@/lib/posts';
@@ -215,7 +214,9 @@ export default function HomePage() {
             </p>
           </div>
           <div className="flex items-center justify-center md:justify-end">
-            <NewsletterForm />
+            <Button variant="outline" asChild>
+              <Link href="/about">Comprendre la ligne éditoriale</Link>
+            </Button>
           </div>
         </div>
       </section>

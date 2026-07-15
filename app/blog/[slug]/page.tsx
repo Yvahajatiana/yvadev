@@ -12,7 +12,6 @@ import { siteConfig } from '@/lib/constants';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { NewsletterForm } from '@/components/ui/NewsletterForm';
 import { PostCard } from '@/components/blog/PostCard';
 import { TableOfContents } from '@/components/blog/TableOfContents';
 import { CodeBlock } from '@/components/mdx/CodeBlock';
@@ -206,17 +205,6 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                     </div>
                   </div>
 
-                  <div className="mb-8 rounded-[1.75rem] bg-primary/5 p-6">
-                    <div className="text-center">
-                      <h3 className="mb-2 text-xl font-bold text-foreground">Recevoir les prochaines publications YvaDev</h3>
-                      <p className="mb-4 text-secondary">
-                        Analyses techniques, architectures concrètes et retours d'expérience envoyés directement par e-mail.
-                      </p>
-                      <div className="flex justify-center">
-                        <NewsletterForm />
-                      </div>
-                    </div>
-                  </div>
                 </footer>
               </div>
 
