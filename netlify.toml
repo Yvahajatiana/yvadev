@@ -36,15 +36,9 @@
 
 # Let Next.js handle all internal routing and 404s
 
-# API rate limiting (if needed)
-[[edge_functions]]
-  function = "rate-limit"
-  path = "/api/*"
-
 # Environment variables (set these in Netlify dashboard)
 # NEXT_PUBLIC_SITE_URL
 # NEXT_PUBLIC_GA_ID
-# NEWSLETTER_API_KEY
 
 # Build settings
 [build.environment]
