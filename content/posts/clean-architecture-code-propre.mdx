@@ -1,40 +1,40 @@
 ---
-title: "Clean Architecture : une methode utile ou une ceremonie de plus ?"
-excerpt: "La Clean Architecture peut clarifier une application, mais elle devient vite contre-productive lorsqu elle est appliquee comme un schema rigide au lieu d une discipline de frontieres."
+title: "Clean Architecture : une méthode utile ou une cérémonie de plus ?"
+excerpt: "La Clean Architecture peut clarifier une application, mais elle devient vite contre-productive lorsqu'elle est appliquée comme un schéma rigide au lieu d'une discipline de frontières."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["Clean Architecture", "Architecture", ".NET", "Maintainability", "Software Engineering"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Organisation d une application selon les principes de Clean Architecture"
+coverImageAlt: "Organisation d'une application selon les principes de Clean Architecture"
 featured: false
 filename: "clean-architecture-code-propre"
 ---
 
-La Clean Architecture est devenue une reference dans de nombreux projets .NET. Elle promet une separation nette entre domaine, application, infrastructure et presentation. Sur le principe, cette promesse est saine. En pratique, beaucoup d'equipes transforment cette idee en mecanique de duplication et de couches vides.
+La Clean Architecture est devenue une référence dans de nombreux projets .NET. Elle promet une séparation nette entre domaine, application, infrastructure et présentation. Sur le principe, cette promesse est saine. En pratique, beaucoup d'équipes transforment cette idée en mécanique de duplication et de couches vides.
 
-Le sujet n'est donc pas de "faire de la Clean Architecture". Le sujet est de savoir si les frontieres introduites aident reellement l'equipe a faire evoluer le systeme.
+Le sujet n'est donc pas de "faire de la Clean Architecture". Le sujet est de savoir si les frontières introduites aident réellement l'équipe à faire évoluer le système.
 
-## Ce que la Clean Architecture cherche a proteger
+## Ce que la Clean Architecture cherche à protéger
 
-L'idee centrale est simple:
+L'idée centrale est simple:
 
-- le domaine ne doit pas dependre des details techniques
+- le domaine ne doit pas dépendre des détails techniques
 - l'infrastructure doit rester remplaçable
-- les flux applicatifs doivent etre explicites
+- les flux applicatifs doivent être explicites
 
-Quand ces objectifs sont atteints, les benefices sont concrets:
+Quand ces objectifs sont atteints, les bénéfices sont concrets:
 
-- regles metier plus lisibles
+- règles métier plus lisibles
 - tests plus simples
-- code applicatif moins couple a la base de donnees ou aux APIs externes
+- code applicatif moins couple à la base de données ou aux API externes
 
 ## La version utile
 
-La version utile de la Clean Architecture consiste a:
+La version utile de la Clean Architecture consiste à:
 
-- isoler les invariants metier
+- isoler les invariants métier
 - rendre les cas d'usage explicites
-- repousser les details techniques vers la peripherie
+- repousser les détails techniques vers la périphérie
 
 Une structure simple suffit souvent:
 
@@ -45,7 +45,7 @@ Infrastructure/
 Api/
 ```
 
-Inutile d'ajouter dix projets si quatre frontieres claires suffisent.
+Inutile d'ajouter dix projets si quatre frontières claires suffisent.
 
 ## La version dogmatique
 
@@ -55,24 +55,24 @@ La version dogmatique produit souvent:
 - des DTO partout
 - des mappings excessifs
 - des services applicatifs vides
-- des repositories generiques
+- des dépôts génériques
 
-Le resultat est un codebase plus ceremoniel, pas forcement plus clair.
+Le résultat est un base de code plus cérémoniel, pas forcément plus clair.
 
-## Le bon critere
+## Le bon critère
 
-Une architecture est bonne si elle rend les evolutions moins risquées.
+Une architecture est bonne si elle rend les évolutions moins risquées.
 
 Pose simplement ces questions:
 
-- peut-on comprendre un use case sans lire toute la pile ?
-- les regles metier sont-elles testables sans infrastructure ?
+- peut-on comprendre un cas d'usage sans lire toute la pile ?
+- les règles métier sont-elles testables sans infrastructure ?
 - un changement d'outil technique force-t-il un changement global ?
-- l'equipe gagne-t-elle en lisibilite ou perd-elle du temps en ceremonie ?
+- l'équipe gagne-t-elle en lisibilité ou perd-elle du temps en cérémonie ?
 
-Si les reponses sont mauvaises, la structure doit etre simplifiee.
+Si les réponses sont mauvaises, la structure doit être simplifiée.
 
 ## Conclusion
 
-La Clean Architecture n'est ni une mode a rejeter, ni une recette a appliquer aveuglement. C'est un ensemble de principes utiles pour mieux separer les responsabilites. Elle vaut par les frontieres qu'elle clarifie, pas par le nombre de couches qu'elle ajoute.
+La Clean Architecture n'est ni une mode à rejeter, ni une recette à appliquer aveuglément. C'est un ensemble de principes utiles pour mieux séparer les responsabilités. Elle vaut par les frontières qu'elle clarifie, pas par le nombre de couches qu'elle ajoute.
 

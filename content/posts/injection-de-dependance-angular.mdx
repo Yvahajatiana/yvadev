@@ -1,44 +1,44 @@
 ---
-title: "Injection de dependance en Angular : comprendre ce qui se passe vraiment"
-excerpt: "L injection de dependance en Angular est souvent utilisee par habitude. Pourtant, bien la comprendre aide a mieux structurer les services, les scopes et les frontieres applicatives."
+title: "Injection de dépendance en Angular : comprendre ce qui se passe vraiment"
+excerpt: "L'injection de dépendance en Angular est souvent utilisée par habitude. Pourtant, bien la comprendre aide à mieux structurer les services, les scopes et les frontières applicatives."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["Angular", "Dependency Injection", "Frontend", "Architecture", "TypeScript"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Injection de dependance et structuration des services Angular"
+coverImageAlt: "Injection de dépendance et structuration des services Angular"
 featured: false
 filename: "injection-de-dependance-angular"
 ---
 
-L'injection de dependance est au coeur d'Angular, mais elle est souvent consommee comme une mecanique automatique. On injecte un service dans un composant, cela fonctionne, et on passe au sujet suivant. Le probleme est qu'une mauvaise comprehension de ce mecanisme produit rapidement des scopes incoherents, des services mal places et des effets de bord difficiles a tracer.
+L'injection de dépendance est au cœur d'Angular, mais elle est souvent consommée comme une mécanique automatique. On injecte un service dans un composant, cela fonctionne, et on passe au sujet suivant. Le problème est qu'une mauvaise compréhension de ce mécanisme produit rapidement des scopes incohérents, des services mal placés et des effets de bord difficiles à tracer.
 
 ## Ce que l'injection apporte
 
-L'objectif de l'injection de dependance est simple:
+L'objectif de l'injection de dépendance est simple:
 
-- separer l'utilisation d'un service de sa creation
+- séparer l'utilisation d'un service de sa création
 - rendre les composants plus testables
-- centraliser les responsabilites partagées
+- centraliser les responsabilités partagées
 
-Angular pousse cette logique tres loin avec son systeme d'injecteurs hierarchiques.
+Angular pousse cette logique très loin avec son système d'injecteurs hiérarchiques.
 
 ## Le point important: le scope
 
 La vraie question n'est pas "comment injecter un service ?". La vraie question est:
 
-**a quel niveau ce service doit-il vivre ?**
+**à quel niveau ce service doit-il vivre ?**
 
-Un service peut etre:
+Un service peut être:
 
-- global a l'application
-- limite a un module ou une feature
-- limite a un composant ou une sous-arborescence
+- global à l'application
+- limite à un module ou une fonctionnalité
+- limite à un composant ou une sous-arborescence
 
-Un mauvais choix de scope cree souvent:
+Un mauvais choix de scope crée souvent:
 
-- etat partage non voulu
+- état partage non voulu
 - duplication de services
-- comportements difficiles a reproduire
+- comportements difficiles à reproduire
 
 ## Quand utiliser `providedIn: 'root'`
 
@@ -47,21 +47,20 @@ Un mauvais choix de scope cree souvent:
 - une logique transverse
 - un client d'API
 - un cache global
-- un service applicatif reutilise partout
+- un service applicatif réutilisé partout
 
-Mais tout mettre en `root` finit par creer un espace global implicite.
+Mais tout mettre en `root` finit par créer un espace global implicite.
 
 ## Quand limiter un provider
 
-Un provider local est utile quand le service doit etre:
+Un provider local est utile quand le service doit être:
 
-- isole a une feature
+- isolé dans une fonctionnalité
 - reconstruit avec le composant
-- decouple d'un etat global
+- decouple d'un état global
 
-Cela aide a mieux borner certaines logiques d'ecran ou de workflow.
+Cela aide à mieux borner certaines logiques d'écran ou de workflow.
 
 ## Conclusion
 
-Bien utiliser l'injection de dependance en Angular, c'est surtout bien choisir les frontieres et les scopes. Le mecanisme technique est simple. La difficulte reelle se situe dans la structuration des responsabilites.
-
+Bien utiliser l'injection de dépendance en Angular, c'est surtout bien choisir les frontières et les scopes. Le mécanisme technique est simple. La difficulté réelle se situe dans la structuration des responsabilités.

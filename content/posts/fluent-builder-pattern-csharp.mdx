@@ -1,30 +1,30 @@
 ---
-title: "Fluent Builder Pattern en C# : quand l'utiliser et quand l'eviter"
-excerpt: "Le Fluent Builder Pattern peut clarifier la creation d'objets complexes en C#, mais il devient vite une abstraction inutile s'il est applique sans discipline."
+title: "Fluent Builder Pattern en C# : quand l'utiliser et quand l'éviter"
+excerpt: "Le Fluent Builder Pattern peut clarifier la création d'objets complexes en C#, mais il devient vite une abstraction inutile s'il est applique sans discipline."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["C#", ".NET", "Design Patterns", "Architecture", "API Design"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Conception d une API fluide en C# avec le pattern Builder"
+coverImageAlt: "Conception d'une API fluide en C# avec le pattern Builder"
 featured: true
 filename: "fluent-builder-pattern-csharp"
 ---
 
-Le Fluent Builder Pattern est souvent presente comme une solution elegante des qu'un objet possede plusieurs proprietes. Cette vision est trop simpliste. En pratique, le pattern est utile dans un nombre limite de cas: quand la construction est progressive, quand certaines combinaisons doivent etre validees, ou quand on veut exposer une API expressive sans empiler les constructeurs.
+Le Fluent Builder Pattern est souvent présenté comme une solution élégante dès qu'un objet possède plusieurs propriétés. Cette vision est trop simpliste. En pratique, le pattern est utile dans un nombre limité de cas: quand la construction est progressive, quand certaines combinaisons doivent être validées, ou quand on veut exposer une API expressive sans empiler les constructeurs.
 
-Le sujet n'est donc pas "comment faire un builder ?", mais "dans quel contexte un builder ameliore-t-il vraiment la conception ?".
+Le sujet n'est donc pas "comment faire un builder ?", mais "dans quel contexte un builder améliore-t-il vraiment la conception ?".
 
-## Le vrai probleme a resoudre
+## Le vrai problème à résoudre
 
-Dans une application .NET, la creation d'un objet devient difficile lorsque plusieurs signaux se cumulent:
+Dans une application .NET, la création d'un objet devient difficile lorsque plusieurs signaux se cumulent:
 
-- trop de parametres dans le constructeur
+- trop de paramètres dans le constructeur
 - plusieurs options facultatives
-- ordre des parametres difficile a relire
+- ordre des paramètres difficile à relire
 - validations conditionnelles
-- etapes de construction dependantes les unes des autres
+- étapes de construction dépendantes les unes des autres
 
-Un code comme celui-ci reste correct techniquement, mais il devient vite penible a maintenir:
+Un code comme celui-ci reste correct techniquement, mais il devient vite pénible à maintenir:
 
 ```csharp
 var invoice = new Invoice(
@@ -40,9 +40,9 @@ var invoice = new Invoice(
     createdBy);
 ```
 
-Le probleme n'est pas seulement le nombre de parametres. C'est aussi l'absence d'intention visible.
+Le problème n'est pas seulement le nombre de paramètres. C'est aussi l'absence d'intention visible.
 
-## Ce que le Fluent Builder apporte reellement
+## Ce que le Fluent Builder apporte réellement
 
 Un bon builder rend la construction plus explicite:
 
@@ -57,20 +57,20 @@ var invoice = InvoiceBuilder
     .Build();
 ```
 
-Le gain principal est la lisibilite. On comprend immediatement ce qui est obligatoire, ce qui est optionnel et dans quel ordre conceptuel l'objet est prepare.
+Le gain principal est la lisibilité. On comprend immédiatement ce qui est obligatoire, ce qui est optionnel et dans quel ordre conceptuel l'objet est prepare.
 
-Les autres benefices sont reels, mais secondaires:
+Les autres bénéfices sont réels, mais secondaires:
 
-- validation centralisee
-- API plus difficile a mal utiliser
+- validation centralisée
+- API plus difficile à mal utiliser
 - tests plus lisibles
-- possibilite de reutiliser un schema de construction
+- possibilité de réutiliser un schéma de construction
 
-## Le builder n'est pas une reponse universelle
+## Le builder n'est pas une réponse universelle
 
-Le Fluent Builder Pattern devient contre-productif quand il est applique a des objets simples.
+Le Fluent Builder Pattern devient contre-productif quand il est applique à des objets simples.
 
-Si une classe a trois ou quatre proprietes claires, un constructeur explicite ou un `record` suffit souvent largement:
+Si une classe a trois ou quatre propriétés claires, un constructeur explicite ou un `record` suffit souvent largement:
 
 ```csharp
 public sealed record MoneyTransfer(
@@ -82,19 +82,19 @@ public sealed record MoneyTransfer(
 
 Ajouter un builder ici ne simplifie rien. Il augmente seulement le nombre de types, le code boilerplate et la surface de maintenance.
 
-Un bon signal: si le builder ne porte ni validation utile, ni progression logique, ni contrainte d'usage, il ne sert probablement a rien.
+Un bon signal: si le builder ne porte ni validation utile, ni progression logique, ni contrainte d'usage, il ne sert probablement à rien.
 
-## Les cas ou il est pertinent
+## Les cas où il est pertinent
 
-Le pattern devient defensable dans plusieurs situations.
+Le pattern devient défendable dans plusieurs situations.
 
-### 1. Objet complexe avec etapes progressives
+### 1. Objet complexe avec étapes progressives
 
-Quand la creation suit un enchainement metier, le builder clarifie le flux.
+Quand la création suit un enchaînement métier, le builder clarifie le flux.
 
 Exemple:
 
-- creation d'une commande
+- création d'une commande
 - ajout des lignes
 - application d'une remise
 - configuration de la livraison
@@ -117,11 +117,11 @@ public InvoiceBuilder WithRecurringSchedule(RecurringSchedule schedule)
 }
 ```
 
-Ici, le builder joue un role de protection d'API, pas seulement de confort syntaxique.
+Ici, le builder joue un rôle de protection d'API, pas seulement de confort syntaxique.
 
-### 3. Besoin d'une API lisible pour les appels frequents
+### 3. Besoin d'une API lisible pour les appels fréquents
 
-Certaines APIs internes sont appelees partout dans le codebase. Un style fluent peut reduire les erreurs et aider la lecture:
+Certaines API internes sont appelées partout dans le base de code. Un style fluent peut réduire les erreurs et aider la lecture:
 
 ```csharp
 var query = SearchRequestBuilder
@@ -132,16 +132,16 @@ var query = SearchRequestBuilder
     .Build();
 ```
 
-Quand l'objet est souvent construit dans des variantes legerement differentes, cette approche peut etre plus claire qu'une accumulation de surcharge de constructeurs.
+Quand l'objet est souvent construit dans des variantes légèrement différentes, cette approche peut être plus claire qu'une accumulation de surcharge de constructeurs.
 
 ## Builder mutable ou objet final immutable
 
-La meilleure combinaison reste generalement:
+La meilleure combinaison reste généralement:
 
 - builder mutable
 - objet final immutable
 
-Le builder accumule l'etat pendant la phase de construction. L'objet cree par `Build()` devient ensuite stable et sur.
+Le builder accumule l'état pendant la phase de construction. L'objet crée par `Build()` devient ensuite stable et sur.
 
 ```csharp
 public sealed class DeploymentConfiguration
@@ -159,13 +159,13 @@ public sealed class DeploymentConfiguration
 }
 ```
 
-Cette separation est importante. Le builder gere la flexibilite. L'objet final porte la stabilite.
+Cette séparation est importante. Le builder gère la flexibilité. L'objet final porte la stabilité.
 
 ## Ou placer les validations
 
-Un builder serieux doit distinguer deux niveaux de validation:
+Un builder sérieux doit distinguer deux niveaux de validation:
 
-- validation immediate sur un parametre invalide
+- validation immediate sur un paramètre invalide
 - validation globale au moment du `Build()`
 
 Exemple:
@@ -186,28 +186,28 @@ public DeploymentConfiguration Build()
 }
 ```
 
-La validation locale evite les erreurs grossieres. La validation globale protege les regles transverses.
+La validation locale évite les erreurs grossières. La validation globale protège les règles transverses.
 
 ## Faut-il rendre l'API totalement fluide
 
-Pas necessairement. Beaucoup de builders deviennent caricaturaux parce qu'ils chainent tout, meme ce qui devrait rester simple.
+Pas nécessairement. Beaucoup de builders deviennent caricaturaux parce qu'ils chaînent tout, même ce qui devrait rester simple.
 
 Il vaut mieux garder ces principes:
 
-- methodes au nom explicite
+- méthodes au nom explicite
 - peu d'effets implicites
-- pas de magie cachee
+- pas de magie cachée
 - `Build()` comme point de validation final
 
-Une API fluide doit rester previsible. Si elle devient "trop intelligente", elle devient aussi plus difficile a raisonner.
+Une API fluide doit rester prévisible. Si elle devient "trop intelligente", elle devient aussi plus difficile à raisonner.
 
 ## L'alternative moderne: records, object initializers et factories
 
 En C# moderne, le builder partage l'espace avec d'autres outils:
 
-- `record` pour les objets de donnees simples
-- `init` pour les proprietes configurees une seule fois
-- methodes de factory pour les cas de creation standards
+- `record` pour les objets de données simples
+- `init` pour les propriétés configurées une seule fois
+- méthodes de factory pour les cas de création standards
 
 Exemple simple:
 
@@ -221,23 +221,23 @@ public sealed record NotificationOptions
 }
 ```
 
-Si ce niveau de modelisation suffit, un builder n'apporte pas assez de valeur pour justifier son cout.
+Si ce niveau de modélisation suffit, un builder n'apporte pas assez de valeur pour justifier son coût.
 
-## Une regle pratique pour choisir
+## Une règle pratique pour choisir
 
 Avant d'introduire un Fluent Builder, pose ces questions:
 
-- l'objet est-il vraiment complexe a construire ?
+- l'objet est-il vraiment complexe à construire ?
 - existe-t-il une progression logique de configuration ?
-- le constructeur actuel nuit-il a la lisibilite ?
-- y a-t-il des invariants difficiles a exprimer autrement ?
-- l'API sera-t-elle appelee souvent par d'autres developpeurs ?
+- le constructeur actuel nuit-il à la lisibilité ?
+- y à-t-il des invariants difficiles à exprimer autrement ?
+- l'API sera-t-elle appelée souvent par d'autres développeurs ?
 
-Si plusieurs reponses sont "non", il vaut mieux rester sur une solution plus simple.
+Si plusieurs réponses sont "non", il vaut mieux rester sur une solution plus simple.
 
 ## Exemple complet
 
-Voici un builder raisonnable, oriente intention:
+Voici un builder raisonnable, orienté intention:
 
 ```csharp
 public sealed class ApiClientOptionsBuilder
@@ -282,12 +282,12 @@ public sealed class ApiClientOptionsBuilder
 
 Ce builder reste utile parce qu'il:
 
-- encapsule une validation reelle
+- encapsulé une validation réelle
 - expose des choix explicites
 - produit un objet final simple
 
 ## Conclusion
 
-Le Fluent Builder Pattern est un bon outil, mais c'est un outil de precision. Il est efficace quand il clarifie une construction complexe, impose des regles et rend une API plus sure a utiliser. Il est mauvais quand il remplace mecaniquement des constructeurs deja suffisants.
+Le Fluent Builder Pattern est un bon outil, mais c'est un outil de précision. Il est efficace quand il clarifie une construction complexe, impose des règles et rend une API plus sûre à utiliser. Il est mauvais quand il remplace mécaniquement des constructeurs déjà suffisants.
 
-La meilleure decision de design n'est pas d'utiliser plus de patterns. C'est d'utiliser uniquement ceux qui reduisent la complexite reelle du code.
+La meilleure décision de design n'est pas d'utiliser plus de patterns. C'est d'utiliser uniquement ceux qui réduisent la complexité réelle du code.

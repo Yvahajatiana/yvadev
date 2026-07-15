@@ -1,61 +1,60 @@
 ---
-title: "Protocole Model Contextuel (MCP) : relier l IA aux donnees sans bricoler les integrations"
-excerpt: "Le Model Context Protocol cherche a standardiser la facon dont un modele accede a des outils et a du contexte externe. Son interet est surtout architectural."
+title: "Model Context Protocol (MCP) : relier l'IA aux données sans bricolage"
+excerpt: "Le Model Context Protocol standardise la façon dont une application d'IA découvre des outils, des ressources et des instructions issus de systèmes externes."
 date: "2026-03-11"
 author: "Yva Hajatiana"
-tags: ["MCP", "AI Engineering", "LLM", "Architecture", "Integration"]
+tags: ["MCP", "AI Engineering", "LLM", "Architecture", "Intégration"]
 coverImage: "/images/posts/csharp-ai-agents.png"
-coverImageAlt: "Integration standardisee entre un modele et des sources de contexte"
+coverImageAlt: "Intégration standardisée entre un modèle et des sources de contexte"
 featured: false
 filename: "protocole-model-contextuel-mcp-ia-donnees"
 ---
 
-Un modele de langage n'est utile dans une application que s'il peut travailler avec du contexte reel:
+Un modèle de langage n'est utile dans une application que s'il peut travailler avec du contexte réel:
 
 - documents
 - bases de connaissances
-- APIs internes
-- outils metier
+- API internes
+- outils métier
 
-Le probleme est que chaque integration a longtemps ete implemente comme un cas particulier. Le Model Context Protocol (MCP) cherche a corriger cela en proposant une facon plus standard de brancher un modele sur des sources de contexte et des outils.
+Le problème est que chaque intégration a longtemps été implémentée comme un cas particulier. Le Model Context Protocol (MCP) cherche à corriger cela en proposant une façon plus standard de brancher un modèle sur des sources de contexte et des outils.
 
-## Pourquoi MCP est interessant
+## Pourquoi MCP est intéressant
 
-L'interet de MCP n'est pas uniquement fonctionnel. Il est architectural.
+L'intérêt de MCP n'est pas uniquement fonctionnel. Il est architectural.
 
-Il permet de mieux separer:
+Il permet de mieux séparer:
 
-- le modele
+- le modèle
 - les outils disponibles
-- la maniere de decrire les capacites
-- l'acces au contexte
+- la manière de décrire les capacités
+- l'accès au contexte
 
-Au lieu de coder une integration ad hoc pour chaque application, on tend vers une interface plus uniforme.
+Au lieu de coder une intégration ad hoc pour chaque application, on tend vers une interface plus uniforme.
 
 ## Le vrai gain
 
-Le gain principal est la reduction du couplage entre:
+Le gain principal est la réduction du couplage entre:
 
 - le client IA
-- les donnees
+- les données
 - les outils
 - le runtime de l'application
 
-Cette standardisation est importante des qu'on veut faire evoluer une plateforme IA sans reecrire chaque connexion.
+Cette standardisation est importante dès qu'on veut faire évoluer une plateforme IA sans réécrire chaque connexion.
 
-## Ce que MCP ne regle pas tout seul
+## Ce que MCP ne règle pas tout seul
 
 MCP ne supprime pas:
 
-- les sujets de securite
-- la gouvernance des donnees
-- les droits d'acces
-- la qualite du contexte fourni
-- la validation metier des actions
+- les sujets de sécurité
+- la gouvernance des données
+- les droits d'accès
+- la qualité du contexte fourni
+- la validation métier des actions
 
-Il fournit un cadre d'integration. Il ne remplace pas les gardes applicatifs.
+Il fournit un cadre d'intégration. Il ne remplace pas les gardes applicatifs.
 
 ## Conclusion
 
-MCP devient interessant des qu'on traite l'IA comme une capacite systemique et non comme une simple API de texte. Son apport principal est d'aider a structurer les integrations et a rendre l'acces au contexte moins artisanal.
-
+MCP devient intéressant dès qu'on traite l'IA comme une capacité systémique et non comme une simple API de texte. Son apport principal est d'aider à structurer les intégrations et à rendre l'accès au contexte moins artisanal.

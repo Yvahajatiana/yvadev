@@ -1,6 +1,6 @@
 ---
-title: "Transactions distribuees : comprendre le pattern Inbox / Outbox"
-excerpt: "Le pattern Inbox / Outbox permet de rendre les integrations asynchrones plus fiables sans dependance a une transaction distribuee globale."
+title: "Transactions distribuées : comprendre le pattern Inbox / Outbox"
+excerpt: "Le pattern Inbox / Outbox permet de rendre les intégrations asynchrones plus fiables sans dépendance à une transaction distribuée globale."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["Distributed Systems", "Architecture", ".NET", "Messaging", "Reliability"]
@@ -10,50 +10,49 @@ featured: false
 filename: "transactions-distribuees-inbox-outbox"
 ---
 
-Dans un systeme distribue, une operation metier implique souvent plusieurs effets:
+Dans un système distribué, une opération métier implique souvent plusieurs effets:
 
-- ecriture en base
-- publication d'un evenement
+- écriture en base
+- publication d'un événement
 - appel d'un autre service
 
-Le probleme apparait quand l'un reussit et l'autre echoue. La base est mise a jour, mais le message n'est jamais envoye. Ou l'inverse.
+Le problème apparaît quand l'un réussit et l'autre échoue. La base est mise à jour, mais le message n'est jamais envoyé. Ou l'inverse.
 
-Le pattern Inbox / Outbox est une reponse pragmatique a ce probleme.
+Le pattern Inbox / Outbox est une réponse pragmatique à ce problème.
 
-## L'idee de l'Outbox
+## L'idée de l'Outbox
 
-Au lieu d'ecrire en base **puis** publier un message de maniere separee, l'application:
+Au lieu d'écrire en base **puis** publier un message de manière séparée, l'application:
 
-1. enregistre les donnees metier
-2. enregistre aussi le message a publier dans une table Outbox
-3. committe le tout dans la meme transaction locale
+1. enregistre les données métier
+2. enregistre aussi le message à publier dans une table Outbox
+3. valide le tout dans la même transaction locale
 
 Ensuite, un processus distinct lit l'Outbox et publie les messages.
 
-Le benefice est clair: la verite transactionnelle est conservee dans la base applicative.
+Le bénéfice est clair: la vérité transactionnelle est conservée dans la base applicative.
 
-## L'idee de l'Inbox
+## L'idée de l'Inbox
 
-Du cote consommateur, l'Inbox sert a enregistrer les messages deja traites pour eviter:
+Du côté consommateur, l'Inbox sert à enregistrer les messages déjà traités pour éviter:
 
 - les doublons
 - les replays dangereux
 - les effets de bord non idempotents
 
-Chaque message recu est marque comme traite avec une cle unique.
+Chaque message reçu est marqué comme traité avec une clé unique.
 
 ## Pourquoi ce pattern reste pertinent
 
 Le pattern Inbox / Outbox permet:
 
-- d'eviter une transaction distribuee globale
-- de fiabiliser les evenements
+- d'éviter une transaction distribuée globale
+- de fiabiliser les événements
 - de rendre les retries plus surs
-- d'ameliorer l'idempotence
+- d'améliorer l'idempotence
 
-Il ne supprime pas toute la complexite, mais il la rend gérable.
+Il ne supprime pas toute la complexité, mais il la rend gérable.
 
 ## Conclusion
 
-Inbox / Outbox n'est pas un pattern "avance" reserve aux architectures exotiques. C'est un mecanisme de fiabilite tres utile des qu'une application doit synchroniser etat metier et messaging sans perdre en cohérence.
-
+Inbox / Outbox n'est pas un pattern « avancé » réservé aux architectures exotiques. C'est un mécanisme de fiabilité très utile dès qu'une application doit synchroniser état métier et messaging sans perdre en cohérence.

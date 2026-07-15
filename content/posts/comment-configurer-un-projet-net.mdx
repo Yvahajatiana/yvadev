@@ -1,28 +1,28 @@
 ---
-title: "Comment configurer un projet .NET pour tenir dans la duree"
-excerpt: "Un projet .NET durable depend moins du template initial que de conventions claires sur la structure, la configuration, les tests et l exploitation."
+title: "Comment configurer un projet .NET pour tenir dans la durée"
+excerpt: "Un projet .NET durable dépend moins du template initial que de conventions claires sur la structure, la configuration, les tests et l'exploitation."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: [".NET", "Project Setup", "Architecture", "Maintainability", "Software Engineering"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Configuration initiale d un projet .NET durable"
+coverImageAlt: "Configuration initiale d'un projet .NET durable"
 featured: false
 filename: "comment-configurer-un-projet-net"
 ---
 
-La configuration initiale d'un projet .NET influence fortement sa capacite a rester lisible quand l'equipe, les features et les integrations augmentent. Pourtant, beaucoup de projets sont demarres avec une bonne intention mais sans conventions assez claires.
+La configuration initiale d'un projet .NET influence fortement sa capacité à rester lisible quand l'équipe, les fonctionnalités et les intégrations augmentent. Pourtant, beaucoup de projets sont démarrés avec une bonne intention mais sans conventions assez claires.
 
-Configurer un projet .NET pour le long terme consiste surtout a preparer:
+Configurer un projet .NET pour le long terme consiste surtout à préparer:
 
-- une structure de solution comprehensible
-- des dependances claires
+- une structure de solution compréhensible
+- des dépendances claires
 - une configuration multi-environnements propre
-- une strategie de tests
-- des conventions de logging et d'observabilite
+- une stratégie de tests
+- des conventions de logging et d'observabilité
 
-## 1. Fixer des frontieres de projet
+## 1. Fixer des frontières de projet
 
-Une structure simple fonctionne deja tres bien:
+Une structure simple fonctionne déjà très bien:
 
 ```text
 src/
@@ -35,7 +35,7 @@ tests/
   Project.IntegrationTests/
 ```
 
-Cette separation aide a eviter que tout remonte dans l'API.
+Cette séparation aide à éviter que tout remonte dans l'API.
 
 ## 2. Standardiser la configuration
 
@@ -46,32 +46,32 @@ Un projet .NET vieillit mal quand la configuration devient diffuse. Il faut cent
 - variables d'environnement
 - secrets locaux
 
-La regle doit etre simple: le code lit des options typées, pas des chaines magiques partout.
+La règle doit être simple: le code lit des options typées, pas des chaînes magiques partout.
 
-## 3. Poser une strategie de dependances
+## 3. Poser une stratégie de dépendances
 
-Avant meme d'ecrire les features, il faut clarifier:
+Avant même d'écrire les fonctionnalités, il faut clarifier:
 
-- ou vivent les contrats
-- ou vivent les clients externes
-- comment se fait l'injection de dependances
-- comment on introduit une nouvelle integration
+- où vivent les contrats
+- où vivent les clients externes
+- comment se fait l'injection de dépendances
+- comment on introduit une nouvelle intégration
 
-Cette clarte evite les dependances transverses difficiles a corriger plus tard.
+Cette clarté evite les dépendances transverses difficiles à corriger plus tard.
 
-## 4. Activer les qualites de base
+## 4. Activer les qualités de base
 
-Un projet qui doit durer devrait demarrer avec:
+Un projet qui doit durer devrait démarrer avec:
 
 - linting
 - type safety
 - tests
 - conventions de logs
-- gestion des erreurs centralisee
+- gestion des erreurs centralisée
 
 Ce n'est pas du luxe. C'est un minimum pour maintenir un rythme soutenable.
 
 ## Conclusion
 
-Configurer un projet .NET pour le long terme, c'est reduire tres tot les zones d'ambiguite. Un bon demarrage ne garantit pas une bonne architecture, mais un mauvais demarrage fabrique presque toujours de la dette.
+Configurer un projet .NET pour le long terme, c'est réduire très tôt les zones d'ambiguïté. Un bon démarrage ne garantit pas une bonne architecture, mais un mauvais démarrage fabrique presque toujours de la dette.
 

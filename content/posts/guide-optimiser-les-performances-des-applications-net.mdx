@@ -1,6 +1,6 @@
 ---
 title: "Guide : optimiser les performances des applications .NET"
-excerpt: "L optimisation en .NET n est utile que lorsqu elle part de mesures fiables. Le vrai travail consiste a trouver les goulets d etranglement et a reduire les couts dominants."
+excerpt: "L'optimisation en .NET n'est utile que lorsqu'elle part de mesures fiables. Le vrai travail consiste à trouver les goulets d'étranglement et à réduire les coûts dominants."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: [".NET", "Performance", "Profiling", "Backend", "Optimization"]
@@ -10,32 +10,32 @@ featured: false
 filename: "guide-optimiser-les-performances-des-applications-net"
 ---
 
-Optimiser une application .NET ne consiste pas a appliquer une liste de micro-optimisations. Une demarche serieuse commence par la mesure, puis par la comprehension des couts dominants.
+Optimiser une application .NET ne consiste pas à appliquer une liste de micro-optimisations. Une démarche sérieuse commence par la mesure, puis par la compréhension des coûts dominants.
 
 ## Mesurer avant de changer
 
-Les premiers reflexes doivent etre:
+Les premiers réflexes doivent être:
 
 - profiler CPU
-- observer allocations memoire
+- observer allocations mémoire
 - mesurer latence et throughput
-- verifier les acces I/O
-- identifier les appels reseau ou base de donnees dominants
+- vérifier les accès I/O
+- identifier les appels réseau ou base de données dominants
 
 Sans ces mesures, on optimise souvent la mauvaise chose.
 
 ## Les sources classiques de lenteur
 
-Dans les applications .NET, les problemes frequents sont:
+Dans les applications .NET, les problèmes fréquents sont:
 
 - allocations inutiles
-- requetes SQL trop nombreuses
-- serializations repetitives
-- contention sur ressources partagees
+- requêtes SQL trop nombreuses
+- sérialisations répétitives
+- contention sur ressources partagées
 - appels synchrones dans des flux asynchrones
-- traitement reseau trop verbeux
+- traitement réseau trop verbeux
 
-Les problemes d'architecture comptent souvent plus que les details syntaxiques.
+Les problèmes d'architecture comptent souvent plus que les détails syntaxiques.
 
 ## La bonne approche
 
@@ -43,12 +43,11 @@ Un plan d'optimisation efficace suit souvent cet ordre:
 
 1. mesurer
 2. identifier le goulet dominant
-3. corriger a la source
+3. corriger à la source
 4. remesurer
 
-Cette discipline evite les optimisations cosmetiques.
+Cette discipline evite les optimisations cosmétiques.
 
 ## Conclusion
 
-La performance en .NET est un sujet d'observabilite et d'architecture avant d'etre un sujet de tricks. Ce qui compte, c'est de reduire les couts dominants la ou ils penaliseent vraiment le service.
-
+La performance en .NET est un sujet d'observabilité et d'architecture avant d'être un sujet de tricks. Ce qui compte, c'est de réduire les coûts dominants là où ils pénalisent vraiment le service.

@@ -1,25 +1,25 @@
 ---
-title: "L art des prompts : ecrire des instructions utiles pour ChatGPT"
-excerpt: "Un bon prompt n est pas un tour de magie. C est une specification concise qui reduit l ambiguite, structure la sortie et cadre le comportement du modele."
+title: "L'art des prompts : écrire des instructions utiles pour ChatGPT"
+excerpt: "Un bon prompt n'est pas un tour de magie. C'est une spécification concise qui réduit l'ambiguïté, structure la sortie et cadre le comportement du modèle."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["Prompt Engineering", "ChatGPT", "AI Engineering", "LLM", "Productivity"]
 coverImage: "/images/posts/gpt4-api-guide.png"
-coverImageAlt: "Conception de prompts efficaces pour un modele de langage"
+coverImageAlt: "Conception de prompts efficaces pour un modèle de langage"
 featured: false
 filename: "art-des-prompts-chatgpt"
 ---
 
-Le prompt engineering est souvent traite comme un ensemble d'astuces. Cette approche est insuffisante des qu'un modele de langage entre dans un workflow serieux. Un prompt utile doit etre pense comme une interface entre une intention humaine et un systeme probabiliste.
+Le prompt engineering est souvent traité comme un ensemble d'astuces. Cette approche est insuffisante dès qu'un modèle de langage entre dans un workflow sérieux. Un prompt utile doit être pensé comme une interface entre une intention humaine et un système probabiliste.
 
-L'objectif n'est pas d'impressionner le modele. L'objectif est de reduire l'ambiguite.
+L'objectif n'est pas d'impressionner le modèle. L'objectif est de réduire l'ambiguïté.
 
-## Un prompt est une specification
+## Un prompt est une spécification
 
-Un bon prompt dit au modele:
+Un bon prompt dit au modèle:
 
-- quel role adopter
-- quelle tache accomplir
+- quel rôle adopter
+- quelle tâche accomplir
 - quel contexte utiliser
 - quel format de sortie respecter
 - quelles limites ne pas franchir
@@ -27,47 +27,47 @@ Un bon prompt dit au modele:
 Exemple faible:
 
 ```text
-Resume ce document.
+Résume ce document.
 ```
 
 Exemple exploitable:
 
 ```text
 Tu es un assistant technique.
-Resume ce document pour une equipe backend.
+Résume ce document pour une équipe backend.
 Fais 5 points maximum.
-Mets en avant les risques, les decisions et les dependances.
-N invente rien si une information manque.
+Mets en avant les risques, les décisions et les dépendances.
+N'invente rien si une information manque.
 ```
 
-La seconde version ne rend pas le modele "plus intelligent". Elle rend l'attente plus claire.
+La seconde version ne rend pas le modèle "plus intelligent". Elle rend l'attente plus claire.
 
 ## Les 5 blocs d'un prompt robuste
 
-Pour la plupart des cas d'usage, un prompt serieux contient cinq blocs.
+Pour la plupart des cas d'usage, un prompt sérieux contient cinq blocs.
 
-### 1. Le role
+### 1. Le rôle
 
-Le role fixe la perspective:
+Le rôle fixe la perspective:
 
 - assistant technique
 - relecteur de code
 - analyste produit
 - support engineer
 
-### 2. La tache
+### 2. La tâche
 
-La tache doit etre explicite:
+La tâche doit être explicite:
 
-- resumer
+- résumer
 - extraire
 - classer
-- generer
+- générer
 - reformuler
 
 ### 3. Le contexte
 
-Le contexte doit etre utile, pas massif. Plus de contexte n'est pas toujours mieux.
+Le contexte doit être utile, pas massif. Plus de contexte n'est pas toujours mieux.
 
 ### 4. Les contraintes
 
@@ -76,27 +76,27 @@ Exemples:
 - ne pas inventer d'informations
 - utiliser un ton professionnel
 - respecter une longueur maximale
-- repondre en JSON
+- répondre en JSON
 
 ### 5. Le format de sortie
 
-Si la sortie doit etre exploitee par une application, le format doit etre impose.
+Si la sortie doit être exploitée par une application, le format doit être imposé.
 
-## La plupart des mauvais prompts echouent pour des raisons previsibles
+## La plupart des mauvais prompts échouent pour des raisons prévisibles
 
-Les causes d'echec les plus frequentes sont:
+Les causes d'échec les plus fréquentes sont:
 
 - objectif flou
 - contexte incomplet
 - consignes contradictoires
 - absence de format attendu
-- attente implicite de raisonnement metier non fourni
+- attente implicite de raisonnement métier non fourni
 
-Quand un modele repond mal, le probleme n'est pas toujours le modele. C'est souvent une specification pauvre.
+Quand un modèle répond mal, le problème n'est pas toujours le modèle. C'est souvent une spécification pauvre.
 
 ## Quand il faut imposer un format strict
 
-Des qu'une sortie alimente un autre composant logiciel, il faut privilegier une structure stable.
+Des qu'une sortie alimente un autre composant logiciel, il faut privilégier une structure stable.
 
 ```text
 Retourne strictement un JSON avec:
@@ -105,38 +105,38 @@ Retourne strictement un JSON avec:
 - requires_human_review: boolean
 ```
 
-Dans un systeme de production, une reponse structuree vaut mieux qu'une prose elegante mais difficile a parser.
+Dans un système de production, une réponse structurée vaut mieux qu'une prose élégante mais difficile à parser.
 
-## Le bon niveau de detail
+## Le bon niveau de détail
 
-Un prompt trop court laisse trop d'interpretation. Un prompt trop long dilue le signal.
+Un prompt trop court laisse trop d'interprétation. Un prompt trop long dilue le signal.
 
 La bonne pratique est de donner:
 
 - assez de contexte pour cadrer
-- assez peu de bruit pour garder la tache lisible
+- assez peu de bruit pour garder la tâche lisible
 
-Il faut donc supprimer tout ce qui ne change pas reellement la qualite de la sortie.
+Il faut donc supprimer tout ce qui ne change pas réellement la qualité de la sortie.
 
 ## Les exemples sont utiles, mais pas toujours
 
 Le few-shot prompting fonctionne bien quand tu veux montrer:
 
 - le style attendu
-- le niveau de detail
-- le schema de sortie
-- la distinction entre bon et mauvais resultat
+- le niveau de détail
+- le schéma de sortie
+- la distinction entre bon et mauvais résultat
 
-Mais si la tache est deja claire et stable, multiplier les exemples peut augmenter le cout et la latence sans gain significatif.
+Mais si la tâche est déjà claire et stable, multiplier les exemples peut augmenter le coût et la latence sans gain significatif.
 
 ## Prompt engineering et architecture applicative
 
-Dans une application, le prompt ne doit pas vivre cache dans un controller. Il doit etre:
+Dans une application, le prompt ne doit pas vivre caché dans un contrôleur. Il doit être:
 
 - versionne
 - relu
 - teste
-- rattache a un use case precis
+- rattache à un cas d'usage précis
 
 Exemple:
 
@@ -163,14 +163,13 @@ Un bon prompt n'efface pas:
 
 - un mauvais cas d'usage
 - un manque de contexte fiable
-- une sortie impossible a verifier
-- une integration applicative mal pensee
+- une sortie impossible à vérifier
+- une intégration applicative mal pensée
 
-Le prompt engineering n'est pas un substitut a l'architecture.
+Le prompt engineering n'est pas un substitut à l'architecture.
 
 ## Conclusion
 
-L'art des prompts consiste moins a trouver la formule parfaite qu'a ecrire des instructions claires, testables et orientees resultat. Plus le systeme est important, plus le prompt doit etre traite comme une specification technique.
+L'art des prompts consiste moins à trouver la formule parfaite qu'à écrire des instructions claires, testables et orientées résultat. Plus le système est important, plus le prompt doit être traité comme une spécification technique.
 
-Un bon prompt ne cherche pas a "convaincre" le modele. Il cherche a rendre la tache difficile a mal comprendre.
-
+Un bon prompt ne cherche pas à "convaincre" le modèle. Il cherche à rendre la tâche difficile à mal comprendre.

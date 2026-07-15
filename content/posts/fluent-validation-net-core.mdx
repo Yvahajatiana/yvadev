@@ -1,25 +1,25 @@
 ---
-title: "FluentValidation en .NET : ou placer les validations et pourquoi"
-excerpt: "FluentValidation est utile quand il clarifie les regles d entree et evite la duplication. Il devient moins utile lorsqu il remplace la vraie logique metier."
+title: "FluentValidation en .NET : où placer les validations et pourquoi"
+excerpt: "FluentValidation est utile quand il clarifie les règles d'entrée et évite la duplication. Il devient moins utile lorsqu'il remplace la vraie logique métier."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: [".NET", "FluentValidation", "Validation", "ASP.NET Core", "Architecture"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Validation declarative en .NET avec FluentValidation"
+coverImageAlt: "Validation déclarative en .NET avec FluentValidation"
 featured: false
 filename: "fluent-validation-net-core"
 ---
 
-FluentValidation est largement utilise dans les applications .NET pour valider des commandes, des requetes ou des DTO HTTP. C'est un outil utile, mais il faut etre clair sur son role. Il ne sert pas a porter toute la logique metier. Il sert a exprimer proprement les regles d'entree.
+FluentValidation est largement utilisé dans les applications .NET pour valider des commandes, des requêtes ou des DTO HTTP. C'est un outil utile, mais il faut être clair sur son rôle. Il ne sert pas à porter toute la logique métier. Il sert à exprimer proprement les règles d'entrée.
 
 ## Ce que FluentValidation fait bien
 
 Il est excellent pour:
 
-- verifier qu'un champ est requis
-- controler un format
+- vérifier qu'un champ est requis
+- contrôler un format
 - imposer une longueur ou une plage
-- centraliser la validation d'entree
+- centraliser la validation d'entrée
 
 Exemple:
 
@@ -34,21 +34,20 @@ public sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
 }
 ```
 
-## Ce qu'il ne faut pas lui deleguer
+## Ce qu'il ne faut pas lui déléguer
 
 FluentValidation ne doit pas remplacer:
 
 - les invariants du domaine
-- les regles metier complexes
-- les decisions qui dependent de l'etat profond du systeme
+- les règles métier complexes
+- les décisions qui dépendent de l'état profond du système
 
-La validation d'entree n'est pas la logique metier.
+La validation d'entrée n'est pas la logique métier.
 
 ## Ou le placer
 
-Le placement le plus sain est souvent dans la couche application, au plus pres des commandes et queries. Cela permet de filtrer les entrees avant l'execution du use case, tout en laissant le domaine proteger ses propres invariants.
+Le placement le plus sain est souvent dans la couche application, au plus près des commandes et requêtes. Cela permet de filtrer les entrées avant l'exécution du cas d'usage, tout en laissant le domaine protéger ses propres invariants.
 
 ## Conclusion
 
-FluentValidation est utile lorsqu'il reduit le bruit, standardise les regles d'entree et clarifie les contrats. Il devient problematique quand il sert a deplacer hors du domaine des regles qui devraient y rester.
-
+FluentValidation est utile lorsqu'il réduit le bruit, standardise les règles d'entrée et clarifie les contrats. Il devient problématique quand il sert à déplacer hors du domaine des règles qui devraient y rester.

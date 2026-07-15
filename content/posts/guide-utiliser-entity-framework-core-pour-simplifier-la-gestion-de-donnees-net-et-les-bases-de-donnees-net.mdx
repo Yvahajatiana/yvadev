@@ -1,46 +1,46 @@
 ---
-title: "Guide : utiliser Entity Framework Core sans perdre le controle sur la persistence"
-excerpt: "Entity Framework Core accelere la productivite en .NET, mais il faut comprendre clairement ce qu il abstrait et ce qu il faut continuer a maitriser."
+title: "Guide : utiliser Entity Framework Core sans perdre le contrôle sur la persistance"
+excerpt: "Entity Framework Core accélère la productivité en .NET, mais il faut comprendre clairement ce qu il abstrait et ce qu il faut continuer à maîtriser."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["Entity Framework Core", ".NET", "Persistence", "Database", "Architecture"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Utilisation de Entity Framework Core pour la persistence .NET"
+coverImageAlt: "Utilisation de Entity Framework Core pour la persistance .NET"
 featured: false
 filename: "guide-utiliser-entity-framework-core-pour-simplifier-la-gestion-de-donnees-net-et-les-bases-de-donnees-net"
 ---
 
-Entity Framework Core simplifie beaucoup de taches de persistence en .NET:
+Entity Framework Core simplifie beaucoup de tâches de persistance en .NET:
 
 - mapping objet-relationnel
 - migrations
-- suivi des entites
-- requetes LINQ
+- suivi des entités
+- requêtes LINQ
 
-Mais cette simplification peut devenir dangereuse si elle donne l'illusion que la persistence n'a plus de cout.
+Mais cette simplification peut devenir dangereuse si elle donne l'illusion que la persistance n'a plus de coût.
 
-## Ce qu'EF Core fait tres bien
+## Ce qu'EF Core fait très bien
 
 EF Core est excellent pour:
 
-- accelerer la mise en place d'un modele
+- accélérer la mise en place d'un modèle
 - centraliser la configuration de mapping
 - faciliter les migrations
-- reduire le code boilerplate d'acces aux donnees
+- réduire le code boilerplate d'accès aux données
 
-Pour une grande partie des applications metier, cela apporte une vraie productivite.
+Pour une grande partie des applications métier, cela apporte une vraie productivité.
 
-## Ce qu'il faut continuer a surveiller
+## Ce qu'il faut continuer à surveiller
 
-Même avec EF Core, il faut garder la maitrise sur:
+Même avec EF Core, il faut garder la maîtrise sur:
 
-- la forme des requetes SQL
-- le nombre d'aller-retours base de donnees
+- la forme des requêtes SQL
+- le nombre d'aller-retours base de données
 - le chargement eager, explicite ou lazy
 - la taille des projections
 - les transactions
 
-Une requete LINQ lisible peut produire un SQL couteux. C'est pourquoi il faut observer ce qui se passe reellement.
+Une requête LINQ lisible peut produire un SQL coûteux. C'est pourquoi il faut observer ce qui se passe réellement.
 
 ## Le bon usage
 
@@ -48,10 +48,10 @@ EF Core est plus utile quand:
 
 - les aggregate roots sont clairs
 - les projections sont choisies explicitement
-- les repositories ou queries encapsulent l'acces utile
-- les decisions de transaction restent visibles
+- les repositories ou requêtes encapsulent l'accès utile
+- les décisions de transaction restent visibles
 
 ## Conclusion
 
-Entity Framework Core simplifie la persistence, mais il ne remplace pas la comprehension de la base de donnees. Bien utilise, il augmente la vitesse de delivery. Mal maitrise, il masque des couts qui reapparaissent plus tard sous forme de latence et de dette.
+Entity Framework Core simplifie la persistance, mais il ne remplace pas la compréhension de la base de données. Bien utilisé, il augmente la vitesse de livraison. Mal maîtrisé, il masque des coûts qui réapparaissent plus tard sous forme de latence et de dette.
 

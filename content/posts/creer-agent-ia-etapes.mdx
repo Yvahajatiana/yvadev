@@ -1,74 +1,74 @@
 ---
-title: "Creer un agent IA en 8 etapes utiles"
-excerpt: "Construire un agent IA ne consiste pas a brancher un modele a quelques outils. Il faut cadrer le probleme, limiter l autonomie et concevoir un workflow observable."
+title: "Créer un agent IA en 8 étapes utiles"
+excerpt: "Construire un agent IA ne consiste pas à brancher un modèle à quelques outils. Il faut cadrer le problème, limiter l'autonomie et concevoir un workflow observable."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["AI Agents", "AI Engineering", "LLM", "Architecture", "Automation"]
 coverImage: "/images/posts/csharp-ai-agents.png"
-coverImageAlt: "Conception d un agent IA avec outils et workflow controle"
+coverImageAlt: "Conception d'un agent IA avec outils et workflow contrôle"
 featured: false
 filename: "creer-agent-ia-etapes"
 ---
 
-Le terme "agent IA" est souvent utilise pour decrire n'importe quelle application qui combine un LLM avec des appels de fonctions. Cette definition est trop large. Un agent utile est un composant logiciel capable de raisonner dans un cadre borne, d'utiliser des outils et de produire un resultat exploitable sans sortir de son perimetre.
+Le terme "agent IA" est souvent utilisé pour décrire n'importe quelle application qui combine un LLM avec des appels de fonctions. Cette définition est trop large. Un agent utile est un composant logiciel capable de raisonner dans un cadre borné, d'utiliser des outils et de produire un résultat exploitable sans sortir de son périmètre.
 
-Le point critique n'est pas l'autonomie. C'est le controle.
+Le point critique n'est pas l'autonomie. C'est le contrôle.
 
-## 1. Definir une tache precise
+## 1. Définir une tâche précise
 
-Un agent n'est pas fait pour "tout faire". Il doit traiter une responsabilite delimitee:
+Un agent n'est pas fait pour "tout faire". Il doit traiter une responsabilité délimitée:
 
 - rechercher une information
-- preparer un brouillon
+- préparer un brouillon
 - classer une demande
-- executer un workflow d'assistance
+- exécuter un workflow d'assistance
 
-Plus le probleme est flou, plus l'agent devient instable.
+Plus le problème est flou, plus l'agent devient instable.
 
-## 2. Identifier les outils necessaires
+## 2. Identifier les outils nécessaires
 
 Un agent ne devrait disposer que des outils indispensables:
 
 - recherche documentaire
 - lecture d'un statut
-- creation d'un brouillon
+- création d'un brouillon
 - appel d'une API interne
 
-Trop d'outils augmentent la surface d'erreur et la complexite de validation.
+Trop d'outils augmentent la surface d'erreur et la complexité de validation.
 
 ## 3. Encadrer les permissions
 
 Chaque outil doit avoir:
 
-- un schema d'entree clair
-- des gardes metier
+- un schéma d'entrée clair
+- des gardes métier
 - des limites d'usage
 - une journalisation
 
-Le modele propose une action. L'application verifie avant d'executer.
+Le modèle propose une action. L'application vérifie avant d'exécuter.
 
 ## 4. Structurer le contexte
 
 Un agent efficace travaille avec un contexte cible:
 
-- donnees pertinentes
+- données pertinentes
 - historique utile
 - instructions stables
-- contraintes metier
+- contraintes métier
 
-Un contexte trop large degrade souvent la qualite et augmente le cout.
+Un contexte trop large dégrade souvent la qualité et augmente le coût.
 
-## 5. Prevoir un nombre limite de tours
+## 5. Prévoir un nombre limite de tours
 
-Un agent ne doit pas tourner indefiniment. Il faut limiter:
+Un agent ne doit pas tourner indéfiniment. Il faut limiter:
 
 - le nombre d'appels outils
 - la profondeur de raisonnement
-- la duree maximale d'execution
+- la durée maximale d'exécution
 
 Ces garde-fous sont indispensables en production.
 
-## 6. Prevoir les cas de fallback
+## 6. Prévoir les cas de fallback
 
 Un agent utile doit pouvoir dire:
 
@@ -77,30 +77,29 @@ Un agent utile doit pouvoir dire:
 - le contexte est insuffisant
 - l'outil n'est pas disponible
 
-L'echec propre vaut mieux qu'une autonomie mal controlee.
+L'échec propre vaut mieux qu'une autonomie mal contrôlée.
 
 ## 7. Mesurer ce qui se passe
 
-Sans mesure, impossible d'ameliorer un agent. Il faut suivre:
+Sans mesure, impossible d'améliorer un agent. Il faut suivre:
 
-- taux de succes
+- taux de succès
 - latence
 - nombre d'appels outils
 - taux de fallback
 - erreurs fonctionnelles
 
-## 8. Evaluer sur des cas reels
+## 8. Évaluer sur des cas réels
 
-Un agent doit etre teste sur des scenarios proches de la production:
+Un agent doit être testé sur des scénarios proches de la production:
 
 - demandes simples
 - demandes ambiguës
 - erreurs d'outils
 - contexte incomplet
 
-La qualite d'un agent se juge dans les cas limites, pas uniquement dans les demos.
+La qualité d'un agent se juge dans les cas limites, pas uniquement dans les démos.
 
 ## Conclusion
 
-Creer un agent IA utile revient a construire un workflow applicatif contraint, observable et defendable. La sophistication du modele compte. Mais la robustesse du cadre compte encore plus.
-
+Créer un agent IA utile revient à construire un workflow applicatif contraint, observable et défendable. La sophistication du modèle compte. Mais la robustesse du cadre compte encore plus.

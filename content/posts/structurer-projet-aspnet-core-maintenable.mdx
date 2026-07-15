@@ -1,6 +1,6 @@
 ---
 title: "Comment structurer un projet ASP.NET Core pour rester maintenable"
-excerpt: "Une approche concrete pour organiser un projet ASP.NET Core de maniere lisible, testable et maintenable, meme quand l equipe et le code grossissent."
+excerpt: "Une approche concrète pour organiser un projet ASP.NET Core de manière lisible, testable et maintenable, même quand l'équipe et le code grossissent."
 date: "2026-03-11"
 author: "Yva Hajatiana"
 tags: ["ASP.NET Core", "Maintainability", "Architecture", ".NET", "Backend"]
@@ -10,25 +10,25 @@ featured: true
 filename: "structurer-projet-aspnet-core-maintenable"
 ---
 
-Un projet ASP.NET Core devient rarement ingerable du jour au lendemain. Il se degrade progressivement: controllers trop gros, services qui font tout, dependances circulaires, conventions incoherentes et logique metier dispersee.
+Un projet ASP.NET Core devient rarement ingérable du jour au lendemain. Il se dégrade progressivement: contrôleurs trop gros, services qui font tout, dépendances circulaires, conventions incohérentes et logique métier dispersée.
 
-La maintenabilite n'est donc pas une qualite abstraite. C'est le resultat d'une structure explicite qui aide les developpeurs a savoir ou mettre le code et ou chercher quand quelque chose casse.
+La maintenabilité n'est donc pas une qualité abstraite. C'est le résultat d'une structure explicite qui aide les développeurs à savoir où mettre le code et où chercher quand quelque chose casse.
 
-## Le probleme n'est pas la taille, c'est la confusion
+## Le problème n'est pas la taille, c'est la confusion
 
-Beaucoup de codebases supportent tres bien des centaines de fichiers tant que la structure reste coherente. L'inverse est aussi vrai: une petite application peut devenir penible a faire evoluer si tout melange transport HTTP, logique metier, acces aux donnees et integrations externes.
+Beaucoup de bases de code supportent très bien des centaines de fichiers tant que la structure reste cohérente. L'inverse est aussi vrai: une petite application peut devenir pénible à faire évoluer si tout mélange transport HTTP, logique métier, accès aux données et intégrations externes.
 
-Les symptomes sont connus:
+Les symptômes sont connus:
 
-- controllers de 400 lignes
+- contrôleurs de 400 lignes
 - services nommes `Helper`, `Manager`, `Processor`
-- repository generique utilise partout
+- dépôt générique utilisé partout
 - duplication de validation
-- logique metier cachee dans des handlers HTTP
+- logique métier cachée dans des handlers HTTP
 
 ## Une structure de base qui marche bien
 
-Une structure maintenable doit separer l'intention metier des details techniques.
+Une structure maintenable doit séparer l'intention métier des détails techniques.
 
 ```text
 src/
@@ -53,11 +53,11 @@ src/
     ExternalServices/
 ```
 
-Cette organisation n'est pas magique, mais elle donne des frontieres utiles.
+Cette organisation n'est pas magique, mais elle donne des frontières utiles.
 
-## Regle 1: les controllers et endpoints doivent rester minces
+## Règle 1: les contrôleurs et endpoints doivent rester minces
 
-Un endpoint ASP.NET Core ne devrait pas prendre de decisions metier. Il traduit une requete HTTP en action applicative.
+Un endpoint ASP.NET Core ne devrait pas prendre de décisions métier. Il traduit une requête HTTP en action applicative.
 
 ```csharp
 app.MapPost("/orders", async (
@@ -73,22 +73,22 @@ app.MapPost("/orders", async (
 });
 ```
 
-Si tu vois de la logique de pricing, de validation complexe, de transactions ou d'appels externes ici, la structure s'ecarte deja de la maintenabilite.
+Si tu vois de la logique de pricing, de validation complexe, de transactions ou d'appels externes ici, la structure s'écarte déjà de la maintenabilité.
 
-## Regle 2: les noms doivent decrire une responsabilite
+## Règle 2: les noms doivent décrire une responsabilité
 
-Le mot "service" n'explique rien. Une base maintainable prefere des noms orientes action ou domaine:
+Le mot "service" n'explique rien. Une base maintenable préfère des noms orientés action ou domaine:
 
 - `CreateOrderHandler`
 - `InvoiceNumberGenerator`
 - `PaymentRetryPolicy`
 - `CustomerEligibilityService`
 
-Ces noms disent ce que fait le composant. Cela reduit le besoin de documentation implicite.
+Ces noms disent ce que fait le composant. Cela réduit le besoin de documentation implicite.
 
-## Regle 3: un use case = une entree claire
+## Règle 3: un cas d'usage = une entrée claire
 
-Pour rester lisible, chaque besoin metier important devrait correspondre a une commande ou une query clairement identifiee.
+Pour rester lisible, chaque besoin métier important devrait correspondre à une commande ou une query clairement identifiée.
 
 ```csharp
 public sealed record PublishInvoiceCommand(Guid InvoiceId);
@@ -97,27 +97,27 @@ public sealed class PublishInvoiceHandler
 {
     public async Task HandleAsync(PublishInvoiceCommand command, CancellationToken ct)
     {
-        // orchestration du use case
+        // orchestration du cas d'usage
     }
 }
 ```
 
-Cette approche rend les flux applicatifs plus evidents, facilite les tests et evite les gros services fourre-tout.
+Cette approche rend les flux applicatifs plus évidents, facilite les tests et évite les gros services fourre-tout.
 
-## Regle 4: centraliser les conventions de validation et d'erreur
+## Règle 4: centraliser les conventions de validation et d'erreur
 
-Une application ASP.NET Core vieillit mal quand chaque endpoint gere ses erreurs differemment. La maintenabilite passe par des conventions:
+Une application ASP.NET Core vieillit mal quand chaque endpoint gère ses erreurs différemment. La maintenabilité passe par des conventions:
 
 - middleware global de gestion des exceptions
-- objets de reponse coherents
-- validation centralisee
-- journalisation standardisee
+- objets de réponse cohérents
+- validation centralisée
+- journalisation standardisée
 
-Si chaque controller invente sa propre facon de renvoyer une erreur, la dette augmente vite.
+Si chaque contrôleur invente sa propre façon de renvoyer une erreur, la dette augmente vite.
 
-## Regle 5: isoler l'infrastructure sans la rendre invisible
+## Règle 5: isoler l'infrastructure sans la rendre invisible
 
-L'infrastructure doit etre claire dans la solution. Base de donnees, cache, file de messages, providers externes: tout cela doit avoir une place evidente.
+L'infrastructure doit être claire dans la solution. Base de données, cache, file de messages, fournisseurs externes: tout cela doit avoir une place évidente.
 
 Exemple de dossier `Infrastructure/Persistence`:
 
@@ -138,36 +138,36 @@ ExternalServices/
   StorageClient.cs
 ```
 
-Le but est simple: un nouveau developpeur doit comprendre ou vivent les details techniques en quelques minutes.
+Le but est simple: un nouveau développeur doit comprendre où vivent les détails techniques en quelques minutes.
 
-## Regle 6: eviter les projets "utilitaires" sans frontiere claire
+## Règle 6: éviter les projets "utilitaires" sans frontière claire
 
-Les projets `Common`, `Shared`, `Utils` deviennent souvent des zones de contamination. Du code de tous types finit par y vivre, sans responsabilite claire.
+Les projets `Common`, `Shared`, `Utils` deviennent souvent des zones de contamination. Du code de tous types finit par y vivre, sans responsabilité claire.
 
 Il vaut mieux:
 
-- garder un petit noyau de primitives techniques bien delimitees
-- placer le code partage dans le domaine ou l'application quand il a un contexte metier
-- dupliquer legerement si cela evite un coupling artificiel
+- garder un petit noyau de primitives techniques bien délimitées
+- placer le code partagé dans le domaine ou l'application quand il a un contexte métier
+- dupliquer légèrement si cela evite un coupling artificiel
 
-La duplication locale est parfois moins couteuse qu'une mauvaise abstraction globale.
+La duplication locale est parfois moins coûteuse qu'une mauvaise abstraction globale.
 
-## Regle 7: structurer aussi les tests
+## Règle 7: structurer aussi les tests
 
-Une application maintainable ne se limite pas au code de production. Les tests doivent epouser la structure du projet.
+Une application maintainable ne se limite pas au code de production. Les tests doivent épouser la structure du projet.
 
 Par exemple:
 
 - tests de domaine pour les invariants
-- tests d'application pour les use cases
-- tests d'integration pour la persistence et les APIs externes
+- tests d'application pour les cas d'usage
+- tests d'intégration pour la persistance et les API externes
 - tests d'API pour les contrats HTTP
 
-Cette separation evite les suites de tests lentes et peu fiables.
+Cette séparation evite les suites de tests lentes et peu fiables.
 
-## Exemple de dossier par feature
+## Exemple de dossier par fonctionnalité
 
-Pour certains projets, une structure par feature fonctionne encore mieux:
+Pour certains projets, une structure par fonctionnalité fonctionne encore mieux:
 
 ```text
 Application/
@@ -181,34 +181,34 @@ Application/
       CancelOrderHandler.cs
 ```
 
-Cette approche est tres efficace quand le produit grossit et que les features ont des comportements riches.
+Cette approche est très efficace quand le produit grossit et que les fonctionnalités ont des comportements riches.
 
 ## Les signaux d'alerte
 
-Tu peux anticiper les problemes en observant ces signaux:
+Tu peux anticiper les problèmes en observant ces signaux:
 
 - tu dois ouvrir cinq dossiers pour comprendre un cas d'usage simple
-- une modification HTTP casse du code metier
-- des services ont trop de dependances injectees
+- une modification HTTP casse du code métier
+- des services ont trop de dépendances injectées
 - des objets EF Core circulent partout dans l'application
-- les nouveaux developpeurs hesitent constamment sur l'emplacement du code
+- les nouveaux développeurs hésitent constamment sur l'emplacement du code
 
-Ce ne sont pas des details. Ce sont des symptomes structurels.
+Ce ne sont pas des détails. Ce sont des symptômes structurels.
 
-## Une checklist simple de maintenabilite
+## Une checklist simple de maintenabilité
 
-Avant d'ajouter une nouvelle fonctionnalite, verifie:
+Avant d'ajouter une nouvelle fonctionnalité, vérifie:
 
-- ou vit le use case ?
-- ou vivent les regles metier ?
-- ou vivent les details d'infrastructure ?
+- où vit le cas d'usage ?
+- où vivent les règles métier ?
+- où vivent les détails d'infrastructure ?
 - le nom des classes est-il explicite ?
-- le test correspondant est-il simple a ecrire ?
+- le test correspondant est-il simple à écrire ?
 
-Si la reponse est floue, la structure doit etre clarifiee avant d'ajouter plus de code.
+Si la réponse est floue, la structure doit être clarifiée avant d'ajouter plus de code.
 
 ## Conclusion
 
 Structurer un projet ASP.NET Core pour rester maintenable n'est pas une question de mode. C'est une discipline de conception.
 
-Une bonne structure rend les decisions visibles, reduit les effets de bord et permet a l'equipe de faire evoluer l'application sans multiplier les regressions. C'est exactement ce qu'on attend d'un projet qui doit durer.
+Une bonne structure rend les décisions visibles, réduit les effets de bord et permet à l'équipe de faire évoluer l'application sans multiplier les régressions. C'est exactement ce qu'on attend d'un projet qui doit durer.
