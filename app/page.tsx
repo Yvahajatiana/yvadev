@@ -10,17 +10,17 @@ import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT } from '@/lib/constants';
 const focusAreas = [
   {
     title: 'Software Engineering',
-    description: 'Architecture de services robustes, maintainability, quality gates, performance et pratiques de production.',
+    description: 'Architecture de services robustes, maintenabilité, qualité logicielle, performance et pratiques de production.',
     icon: Sparkles,
   },
   {
     title: '.NET Engineering',
-    description: 'Conception d applications avec C#, ASP.NET Core, messaging, patterns d architecture et code evolutif.',
+    description: "Conception d'applications avec C#, ASP.NET Core, messagerie, patterns d'architecture et code évolutif.",
     icon: Cpu,
   },
   {
     title: 'Cloud & DevOps',
-    description: 'Infrastructure cloud, automatisation, observabilite, delivery engineering et systemes distribues.',
+    description: 'Infrastructure cloud, automatisation, observabilité, chaînes de livraison et systèmes distribués.',
     icon: Cloud,
   },
 ];
@@ -41,11 +41,11 @@ export default function HomePage() {
 
             <div className="space-y-5">
               <h1 className="max-w-4xl text-balance text-5xl font-extrabold text-foreground md:text-7xl">
-                Un blog d ingenierie logicielle moderne pour les developpeurs.
+                Un blog d'ingénierie logicielle moderne pour les développeurs
               </h1>
               <p className="max-w-2xl text-lg text-secondary md:text-xl">
-                YvaDev est un blog dedie au software engineering moderne : .NET, architecture logicielle,
-                cloud infrastructure et intelligence artificielle appliquee aux applications.
+                YvaDev partage des retours d'expérience et des guides approfondis sur .NET, l'architecture logicielle,
+                le cloud et l'intelligence artificielle appliquée aux applications.
               </p>
             </div>
 
@@ -72,7 +72,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div className="text-3xl font-bold text-primary">Prod</div>
-                <p className="text-sm text-secondary">Systemes fiables, observables et scalables</p>
+                <p className="text-sm text-secondary">Systèmes fiables, observables et capables de monter en charge</p>
               </div>
             </div>
           </div>
@@ -81,36 +81,36 @@ export default function HomePage() {
             <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/20 blur-3xl" />
             <div className="relative space-y-6">
               <div className="inline-flex items-center rounded-full border border-white/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-white/70">
-                engineering focus
+                Priorités d'ingénierie
               </div>
               <div className="space-y-3">
-                <h2 className="text-2xl font-bold">Des concepts appliques au reel</h2>
+                <h2 className="text-2xl font-bold">Des concepts appliqués au réel</h2>
                 <p className="text-sm text-white/70">
-                  Le blog partage des architectures concretes, des retours d experience et des decisions techniques utiles
+                  Le blog partage des architectures concrètes, des retours d'expérience et des décisions techniques utiles
                   pour construire des applications maintenables en production.
                 </p>
               </div>
               <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-5 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70">software</span>
-                  <span>Architecture & quality</span>
+                  <span className="text-white/70">logiciel</span>
+                  <span>Architecture et qualité</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-white/70">.net</span>
-                  <span>C# & ASP.NET Core</span>
+                  <span>C# et ASP.NET Core</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-white/70">cloud</span>
-                  <span>Distributed systems</span>
+                  <span>Systèmes distribués</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/70">ai</span>
-                  <span>Applied AI engineering</span>
+                  <span className="text-white/70">IA</span>
+                  <span>IA appliquée aux produits</span>
                 </div>
               </div>
               <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 text-sm">
                 <Server className="h-4 w-4 text-primary" />
-                Des sujets pour les developpeurs qui veulent aller du code aux contraintes de production.
+                Des sujets pour les développeurs qui veulent aller du code jusqu'aux contraintes de production.
               </div>
             </div>
           </div>
@@ -133,8 +133,8 @@ export default function HomePage() {
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold text-foreground">Ce que tu trouveras sur YvaDev</h2>
           <p className="mx-auto max-w-2xl text-secondary">
-            Des articles techniques sur la conception logicielle, les architectures distribuees, le cloud engineering,
-            l automatisation et l integration de l IA dans des applications reelles.
+            Des articles techniques sur la conception logicielle, les architectures distribuées, le cloud,
+            l'automatisation et l'intégration de l'IA dans des applications réelles.
           </p>
         </div>
 
@@ -161,8 +161,8 @@ export default function HomePage() {
         <section className="container">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <h2 className="mb-2 text-3xl font-bold text-foreground">Articles a la une</h2>
-              <p className="text-secondary">Guides approfondis sur l ingenierie logicielle, le cloud et les systemes applicatifs.</p>
+              <h2 className="mb-2 text-3xl font-bold text-foreground">Articles à la une</h2>
+              <p className="text-secondary">Guides approfondis sur l'ingénierie logicielle, le cloud et les systèmes applicatifs.</p>
             </div>
             <Button variant="outline" asChild>
               <Link href="/blog">
@@ -184,8 +184,8 @@ export default function HomePage() {
         <section className="container">
           <div className="mb-8 flex items-center justify-between gap-4">
             <div>
-              <h2 className="mb-2 text-3xl font-bold text-foreground">Dernieres publications</h2>
-              <p className="text-secondary">Nouveaux articles sur .NET, architecture, cloud engineering et AI engineering.</p>
+              <h2 className="mb-2 text-3xl font-bold text-foreground">Dernières publications</h2>
+              <p className="text-secondary">Nouveaux articles sur .NET, l'architecture, le cloud et l'ingénierie de l'IA.</p>
             </div>
           </div>
 
@@ -200,10 +200,10 @@ export default function HomePage() {
       <section className="container py-16">
         <div className="grid gap-6 rounded-[2rem] border border-border bg-muted/60 p-8 md:grid-cols-2 md:p-12">
           <div>
-            <h2 className="mb-4 text-3xl font-bold text-foreground">Un contenu oriente pratique</h2>
+            <h2 className="mb-4 text-3xl font-bold text-foreground">Un contenu orienté vers la pratique</h2>
             <p className="text-secondary">
-              Le fil conducteur du blog reste le meme : expliquer des choix techniques concrets,
-              montrer des implementations applicables et relier chaque concept aux contraintes de production.
+              Le fil conducteur du blog reste le même : expliquer des choix techniques concrets,
+              montrer des implémentations applicables et relier chaque concept aux contraintes de production.
             </p>
           </div>
           <div className="flex items-center justify-center md:justify-end">
