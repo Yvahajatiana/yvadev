@@ -25,7 +25,7 @@ export function getPostBySlug(slug: string): Post | null {
 
     const fileContents = fs.readFileSync(fullPath, 'utf8');
     const { data, content } = matter(fileContents);
-    const { text: readingTimeText } = readingTime(content);
+    const readingTimeMinutes = Math.max(1, Math.ceil(readingTime(content).minutes));
 
     return {
       slug,
@@ -39,7 +39,7 @@ export function getPostBySlug(slug: string): Post | null {
       coverImageAlt: data.coverImageAlt || data.title || '',
       featured: data.featured || false,
       content,
-      readingTime: readingTimeText,
+      readingTime: `${readingTimeMinutes} min de lecture`,
     };
   } catch (error) {
     console.error(`Error reading post ${slug}:`, error);
