@@ -15,8 +15,8 @@ export function Footer() {
               <span className="text-xl font-bold text-foreground">YvaDev</span>
             </Link>
             <p className="max-w-md text-secondary">
-              Blog technique sur le software engineering, le .NET, l architecture logicielle,
-              le cloud engineering et l intelligence artificielle appliquee.
+              Blog technique sur l'ingénierie logicielle, .NET, l'architecture,
+              le cloud et l'intelligence artificielle appliquée.
             </p>
             <div className="flex space-x-4">
               {siteConfig.social.github && (
@@ -43,25 +43,25 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/about" className="text-secondary transition-colors hover:text-foreground">
-                  A propos
+                  À propos
                 </Link>
               </li>
             </ul>
           </div>
 
           <div>
-            <h3 className="mb-4 font-semibold text-foreground">Themes</h3>
+            <h3 className="mb-4 font-semibold text-foreground">Thèmes</h3>
             <ul className="space-y-2 text-secondary">
-              <li>Software Engineering</li>
-              <li>.NET & architecture</li>
-              <li>Cloud & DevOps</li>
-              <li>AI Engineering</li>
+              <li>Ingénierie logicielle</li>
+              <li>.NET et architecture</li>
+              <li>Cloud et DevOps</li>
+              <li>Ingénierie de l'IA</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-8 flex flex-col items-start justify-between gap-4 border-t border-border pt-8 text-sm text-secondary md:flex-row md:items-center">
-          <p>© {new Date().getFullYear()} {siteConfig.shortName}. Tous droits reserves.</p>
+          <p>© {new Date().getFullYear()} {siteConfig.shortName}. Tous droits réservés.</p>
           <p>{siteConfig.tagline}</p>
         </div>
       </div>

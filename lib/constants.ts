@@ -1,16 +1,16 @@
 import { SiteConfig } from '@/types';
 
 export const siteConfig: SiteConfig = {
-  name: 'YvaDev - AI, .NET, Cloud & Platform Engineering',
+  name: "YvaDev - Ingénierie logicielle, .NET, cloud et IA",
   shortName: 'YvaDev',
-  description: 'YvaDev partage des retours d experience et des pratiques de software engineering sur le .NET, l architecture logicielle, le cloud et l AI engineering.',
-  tagline: 'Software engineering, .NET, cloud and AI engineering',
+  description: "YvaDev partage des retours d'expérience et des pratiques d'ingénierie sur .NET, l'architecture logicielle, le cloud et l'intelligence artificielle.",
+  tagline: "Ingénierie logicielle, .NET, cloud et IA",
   url: process.env.NEXT_PUBLIC_SITE_URL || 'https://yvadev.fr',
   ogImage: '/images/og-image.png',
   author: {
     name: 'Yva Hajatiana',
     email: 'contact@yvadev.fr',
-    bio: 'Software engineer focused on .NET architecture, cloud systems, DevOps engineering and applied AI integration.',
+    bio: "Ingénieur logiciel spécialisé en architecture .NET, systèmes cloud, DevOps et intégration de l'intelligence artificielle.",
   },
   social: {
     github: 'https://github.com/Yvahajatiana/yvadev',

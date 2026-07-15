@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 const navigation = [
   { name: 'Accueil', href: '/' },
   { name: 'Articles', href: '/blog' },
-  { name: 'A propos', href: '/about' },
+  { name: 'À propos', href: '/about' },
 ];
 
 export function Header() {
@@ -25,7 +25,7 @@ export function Header() {
             <div>
               <span className="block text-lg font-bold text-foreground">YvaDev</span>
               <span className="hidden text-xs uppercase tracking-[0.24em] text-secondary sm:block">
-                Code to cloud
+                Du code au cloud
               </span>
             </div>
           </Link>
@@ -49,7 +49,7 @@ export function Header() {
             className="inline-flex items-center justify-center rounded-md p-2 text-secondary hover:text-foreground focus-ring"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <span className="sr-only">Open main menu</span>
+            <span className="sr-only">Ouvrir le menu principal</span>
             {mobileMenuOpen ? (
               <X className="h-6 w-6" aria-hidden="true" />
             ) : (

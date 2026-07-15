@@ -37,7 +37,7 @@ export function WebsiteStructuredData({ url = siteConfig.url }: WebsiteStructure
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: `${siteConfig.url}/search?q={search_term_string}`,
+        urlTemplate: `${siteConfig.url}/blog?search={search_term_string}`,
       },
       'query-input': 'required name=search_term_string',
     },
@@ -51,7 +51,7 @@ export function BlogStructuredData() {
     '@context': 'https://schema.org',
     '@type': 'Blog',
     name: `${siteConfig.shortName} Blog`,
-    description: 'Engineering notes about AI, .NET, cloud infrastructure and delivery automation.',
+    description: "Articles d'ingénierie sur .NET, l'architecture logicielle, le cloud et l'intelligence artificielle.",
     url: `${siteConfig.url}/blog`,
     publisher: {
       '@type': 'Organization',
@@ -113,7 +113,7 @@ export function ArticleStructuredData({ post, url }: ArticleStructuredDataProps)
     },
     keywords: post.tags.join(', '),
     genre: ['Technology', 'Tutorial', 'Programming'],
-    inLanguage: 'en-US',
+    inLanguage: 'fr-FR',
     wordCount: post.content.split(' ').length,
     timeRequired: post.readingTime,
     articleSection: 'Technology',
