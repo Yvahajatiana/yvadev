@@ -4,9 +4,7 @@ import { siteConfig } from '@/lib/constants';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getAllPosts();
-  const currentDate = new Date().toISOString();
 
-  // Get the most recent post date for blog page lastModified
   const latestPostDate = posts.length > 0
     ? new Date(Math.max(...posts.map(post => new Date(post.date).getTime())))
     : new Date();
@@ -44,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticUrls = [
     {
       url: siteConfig.url,
-      lastModified: currentDate,
+      lastModified: latestPostDate.toISOString(),
       changeFrequency: 'daily' as const,
       priority: 1.0,
     },
@@ -56,7 +54,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${siteConfig.url}/about`,
-      lastModified: currentDate,
       changeFrequency: 'monthly' as const,
       priority: 0.8,
     },
