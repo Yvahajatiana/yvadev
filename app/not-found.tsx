@@ -10,7 +10,7 @@ export default function NotFound() {
           <h1 className="mb-2 text-6xl font-bold text-primary">404</h1>
           <h2 className="mb-4 text-2xl font-bold text-foreground">Page introuvable</h2>
           <p className="text-lg text-secondary">
-            Le contenu recherche n'existe plus ou n'a pas encore ete migre vers la nouvelle version du site.
+            Le contenu recherché n'existe plus, a été déplacé ou n'a pas encore été migré vers cette version du site.
           </p>
         </div>
 
@@ -18,7 +18,7 @@ export default function NotFound() {
           <Button asChild>
             <Link href="/">
               <Home className="mr-2 h-4 w-4" />
-              Retour accueil
+              Retour à l'accueil
             </Link>
           </Button>
 
