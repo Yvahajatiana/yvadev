@@ -37,6 +37,11 @@ export function Footer() {
             <h3 className="mb-4 font-semibold text-foreground">Navigation</h3>
             <ul className="space-y-2">
               <li>
+                <Link href="/topics" className="text-secondary transition-colors hover:text-foreground">
+                  Parcours thématiques
+                </Link>
+              </li>
+              <li>
                 <Link href="/blog" className="text-secondary transition-colors hover:text-foreground">
                   Articles
                 </Link>
@@ -51,11 +56,19 @@ export function Footer() {
 
           <div>
             <h3 className="mb-4 font-semibold text-foreground">Thèmes</h3>
-            <ul className="space-y-2 text-secondary">
-              <li>Ingénierie logicielle</li>
-              <li>.NET et architecture</li>
-              <li>Cloud et DevOps</li>
-              <li>Ingénierie de l'IA</li>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/topics/architecture-dotnet" className="text-secondary transition-colors hover:text-foreground">Architecture .NET</Link>
+              </li>
+              <li>
+                <Link href="/topics/csharp-aspnet-core" className="text-secondary transition-colors hover:text-foreground">C# et ASP.NET Core</Link>
+              </li>
+              <li>
+                <Link href="/topics/cloud-systemes-distribues" className="text-secondary transition-colors hover:text-foreground">Cloud et systèmes distribués</Link>
+              </li>
+              <li>
+                <Link href="/topics/ia-appliquee" className="text-secondary transition-colors hover:text-foreground">IA appliquée</Link>
+              </li>
             </ul>
           </div>
         </div>

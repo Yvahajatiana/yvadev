@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ArrowRight, CheckCircle2, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
+import { ArrowRight, BrainCircuit, CheckCircle2, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CodeBlock } from '@/components/ui/CodeBlock';
@@ -16,19 +16,28 @@ export const metadata: Metadata = {
 
 const focusAreas = [
   {
-    title: 'Software Engineering',
+    title: 'Architecture .NET',
     description: 'Architecture de services robustes, maintenabilité, qualité logicielle, performance et pratiques de production.',
     icon: Sparkles,
+    href: '/topics/architecture-dotnet',
   },
   {
-    title: '.NET Engineering',
+    title: 'C# et ASP.NET Core',
     description: "Conception d'applications avec C#, ASP.NET Core, messagerie, patterns d'architecture et code évolutif.",
     icon: Cpu,
+    href: '/topics/csharp-aspnet-core',
   },
   {
-    title: 'Cloud & DevOps',
+    title: 'Cloud et systèmes distribués',
     description: 'Infrastructure cloud, automatisation, observabilité, chaînes de livraison et systèmes distribués.',
     icon: Cloud,
+    href: '/topics/cloud-systemes-distribues',
+  },
+  {
+    title: 'IA appliquée',
+    description: "Intégration fiable de l'intelligence artificielle dans les produits, les workflows et les systèmes en production.",
+    icon: BrainCircuit,
+    href: '/topics/ia-appliquee',
   },
 ];
 
@@ -124,15 +133,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="container grid gap-6 md:grid-cols-3">
-        {focusAreas.map(({ title, description, icon: Icon }) => (
-          <article key={title} className="rounded-[1.75rem] border border-border bg-background/90 p-6 shadow-sm shadow-primary/5">
-            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Icon className="h-6 w-6" />
-            </div>
-            <h2 className="mb-3 text-2xl font-semibold text-foreground">{title}</h2>
-            <p className="text-secondary">{description}</p>
-          </article>
+      <section className="container grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {focusAreas.map(({ title, description, icon: Icon, href }) => (
+          <Link key={title} href={href} className="group rounded-[1.75rem] focus-ring">
+            <article className="h-full rounded-[1.75rem] border border-border bg-background/90 p-6 shadow-sm shadow-primary/5 transition-colors group-hover:border-primary/40">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <Icon className="h-6 w-6" />
+              </div>
+              <h2 className="mb-3 text-2xl font-semibold text-foreground">{title}</h2>
+              <p className="text-secondary">{description}</p>
+              <span className="mt-5 inline-flex items-center text-sm font-semibold text-primary">
+                Explorer ce parcours <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </span>
+            </article>
+          </Link>
         ))}
       </section>
 
