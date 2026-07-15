@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 import { PostList } from '@/components/blog/PostList';
+import { BreadcrumbStructuredData } from '@/components/seo/StructuredData';
 import { siteConfig } from '@/lib/constants';
 import { getAllPosts } from '@/lib/posts';
 import { getTopicBySlug, postMatchesTopic, topics } from '@/lib/topics';
@@ -51,6 +52,13 @@ export default function TopicPage({ params }: TopicPageProps) {
 
   return (
     <div className="container py-12 md:py-16">
+      <BreadcrumbStructuredData
+        items={[
+          { name: 'Accueil', url: siteConfig.url },
+          { name: 'Parcours', url: `${siteConfig.url}/topics` },
+          { name: topic.shortTitle, url: `${siteConfig.url}/topics/${topic.slug}` },
+        ]}
+      />
       <div className="mx-auto max-w-5xl">
         <Link href="/topics" className="focus-ring inline-flex items-center rounded-lg text-sm text-secondary hover:text-foreground">
           <ArrowLeft aria-hidden="true" className="mr-2 h-4 w-4" />

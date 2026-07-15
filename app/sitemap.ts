@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/posts';
 import { siteConfig } from '@/lib/constants';
+import { topics } from '@/lib/topics';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const posts = getAllPosts();
@@ -53,6 +54,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${siteConfig.url}/topics`,
+      lastModified: latestPostDate.toISOString(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.9,
+    },
+    {
       url: `${siteConfig.url}/about`,
       changeFrequency: 'monthly' as const,
       priority: 0.8,
@@ -78,5 +85,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // },
   ];
 
-  return [...staticUrls, ...featuredPosts, ...regularPosts];
+  const topicUrls = topics.map((topic) => ({
+    url: `${siteConfig.url}/topics/${topic.slug}`,
+    lastModified: latestPostDate.toISOString(),
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+
+  return [...staticUrls, ...topicUrls, ...featuredPosts, ...regularPosts];
 }

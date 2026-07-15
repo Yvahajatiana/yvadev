@@ -12,6 +12,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${siteConfig.url}/topics`,
   },
+  openGraph: {
+    title: 'Parcours techniques YvaDev',
+    description: 'Des sélections d’articles pour progresser en architecture .NET, C#, cloud, systèmes distribués et IA appliquée.',
+    url: `${siteConfig.url}/topics`,
+    type: 'website',
+  },
 };
 
 export default function TopicsPage() {
