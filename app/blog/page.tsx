@@ -29,6 +29,7 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
   const allPosts = getAllPosts();
   const searchQuery = typeof searchParams.search === 'string' ? searchParams.search : undefined;
   const posts = searchQuery ? searchPosts(searchQuery) : allPosts;
+  const popularTags = Array.from(new Set(allPosts.flatMap((post) => post.tags))).slice(0, 10);
 
   return (
     <>
@@ -79,16 +80,24 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
           <div className="mb-8">
             <h2 className="mb-4 text-lg font-semibold text-foreground">Sujets populaires</h2>
             <div className="flex flex-wrap gap-2">
-              {Array.from(new Set(posts.flatMap((post) => post.tags)))
-                .slice(0, 10)
-                .map((tag) => (
-                  <button
+              {popularTags.map((tag) => {
+                const isActive = searchQuery?.toLowerCase() === tag.toLowerCase();
+
+                return (
+                  <Link
                     key={tag}
-                    className="rounded-full bg-muted px-3 py-1 text-sm text-secondary transition-colors hover:bg-primary hover:text-white"
+                    href={`/blog?search=${encodeURIComponent(tag)}`}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`focus-ring rounded-full px-3 py-1 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-primary text-white'
+                        : 'bg-muted text-secondary hover:bg-primary hover:text-white'
+                    }`}
                   >
                     {tag}
-                  </button>
-                ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
 
