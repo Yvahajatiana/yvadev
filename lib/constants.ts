@@ -5,7 +5,7 @@ export const siteConfig: SiteConfig = {
   shortName: 'YvaDev',
   description: "YvaDev partage des retours d'expérience et des pratiques d'ingénierie sur .NET, l'architecture logicielle, le cloud et l'intelligence artificielle.",
   tagline: "Ingénierie logicielle, .NET, cloud et IA",
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://yvadev.fr',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://yvadev.com',
   ogImage: '/images/og-image.png',
   author: {
     name: 'Yva Hajatiana',
