@@ -10,10 +10,10 @@ import { BlogStructuredData } from '@/components/seo/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Articles',
-  description: 'Parcourez les articles YvaDev sur le software engineering, le .NET, l architecture logicielle, le cloud et l AI engineering.',
+  description: "Parcourez les articles YvaDev sur l'ingénierie logicielle, .NET, l'architecture, le cloud et l'intelligence artificielle.",
   openGraph: {
     title: `Articles | ${siteConfig.name}`,
-    description: 'Catalogue d articles techniques sur l ingenierie logicielle, le cloud et les architectures applicatives.',
+    description: "Catalogue d'articles techniques sur l'ingénierie logicielle, le cloud et les architectures applicatives.",
     type: 'website',
   },
 };
@@ -34,12 +34,12 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
         <div className="mx-auto max-w-5xl">
           <div className="mb-12 text-center">
             <h1 className="mb-4 text-4xl font-bold text-foreground">
-              {searchQuery ? 'Resultats de recherche' : 'Articles et notes techniques'}
+              {searchQuery ? 'Résultats de recherche' : 'Articles et notes techniques'}
             </h1>
             <p className="mb-8 text-lg text-secondary">
               {searchQuery
-                ? `${posts.length} resultat${posts.length !== 1 ? 's' : ''} pour "${searchQuery}"`
-                : 'Des articles pour approfondir le software engineering, le .NET, l architecture logicielle, le cloud et l AI engineering.'}
+                ? `${posts.length} résultat${posts.length !== 1 ? 's' : ''} pour "${searchQuery}"`
+                : "Des articles pour approfondir l'ingénierie logicielle, .NET, l'architecture, le cloud et l'ingénierie de l'IA."}
             </p>
 
             <div className="mx-auto max-w-md">
@@ -65,7 +65,7 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground">{new Set(posts.flatMap((post) => post.tags)).size}</div>
-              <div className="text-sm text-secondary">Themes</div>
+              <div className="text-sm text-secondary">Thèmes</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-foreground">{posts.filter((post) => post.featured).length}</div>
@@ -91,9 +91,9 @@ export default function BlogPage({ searchParams }: BlogPageProps) {
 
           {posts.length === 0 && searchQuery ? (
             <div className="py-16 text-center">
-              <h3 className="mb-4 text-xl font-semibold text-foreground">Aucun article trouve</h3>
+              <h3 className="mb-4 text-xl font-semibold text-foreground">Aucun article trouvé</h3>
               <p className="mb-6 text-secondary">
-                Aucun contenu ne correspond a "{searchQuery}". Essaie avec d autres mots-clefs.
+                Aucun contenu ne correspond à "{searchQuery}". Essaie avec d'autres mots-clés.
               </p>
               <Button variant="outline" asChild>
                 <Link href="/blog">Voir tous les articles</Link>

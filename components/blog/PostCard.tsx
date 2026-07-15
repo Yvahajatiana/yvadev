@@ -27,7 +27,7 @@ export function PostCard({ post, featured = false }: PostCardProps) {
           />
           {post.featured && (
             <div className="absolute top-4 left-4">
-              <Badge variant="accent">Featured</Badge>
+              <Badge variant="accent">À la une</Badge>
             </div>
           )}
         </div>

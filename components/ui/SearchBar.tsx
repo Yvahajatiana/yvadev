@@ -20,7 +20,7 @@ interface SearchResult {
   limit: number;
 }
 
-export function SearchBar({ className, placeholder = "Search articles...", initialQuery = '' }: SearchBarProps) {
+export function SearchBar({ className, placeholder = "Rechercher un article...", initialQuery = '' }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -185,7 +185,7 @@ export function SearchBar({ className, placeholder = "Search articles...", initi
             <button
               onClick={clearSearch}
               className="p-0.5 hover:bg-muted rounded"
-              aria-label="Clear search"
+              aria-label="Effacer la recherche"
             >
               <X className="h-3 w-3 text-secondary" />
             </button>
@@ -198,14 +198,14 @@ export function SearchBar({ className, placeholder = "Search articles...", initi
         <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
           {results.length === 0 ? (
             <div className="p-4 text-center text-secondary">
-              No articles found for "{query}"
+              Aucun article trouvé pour "{query}"
             </div>
           ) : (
             <>
               {/* Results Header */}
               <div className="px-4 py-2 border-b border-border">
                 <span className="text-xs text-secondary">
-                  {results.length} result{results.length !== 1 ? 's' : ''} for "{query}"
+                  {results.length} résultat{results.length !== 1 ? 's' : ''} pour "{query}"
                 </span>
               </div>
 
@@ -260,7 +260,7 @@ export function SearchBar({ className, placeholder = "Search articles...", initi
                     onClick={() => setIsOpen(false)}
                     className="text-xs text-primary hover:underline"
                   >
-                    View all results for "{query}"
+                    Voir tous les résultats pour "{query}"
                   </Link>
                 </div>
               )}
