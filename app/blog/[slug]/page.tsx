@@ -51,13 +51,18 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   }
 
   const ogImage = post.coverImage.startsWith('http') ? post.coverImage : `${siteConfig.url}${post.coverImage}`;
+  const postUrl = `${siteConfig.url}/blog/${post.slug}`;
 
   return {
     title: post.title,
     description: post.excerpt,
+    alternates: {
+      canonical: postUrl,
+    },
     authors: [{ name: post.author }],
     keywords: post.tags,
     openGraph: {
+      url: postUrl,
       title: post.title,
       description: post.excerpt,
       type: 'article',

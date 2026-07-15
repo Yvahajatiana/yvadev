@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import { ArrowRight, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -5,7 +6,14 @@ import { NewsletterForm } from '@/components/ui/NewsletterForm';
 import { CodeBlock } from '@/components/ui/CodeBlock';
 import { PostCard } from '@/components/blog/PostCard';
 import { getFeaturedPosts, getLatestPosts } from '@/lib/posts';
-import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT } from '@/lib/constants';
+import { FEATURED_POSTS_COUNT, LATEST_POSTS_COUNT, siteConfig } from '@/lib/constants';
+
+export const metadata: Metadata = {
+  title: 'Architecture .NET, Cloud et IA en production',
+  alternates: {
+    canonical: siteConfig.url,
+  },
+};
 
 const focusAreas = [
   {
