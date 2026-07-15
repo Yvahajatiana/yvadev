@@ -11,6 +11,9 @@ import { BlogStructuredData } from '@/components/seo/StructuredData';
 export const metadata: Metadata = {
   title: 'Articles',
   description: "Parcourez les articles YvaDev sur l'ingénierie logicielle, .NET, l'architecture, le cloud et l'intelligence artificielle.",
+  alternates: {
+    canonical: `${siteConfig.url}/blog`,
+  },
   openGraph: {
     title: `Articles | ${siteConfig.name}`,
     description: "Catalogue d'articles techniques sur l'ingénierie logicielle, le cloud et les architectures applicatives.",

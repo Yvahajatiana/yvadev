@@ -6,6 +6,9 @@ import { siteConfig } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'À propos',
   description: "YvaDev est un blog d'ingénierie logicielle consacré à .NET, l'architecture, au cloud et à l'ingénierie de l'IA.",
+  alternates: {
+    canonical: `${siteConfig.url}/about`,
+  },
   openGraph: {
     title: `À propos | ${siteConfig.name}`,
     description: 'Positionnement éditorial et domaines techniques couverts par YvaDev.',
