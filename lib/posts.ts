@@ -75,13 +75,28 @@ export function getPostsByTag(tag: string): PostMetadata[] {
 
 export function getRelatedPosts(currentPost: PostMetadata, count: number = 3): PostMetadata[] {
   const allPosts = getAllPosts().filter((post) => post.slug !== currentPost.slug);
-  const relatedPosts = allPosts.filter((post) => post.tags.some((tag) => currentPost.tags.includes(tag)));
+  const currentTags = new Set(currentPost.tags.map((tag) => tag.toLowerCase()));
+  const relatedPosts = allPosts
+    .map((post) => ({
+      post,
+      sharedTagCount: post.tags.filter((tag) => currentTags.has(tag.toLowerCase())).length,
+    }))
+    .filter(({ sharedTagCount }) => sharedTagCount > 0)
+    .sort((a, b) => {
+      if (b.sharedTagCount !== a.sharedTagCount) {
+        return b.sharedTagCount - a.sharedTagCount;
+      }
+
+      return new Date(b.post.date).getTime() - new Date(a.post.date).getTime();
+    })
+    .map(({ post }) => post);
 
   if (relatedPosts.length >= count) {
     return relatedPosts.slice(0, count);
   }
 
-  const remainingPosts = allPosts.filter((post) => !relatedPosts.find((related) => related.slug === post.slug));
+  const relatedSlugs = new Set(relatedPosts.map((post) => post.slug));
+  const remainingPosts = allPosts.filter((post) => !relatedSlugs.has(post.slug));
   return [...relatedPosts, ...remainingPosts].slice(0, count);
 }
 

@@ -71,3 +71,7 @@ export function postMatchesTopic(postTags: string[], topic: Topic): boolean {
   const normalizedPostTags = postTags.map((tag) => tag.toLowerCase());
   return topic.tags.some((tag) => normalizedPostTags.includes(tag.toLowerCase()));
 }
+
+export function getTopicsForPost(postTags: string[]): Topic[] {
+  return topics.filter((topic) => postMatchesTopic(postTags, topic));
+}

@@ -9,6 +9,7 @@ import { getPostBySlug, getAllPostSlugs, getRelatedPosts } from '@/lib/posts';
 import { generateTableOfContents, mdxOptions } from '@/lib/mdx';
 import { formatDateLong } from '@/lib/utils';
 import { siteConfig } from '@/lib/constants';
+import { getTopicsForPost } from '@/lib/topics';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { CopyButton } from '@/components/ui/CopyButton';
@@ -95,6 +96,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
   }
 
   const relatedPosts = getRelatedPosts(post, 3);
+  const relatedTopics = getTopicsForPost(post.tags);
   const tableOfContents = generateTableOfContents(post.content);
   const postUrl = `${siteConfig.url}/blog/${post.slug}`;
 
@@ -180,6 +182,29 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                 <div className="prose prose-lg max-w-none">
                   <MDXRemote source={post.content} components={mdxComponents} options={mdxOptions} />
                 </div>
+
+                {relatedTopics.length > 0 && (
+                  <aside className="mt-12 rounded-[1.5rem] border border-primary/20 bg-primary/5 p-6" aria-labelledby="related-topics-title">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-primary">Continuer à apprendre</p>
+                    <h2 id="related-topics-title" className="mt-2 text-2xl font-bold text-foreground">
+                      Parcours associés à cet article
+                    </h2>
+                    <p className="mt-2 text-secondary">
+                      Retrouvez les concepts, guides et décisions d’architecture liés dans une sélection structurée.
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      {relatedTopics.map((topic) => (
+                        <Link
+                          key={topic.slug}
+                          href={`/topics/${topic.slug}`}
+                          className="focus-ring rounded-full border border-primary/25 bg-background px-4 py-2 text-sm font-semibold text-primary transition-colors hover:border-primary"
+                        >
+                          {topic.shortTitle}
+                        </Link>
+                      ))}
+                    </div>
+                  </aside>
+                )}
 
                 <footer className="mt-12 border-t border-border pt-8">
                   <div className="mb-6 flex flex-wrap gap-2">
