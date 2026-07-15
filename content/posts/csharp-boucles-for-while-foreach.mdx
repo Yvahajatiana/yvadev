@@ -1,0 +1,118 @@
+---
+title: "Boucles en C# : for, while, do while et foreach"
+excerpt: "Apprenez à choisir et utiliser les boucles for, while, do while et foreach en C#, ainsi que break et continue, sans créer de boucle infinie."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Débutant", "Boucles", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Boucles for while do while et foreach en C#"
+featured: false
+filename: "csharp-boucles-for-while-foreach"
+---
+
+Une boucle répète une instruction. La bonne structure dépend de ce que vous connaissez : un nombre d’itérations, une condition d’arrêt ou simplement une collection à parcourir.
+
+## for : compter les itérations
+
+```csharp
+for (int i = 10; i >= 0; i--)
+{
+    Console.WriteLine(i == 0 ? "Décollage !" : i);
+}
+```
+
+Une boucle `for` réunit l’initialisation, la condition et l’évolution du compteur. Elle convient lorsque le nombre d’itérations est connu ou lorsque l’index est utile.
+
+## while : tester avant d’exécuter
+
+```csharp
+int tentatives = 0;
+bool trouve = false;
+
+while (!trouve && tentatives < 5)
+{
+    Console.Write("Nombre entre 1 et 10 : ");
+    trouve = int.TryParse(Console.ReadLine(), out int valeur)
+        && valeur == 7;
+    tentatives++;
+}
+```
+
+La condition est vérifiée avant le premier passage. Le corps peut donc ne jamais s’exécuter.
+
+## do while : exécuter au moins une fois
+
+```csharp
+bool continuer;
+
+do
+{
+    Console.WriteLine("Traitement en cours…");
+    Console.Write("Continuer ? (O/N) : ");
+    continuer = Console.ReadKey().Key == ConsoleKey.O;
+    Console.WriteLine();
+} while (continuer);
+```
+
+Le test a lieu après le corps. Cette boucle est adaptée aux menus et aux saisies qui doivent être proposées au moins une fois.
+
+## foreach : parcourir une collection
+
+```csharp
+string[] fruits = ["Pomme", "Banane", "Poire"];
+
+foreach (string fruit in fruits)
+{
+    Console.WriteLine(fruit);
+}
+```
+
+`foreach` évite de manipuler un index et exprime directement l’intention : traiter chaque élément.
+
+## Contrôler la boucle avec break et continue
+
+```csharp
+for (int i = 0; i < 10; i++)
+{
+    if (i == 3) continue;
+    if (i == 7) break;
+    Console.WriteLine(i);
+}
+```
+
+`continue` passe à l’itération suivante. `break` quitte immédiatement la boucle la plus proche.
+
+## Imbriquer des boucles
+
+Une table de multiplication utilise deux dimensions :
+
+```csharp
+for (int i = 1; i <= 5; i++)
+{
+    for (int j = 1; j <= 10; j++)
+    {
+        Console.WriteLine($"{i} × {j} = {i * j}");
+    }
+}
+```
+
+Le corps intérieur s’exécute entièrement pour chaque valeur de `i`. Deux boucles de tailles `n` et `m` réalisent donc jusqu’à `n × m` passages.
+
+## Quelle boucle choisir ?
+
+| Situation | Boucle |
+| --- | --- |
+| nombre d’itérations connu ou index nécessaire | `for` |
+| répétition tant qu’une condition reste vraie | `while` |
+| au moins une exécution obligatoire | `do while` |
+| parcours simple d’une collection | `foreach` |
+
+## Erreurs fréquentes
+
+- oublier de modifier la condition d’un `while` et créer une boucle infinie ;
+- écrire `i <= collection.Length`, ce qui dépasse le dernier index ;
+- modifier une collection pendant son parcours avec `foreach` ;
+- imbriquer des boucles coûteuses sans considérer le nombre total d’itérations.
+
+Épisode précédent : [switch et pattern matching](/blog/csharp-switch-pattern-matching). Épisode suivant : [tableaux, listes et dictionnaires](/blog/csharp-tableaux-listes-dictionnaires-linq).
+

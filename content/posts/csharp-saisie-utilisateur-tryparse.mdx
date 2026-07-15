@@ -1,0 +1,121 @@
+---
+title: "Lire une saisie utilisateur en C# avec TryParse"
+excerpt: "Apprenez à lire une valeur avec Console.ReadLine, la convertir avec TryParse et valider proprement les entrées d’une application console C#."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Débutant", "Validation", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Saisie utilisateur et validation avec TryParse en C#"
+featured: false
+filename: "csharp-saisie-utilisateur-tryparse"
+---
+
+Une application devient interactive lorsqu’elle reçoit des données. Dans une application console, `Console.ReadLine()` permet de lire ce que l’utilisateur saisit. Mais cette entrée reste du texte : il faut la convertir et surtout la valider avant de l’utiliser.
+
+## Lire une chaîne
+
+```csharp
+Console.Write("Entrez votre prénom : ");
+string prenom = Console.ReadLine() ?? string.Empty;
+```
+
+`Console.ReadLine()` retourne une `string?`, car la fin du flux peut produire `null`. L’opérateur `??` fournit ici une chaîne vide par défaut.
+
+Vérifiez ensuite que le texte contient une vraie valeur :
+
+```csharp
+if (string.IsNullOrWhiteSpace(prenom))
+{
+    Console.WriteLine("Le prénom est obligatoire.");
+    return;
+}
+```
+
+## Convertir sans provoquer d’exception
+
+Une saisie utilisateur est une donnée non fiable. `int.Parse()` lève une exception si le texte n’est pas un entier. `TryParse` permet de traiter l’échec comme un cas normal :
+
+```csharp
+Console.Write("Entrez votre âge : ");
+string saisieAge = Console.ReadLine() ?? string.Empty;
+
+if (!int.TryParse(saisieAge, out int age))
+{
+    Console.WriteLine("L’âge doit être un nombre entier.");
+    return;
+}
+```
+
+La méthode renvoie un booléen. Si elle réussit, elle place le résultat dans le paramètre `out age`.
+
+## Valider le format et la règle métier
+
+Une conversion réussie ne garantit pas que la valeur soit réaliste :
+
+```csharp
+if (age < 0 || age > 150)
+{
+    Console.WriteLine("L’âge doit être compris entre 0 et 150.");
+    return;
+}
+```
+
+La validation se fait donc en deux niveaux :
+
+1. le texte a-t-il le bon format ?
+2. la valeur respecte-t-elle les règles de l’application ?
+
+## Tenir compte du séparateur décimal
+
+Le français utilise généralement la virgule et l’anglais le point. Vous pouvez imposer un format portable :
+
+```csharp
+using System.Globalization;
+
+bool estValide = decimal.TryParse(
+    Console.ReadLine(),
+    NumberStyles.Any,
+    CultureInfo.InvariantCulture,
+    out decimal taille);
+```
+
+Dans cet exemple, l’utilisateur doit saisir `1.75`. Pour une application destinée uniquement à un public français, utilisez plutôt `CultureInfo.GetCultureInfo("fr-FR")` et acceptez `1,75`.
+
+## Exemple complet
+
+```csharp
+Console.Write("Prénom : ");
+string prenom = Console.ReadLine() ?? string.Empty;
+
+if (string.IsNullOrWhiteSpace(prenom))
+{
+    Console.WriteLine("Le prénom est obligatoire.");
+    return;
+}
+
+Console.Write("Âge : ");
+if (!int.TryParse(Console.ReadLine(), out int age) || age is < 0 or > 150)
+{
+    Console.WriteLine("Âge invalide.");
+    return;
+}
+
+string categorie = age switch
+{
+    < 12 => "Enfant",
+    < 18 => "Adolescent",
+    < 65 => "Adulte",
+    _ => "Senior"
+};
+
+Console.WriteLine($"Bonjour {prenom}, catégorie : {categorie}.");
+```
+
+## Erreurs fréquentes
+
+- appeler `Parse` directement sur une donnée saisie ;
+- ignorer le booléen retourné par `TryParse` ;
+- vérifier uniquement le format et oublier les limites métier ;
+- supposer que le séparateur décimal est identique sur toutes les machines.
+
+Épisode précédent : [variables et types en C#](/blog/csharp-variables-types). Épisode suivant : [écrire des conditions en C#](/blog/csharp-conditions-if-else-ternaire).

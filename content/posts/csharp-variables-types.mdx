@@ -1,0 +1,123 @@
+---
+title: "Variables et types en C# : bien commencer"
+excerpt: "Apprenez à déclarer des variables C#, choisir entre int, decimal, double, string et bool, utiliser var, const et l’interpolation de chaînes."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Débutant", "Variables", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Variables et types fondamentaux en C# et .NET"
+featured: false
+filename: "csharp-variables-types"
+---
+
+Une variable est une zone de mémoire à laquelle on donne un nom et un type. Ce type indique au compilateur ce que la variable peut contenir et quelles opérations sont autorisées. Bien choisir ses types évite des erreurs de calcul et rend l’intention du code plus claire.
+
+Ce premier épisode reprend le projet historique **Episode 0**, publié en 2017, avec une syntaxe actualisée pour .NET 8.
+
+## Créer le projet
+
+Avec le SDK .NET installé, créez puis exécutez une application console :
+
+```bash
+dotnet new console -n E01-Variables
+cd E01-Variables
+dotnet run
+```
+
+## Déclarer et initialiser une variable
+
+Une déclaration C# suit généralement la forme `type nom = valeur;` :
+
+```csharp
+int age = 25;
+string prenom = "Marie";
+bool estMajeur = age >= 18;
+```
+
+`age` ne peut contenir qu’un entier, `prenom` du texte et `estMajeur` seulement `true` ou `false`. C# est un langage à typage statique : une variable déclarée comme `int` ne peut pas recevoir ensuite une `string`.
+
+## Choisir le bon type numérique
+
+Les types courants ne répondent pas aux mêmes besoins :
+
+| Type | Usage typique | Exemple |
+| --- | --- | --- |
+| `int` | entiers courants | âge, quantité |
+| `long` | très grands entiers | population, identifiant |
+| `decimal` | calculs financiers précis | prix, taux |
+| `double` | calcul scientifique général | distance, moyenne |
+| `float` | précision réduite, cas spécialisés | données graphiques |
+
+```csharp
+long population = 8_100_000_000L;
+decimal prixHt = 19.99m;
+double pi = 3.141_592_653_589;
+float temperature = 36.6f;
+```
+
+Les suffixes `L`, `m` et `f` précisent le type du littéral. Pour un prix, préférez `decimal` : la représentation binaire de `double` peut produire de petits écarts indésirables dans les calculs monétaires.
+
+## Utiliser const et var
+
+Une constante ne peut plus changer après sa déclaration :
+
+```csharp
+const decimal TauxTva = 0.20m;
+decimal prixTtc = prixHt * (1 + TauxTva);
+```
+
+Avec `var`, le compilateur déduit le type à partir de la valeur :
+
+```csharp
+var message = "Bonjour"; // string
+var annee = 2026;        // int
+```
+
+`var` ne rend pas C# dynamiquement typé. Le type reste déterminé à la compilation et ne peut plus changer. Utilisez-le lorsque le type est évident ; un type explicite reste préférable s’il clarifie le code.
+
+## Construire et formater une chaîne
+
+L’interpolation, introduite par `$`, permet d’insérer des expressions dans une chaîne :
+
+```csharp
+string nom = "Dupont";
+string nomComplet = $"{prenom} {nom}";
+
+Console.WriteLine($"Nom : {nomComplet}");
+Console.WriteLine($"Prix TTC : {prixTtc:C2}");
+Console.WriteLine($"TVA : {TauxTva:P0}");
+```
+
+`C2` affiche une valeur monétaire avec deux décimales et `P0` un pourcentage sans décimale. Le résultat dépend de la culture configurée sur la machine.
+
+## Exemple complet
+
+```csharp
+int age = 25;
+decimal prixHt = 19.99m;
+string prenom = "Marie";
+string nom = "Dupont";
+bool estMajeur = age >= 18;
+
+const decimal TauxTva = 0.20m;
+decimal prixTtc = prixHt * (1 + TauxTva);
+
+Console.WriteLine($"Nom : {prenom} {nom}");
+Console.WriteLine($"Âge : {age} ans");
+Console.WriteLine($"Majeur : {estMajeur}");
+Console.WriteLine($"Prix TTC : {prixTtc:C2}");
+```
+
+## Erreurs fréquentes
+
+- employer `double` pour de l’argent sans comprendre les erreurs d’arrondi ;
+- croire que `var` permet de changer le type plus tard ;
+- oublier le suffixe `m` d’un littéral `decimal` ;
+- donner à une variable un nom vague comme `x` alors que `prixHt` exprime son rôle.
+
+## À retenir
+
+Le type d’une variable formalise une contrainte utile. Choisissez-le selon le domaine représenté, utilisez `const` pour une valeur immuable et préférez l’interpolation aux concaténations difficiles à lire.
+
+Épisode suivant : [lire et valider une saisie utilisateur en C#](/blog/csharp-saisie-utilisateur-tryparse).
+

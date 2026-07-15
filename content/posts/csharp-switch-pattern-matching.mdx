@@ -1,0 +1,121 @@
+---
+title: "Switch et pattern matching en C# : guide pratique"
+excerpt: "Comprenez le switch classique, les switch expressions et le pattern matching moderne pour écrire des décisions C# plus lisibles."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Débutant", "Pattern Matching", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Switch expression et pattern matching en C#"
+featured: false
+filename: "csharp-switch-pattern-matching"
+---
+
+Quand une décision dépend de plusieurs valeurs possibles d’une même donnée, un `switch` exprime souvent l’intention plus clairement qu’une longue suite de `if/else`.
+
+## Le switch classique
+
+```csharp
+switch (choix)
+{
+    case 1:
+        Console.WriteLine("Problème de démarrage");
+        break;
+    case 2:
+        Console.WriteLine("Problème réseau");
+        break;
+    default:
+        Console.WriteLine("Choix inconnu");
+        break;
+}
+```
+
+Le `default` traite toutes les valeurs non prévues. En C#, une section non vide ne peut pas tomber implicitement dans la suivante : elle se termine généralement par `break`, `return` ou `throw`.
+
+## Regrouper plusieurs valeurs
+
+Dans une instruction `switch`, plusieurs étiquettes peuvent partager le même traitement :
+
+```csharp
+switch (choix)
+{
+    case 2:
+    case 3:
+        Console.WriteLine("Priorité haute");
+        break;
+}
+```
+
+## Retourner une valeur avec switch expression
+
+Lorsque chaque cas sert à calculer une valeur, utilisez une expression `switch` :
+
+```csharp
+string priorite = choix switch
+{
+    1 => "CRITIQUE",
+    2 or 3 => "HAUTE",
+    4 or 5 => "MOYENNE",
+    9 => "STANDARD",
+    _ => "INCONNUE"
+};
+```
+
+Le symbole `_` représente le cas par défaut. Chaque branche retourne une valeur compatible avec le type attendu.
+
+## Ajouter des conditions avec when
+
+Le pattern matching permet de combiner structure et condition :
+
+```csharp
+string niveau = montant switch
+{
+    < 0 => "Invalide",
+    >= 500 when estMembre => "Premium fidélité",
+    >= 500 => "Premium",
+    >= 200 => "Standard",
+    _ => "Essentiel"
+};
+```
+
+L’ordre reste important : une branche générale placée trop tôt rendrait une branche plus précise inaccessible ou inutile.
+
+## Instruction ou expression ?
+
+| Besoin | Forme conseillée |
+| --- | --- |
+| exécuter plusieurs actions par cas | instruction `switch` |
+| calculer une valeur | expression `switch` |
+| tester deux possibilités simples | opérateur ternaire |
+| comparer des critères indépendants | `if/else` |
+
+## Exemple : priorité d’un ticket
+
+```csharp
+Console.Write("Choisissez un incident (1 à 5) : ");
+
+if (!int.TryParse(Console.ReadLine(), out int choix))
+{
+    Console.WriteLine("Saisie invalide.");
+    return;
+}
+
+string priorite = choix switch
+{
+    1 => "Critique",
+    2 or 3 => "Haute",
+    4 or 5 => "Moyenne",
+    _ => "Inconnue"
+};
+
+Console.WriteLine($"Priorité : {priorite}");
+```
+
+## Erreurs fréquentes
+
+- oublier le cas par défaut lorsqu’une valeur inattendue reste possible ;
+- choisir une instruction `switch` uniquement pour affecter une variable ;
+- placer un pattern général avant un pattern plus précis ;
+- surcharger une expression `switch` avec des traitements ayant des effets de bord.
+
+Épisode précédent : [conditions en C#](/blog/csharp-conditions-if-else-ternaire). Épisode suivant : [les boucles en C#](/blog/csharp-boucles-for-while-foreach).
+

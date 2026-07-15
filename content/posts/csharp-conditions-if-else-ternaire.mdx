@@ -1,0 +1,111 @@
+---
+title: "Conditions en C# : if, else et opérateur ternaire"
+excerpt: "Maîtrisez if, else if, else, les opérateurs logiques et l’opérateur ternaire pour contrôler le flux d’exécution d’un programme C#."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Débutant", "Conditions", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Conditions if else et opérateur ternaire en C#"
+featured: false
+filename: "csharp-conditions-if-else-ternaire"
+---
+
+Une condition permet au programme de prendre une décision. Le code n’exécute alors une branche que si une expression booléenne vaut `true`.
+
+## La structure if, else if, else
+
+```csharp
+if (montant >= 500)
+{
+    Console.WriteLine("Commande Premium");
+}
+else if (montant >= 200)
+{
+    Console.WriteLine("Commande Standard");
+}
+else
+{
+    Console.WriteLine("Petite commande");
+}
+```
+
+Les conditions sont évaluées dans l’ordre. Dès qu’une condition est vraie, sa branche est exécutée et les suivantes sont ignorées. Placez donc les seuils du plus restrictif au plus général.
+
+## Combiner plusieurs critères
+
+```csharp
+bool remiseAutorisee = montant >= 50 && estMembre;
+bool livraisonOfferte = montant >= 100 || estPremium;
+bool compteBloque = !compteActif;
+```
+
+| Opérateur | Signification |
+| --- | --- |
+| `&&` | ET : les deux conditions doivent être vraies |
+| `\|\|` | OU : au moins une condition doit être vraie |
+| `!` | NON : inverse le booléen |
+
+`&&` et `||` utilisent le court-circuit : la partie droite n’est pas évaluée si la partie gauche suffit déjà à déterminer le résultat.
+
+## Utiliser l’opérateur ternaire
+
+Pour choisir entre deux valeurs simples :
+
+```csharp
+string statut = estMembre ? "Membre fidélité" : "Client standard";
+```
+
+La syntaxe est `condition ? valeurSiVrai : valeurSiFaux`. Elle convient à une affectation courte, mais une cascade de ternaires devient vite illisible.
+
+## Calculer une remise
+
+```csharp
+decimal tauxRemise;
+
+if (montant >= 500)
+{
+    tauxRemise = estMembre ? 0.25m : 0.20m;
+}
+else if (montant >= 200)
+{
+    tauxRemise = estMembre ? 0.15m : 0.10m;
+}
+else if (montant >= 50 && estMembre)
+{
+    tauxRemise = 0.05m;
+}
+else
+{
+    tauxRemise = 0m;
+}
+
+decimal remise = montant * tauxRemise;
+decimal total = montant - remise;
+Console.WriteLine($"Total : {total:C2}");
+```
+
+## Réduire l’imbrication avec un retour anticipé
+
+Les *early returns* éliminent les branches inutiles :
+
+```csharp
+if (montant < 0)
+{
+    Console.WriteLine("Montant invalide.");
+    return;
+}
+
+// Le reste du programme sait que le montant est valide.
+```
+
+Cette forme facilite la lecture : les erreurs sont traitées tôt et le scénario normal reste peu indenté.
+
+## Erreurs fréquentes
+
+- écrire les seuils dans le mauvais ordre ;
+- confondre `=` (affectation) et `==` (comparaison) ;
+- utiliser `&` ou `|` alors que le court-circuit de `&&` ou `||` est attendu ;
+- imbriquer trop de conditions au lieu d’extraire une méthode ou d’utiliser un `switch`.
+
+Épisode précédent : [saisie et TryParse](/blog/csharp-saisie-utilisateur-tryparse). Épisode suivant : [maîtriser switch et le pattern matching](/blog/csharp-switch-pattern-matching).
+

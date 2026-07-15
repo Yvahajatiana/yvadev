@@ -1,0 +1,129 @@
+---
+title: "Méthodes en C# : paramètres, retour et surcharge"
+excerpt: "Apprenez à créer des méthodes C#, passer des paramètres, retourner une valeur, utiliser void, les paramètres optionnels et la surcharge."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Débutant", "Méthodes", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Méthodes paramètres valeurs de retour et surcharge en C#"
+featured: false
+filename: "csharp-methodes-parametres-retour-surcharge"
+---
+
+Une méthode donne un nom à un traitement réutilisable. Elle limite la duplication, découpe un problème en étapes et permet de tester chaque comportement séparément.
+
+## Anatomie d’une méthode
+
+```csharp
+static int Additionner(int a, int b)
+{
+    return a + b;
+}
+```
+
+- `static` indique ici que la méthode peut être appelée sans créer d’objet ;
+- `int` est le type de la valeur retournée ;
+- `Additionner` est le nom de la méthode ;
+- `a` et `b` sont ses paramètres.
+
+L’appel fournit des arguments :
+
+```csharp
+int total = Additionner(10, 15);
+```
+
+Un **paramètre** figure dans la déclaration ; un **argument** est la valeur passée lors de l’appel.
+
+## Retourner une valeur ou utiliser void
+
+```csharp
+static int Carre(int nombre)
+{
+    return nombre * nombre;
+}
+
+static void Afficher(int nombre)
+{
+    Console.WriteLine($"Résultat : {nombre}");
+}
+```
+
+Une méthode non `void` doit retourner une valeur compatible sur tous les chemins d’exécution. Une méthode `void` réalise une action sans produire de résultat exploitable par l’appelant.
+
+## Écrire une méthode courte
+
+Une méthode réduite à une expression peut employer `=>` :
+
+```csharp
+static int Carre(int nombre) => nombre * nombre;
+```
+
+Cette syntaxe est utile si elle reste immédiatement lisible.
+
+## Surcharger une méthode
+
+La surcharge permet plusieurs signatures sous le même nom :
+
+```csharp
+static int Additionner(int a, int b) => a + b;
+static double Additionner(double a, double b) => a + b;
+static int Additionner(int a, int b, int c) => a + b + c;
+```
+
+Le compilateur choisit la surcharge d’après le nombre et le type des arguments. Le type de retour seul ne suffit pas à différencier deux méthodes.
+
+## Paramètres optionnels et nommés
+
+```csharp
+static void AfficherProfil(
+    string nom,
+    int age = 0,
+    string ville = "Inconnue")
+{
+    Console.WriteLine($"{nom}, {age} ans, {ville}");
+}
+
+AfficherProfil("Alice");
+AfficherProfil("Bob", 25);
+AfficherProfil(nom: "Charlie", ville: "Lyon");
+```
+
+Les paramètres obligatoires précèdent les paramètres optionnels. Les arguments nommés rendent un appel plus explicite et permettent d’omettre une valeur optionnelle intermédiaire.
+
+## Décomposer un petit programme
+
+```csharp
+int nombre = LireEntier();
+int carre = Carre(nombre);
+Afficher(carre);
+
+static int LireEntier()
+{
+    Console.Write("Entrez un entier : ");
+
+    while (!int.TryParse(Console.ReadLine(), out int valeur))
+    {
+        Console.Write("Saisie invalide, recommencez : ");
+    }
+
+    return valeur;
+}
+
+static int Carre(int nombre) => nombre * nombre;
+
+static void Afficher(int resultat) =>
+    Console.WriteLine($"Carré : {resultat}");
+```
+
+Chaque méthode a une responsabilité : lire, calculer ou afficher. Cette séparation prépare naturellement l’étude des classes et des objets.
+
+## Erreurs fréquentes
+
+- oublier `return` dans une méthode non `void` ;
+- créer une méthode très longue qui réalise plusieurs tâches ;
+- tenter une surcharge fondée uniquement sur le type de retour ;
+- placer un paramètre obligatoire après un paramètre optionnel ;
+- modifier un paramètre en pensant modifier automatiquement la variable de l’appelant.
+
+Épisode précédent : [tableaux, listes et dictionnaires](/blog/csharp-tableaux-listes-dictionnaires-linq). La suite abordera les classes et la programmation orientée objet.
+

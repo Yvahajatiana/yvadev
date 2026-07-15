@@ -1,0 +1,116 @@
+---
+title: "Collections C# : tableaux, listes et dictionnaires"
+excerpt: "Découvrez les tableaux, List<T>, Dictionary<TKey,TValue> et les premières opérations LINQ pour stocker et manipuler des collections en C#."
+date: "2017-10-15"
+author: "Yva Hajatiana"
+tags: ["C#", ".NET", "Collections", "LINQ", "Tutoriel"]
+coverImage: "/images/posts/default-dotnet.png"
+coverImageAlt: "Tableaux listes dictionnaires et LINQ en C#"
+featured: false
+filename: "csharp-tableaux-listes-dictionnaires-linq"
+---
+
+Une variable stocke une valeur ; une collection en regroupe plusieurs. C# propose différentes structures selon que la taille est fixe, dynamique ou que chaque valeur doit être retrouvée par une clé.
+
+## Tableau : une taille fixe
+
+```csharp
+int[] temperatures = [12, 18, 22, 25, 19];
+
+Console.WriteLine(temperatures[0]);
+Console.WriteLine(temperatures.Length);
+```
+
+Le premier index est `0` et le dernier `Length - 1`. Une fois créé, le tableau ne change pas de taille.
+
+```csharp
+for (int i = 0; i < temperatures.Length; i++)
+{
+    Console.WriteLine($"Jour {i + 1} : {temperatures[i]} °C");
+}
+```
+
+## List<T> : une taille dynamique
+
+```csharp
+List<string> courses = ["Pommes", "Pain", "Lait"];
+
+courses.Add("Œufs");
+courses.Remove("Pain");
+
+foreach (string article in courses)
+{
+    Console.WriteLine(article);
+}
+```
+
+Une liste peut grandir et rétrécir. `Count` donne son nombre d’éléments, tandis qu’un tableau utilise `Length`.
+
+## Dictionary<TKey, TValue> : accéder par clé
+
+```csharp
+Dictionary<string, decimal> prix = new()
+{
+    ["Pomme"] = 2.50m,
+    ["Banane"] = 1.80m
+};
+
+prix["Mangue"] = 4.50m;
+```
+
+Pour lire une clé qui peut être absente, préférez `TryGetValue` :
+
+```csharp
+if (prix.TryGetValue("Banane", out decimal prixBanane))
+{
+    Console.WriteLine($"Prix : {prixBanane:C2}");
+}
+```
+
+Un accès direct avec `prix["Inconnu"]` provoquerait une `KeyNotFoundException`.
+
+## Interroger une collection avec LINQ
+
+LINQ permet d’exprimer un filtre, un tri ou une transformation :
+
+```csharp
+List<int> nombres = [3, 7, 2, 9, 4, 11, 6];
+
+List<int> pairsTries = nombres
+    .Where(n => n % 2 == 0)
+    .OrderBy(n => n)
+    .ToList();
+
+double moyenne = nombres.Average();
+```
+
+Les opérateurs essentiels sont :
+
+| Opérateur | Rôle |
+| --- | --- |
+| `Where` | filtrer |
+| `Select` | transformer |
+| `OrderBy` | trier |
+| `Any` | vérifier qu’au moins un élément correspond |
+| `Sum`, `Average`, `Min`, `Max` | agréger |
+
+Beaucoup de requêtes LINQ utilisent l’exécution différée : elles ne parcourent réellement la source qu’au moment de l’énumération. `ToList()` matérialise immédiatement le résultat.
+
+## Choisir la collection
+
+| Besoin | Structure |
+| --- | --- |
+| taille connue et fixe | tableau `T[]` |
+| ajouts et suppressions fréquents en fin de séquence | `List<T>` |
+| recherche d’une valeur par clé unique | `Dictionary<TKey, TValue>` |
+
+## Erreurs fréquentes
+
+- dépasser le dernier index d’un tableau ;
+- confondre `Length` et `Count` ;
+- lire une clé inconnue sans `TryGetValue` ;
+- modifier une liste pendant un `foreach` ;
+- enchaîner plusieurs énumérations LINQ coûteuses sans matérialiser le résultat.
+
+Épisode précédent : [les boucles en C#](/blog/csharp-boucles-for-while-foreach). Épisode suivant : [créer des méthodes en C#](/blog/csharp-methodes-parametres-retour-surcharge).
+
