@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { ArrowRight, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Cloud, Cpu, GitBranch, Server, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { CodeBlock } from '@/components/ui/CodeBlock';
@@ -37,8 +37,8 @@ export default function HomePage() {
   const latestPosts = getLatestPosts(LATEST_POSTS_COUNT);
 
   return (
-    <div className="space-y-16 pb-16">
-      <section className="container py-16 md:py-24">
+    <div className="space-y-12 pb-16 md:space-y-16">
+      <section className="container py-14 md:py-20">
         <div className="grid items-center gap-12 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-8">
             <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm text-primary">
@@ -136,20 +136,34 @@ export default function HomePage() {
         ))}
       </section>
 
-      <section className="container py-8">
-        <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-foreground">Ce que tu trouveras sur YvaDev</h2>
-          <p className="mx-auto max-w-2xl text-secondary">
-            Des articles techniques sur la conception logicielle, les architectures distribuées, le cloud,
-            l'automatisation et l'intégration de l'IA dans des applications réelles.
-          </p>
-        </div>
+      <section className="container py-6 md:py-10">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.75fr_1.25fr] lg:gap-14">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-primary">Une lecture orientée décision</p>
+            <h2 className="text-3xl font-bold text-foreground">Comprendre le code, mais aussi le contexte qui le justifie</h2>
+            <p className="mt-4 text-secondary">
+              Un exemple n'est utile que s'il précise ses contraintes. Les guides YvaDev relient chaque implémentation
+              à son rôle dans le système et aux conséquences opérationnelles du choix.
+            </p>
+            <ul className="mt-6 space-y-3 text-sm text-secondary">
+              {[
+                'Le problème technique avant la solution.',
+                'Les compromis de maintenabilité et de performance.',
+                'Les points de contrôle nécessaires en production.',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        <div className="mx-auto max-w-4xl">
-          <CodeBlock
-            language="csharp"
-            title="Production-oriented .NET"
-            code={`public sealed class OrderProjectionWorker : BackgroundService
+          <div className="min-w-0">
+            <CodeBlock
+              language="csharp"
+              title="Production-oriented .NET"
+              code={`public sealed class OrderProjectionWorker : BackgroundService
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -160,7 +174,8 @@ export default function HomePage() {
         }
     }
 }`}
-          />
+            />
+          </div>
         </div>
       </section>
 
