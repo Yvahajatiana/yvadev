@@ -53,7 +53,7 @@ export function TableOfContents({ items, className }: TableOfContentsProps) {
 
   return (
     <div className={cn('space-y-2', className)}>
-      <h4 className="font-semibold text-sm text-foreground mb-4">On this page</h4>
+      <h4 className="font-semibold text-sm text-foreground mb-4">Dans cet article</h4>
       <nav>
         <ul className="space-y-2">
           {items.map((item) => (

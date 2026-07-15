@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
 
   if (!post) {
     return {
-      title: 'Post Not Found',
+      title: 'Article introuvable',
     };
   }
 
@@ -152,7 +152,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                   </div>
 
                   <div className="mb-8 flex items-center gap-2">
-                    <span className="mr-2 text-sm text-secondary">Partager:</span>
+                    <span className="mr-2 text-sm text-secondary">Partager :</span>
                     <Button variant="outline" size="sm" asChild>
                       <a href={shareLinks.twitter} target="_blank" rel="noopener noreferrer">
                         <Twitter className="mr-2 h-4 w-4" />
@@ -179,7 +179,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
 
                 <footer className="mt-12 border-t border-border pt-8">
                   <div className="mb-6 flex flex-wrap gap-2">
-                    <span className="text-sm font-medium text-foreground">Tags:</span>
+                    <span className="text-sm font-medium text-foreground">Mots-clés :</span>
                     {post.tags.map((tag) => (
                       <Badge key={tag} variant="secondary">
                         {tag}
@@ -195,7 +195,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                       <div>
                         <h4 className="mb-1 font-semibold text-foreground">{post.author}</h4>
                         <p className="text-sm text-secondary">
-                          Articles techniques sur le software engineering, le .NET, le cloud et l'intelligence artificielle appliquee aux applications.
+                          Articles techniques sur l'ingénierie logicielle, .NET, le cloud et l'intelligence artificielle appliquée aux applications.
                         </p>
                       </div>
                     </div>
@@ -205,7 +205,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                     <div className="text-center">
                       <h3 className="mb-2 text-xl font-bold text-foreground">Recevoir les prochaines publications YvaDev</h3>
                       <p className="mb-4 text-secondary">
-                        Analyses techniques, architectures concretes et retours d experience envoyes directement par email.
+                        Analyses techniques, architectures concrètes et retours d'expérience envoyés directement par e-mail.
                       </p>
                       <div className="flex justify-center">
                         <NewsletterForm />
@@ -250,7 +250,7 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
           <section className="bg-muted/50 py-16">
             <div className="container">
               <div className="mx-auto max-w-5xl">
-                <h2 className="mb-8 text-2xl font-bold text-foreground">Articles lies</h2>
+                <h2 className="mb-8 text-2xl font-bold text-foreground">Articles liés</h2>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                   {relatedPosts.map((relatedPost) => (
                     <div key={relatedPost.slug} className="h-full">
@@ -266,4 +266,3 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
     </>
   );
 }
-

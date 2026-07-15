@@ -14,7 +14,7 @@ export function NewsletterForm() {
     
     if (!email) {
       setStatus('error');
-      setMessage('Please enter your email address.');
+      setMessage('Saisissez votre adresse e-mail.');
       return;
     }
 
@@ -31,15 +31,15 @@ export function NewsletterForm() {
 
       if (response.ok) {
         setStatus('success');
-        setMessage('Thank you for subscribing! Check your email to confirm.');
+        setMessage('Merci pour votre inscription ! Consultez votre boîte mail pour la confirmer.');
         setEmail('');
       } else {
         setStatus('error');
-        setMessage('Something went wrong. Please try again.');
+        setMessage('Une erreur est survenue. Réessayez dans quelques instants.');
       }
     } catch (error) {
       setStatus('error');
-      setMessage('Something went wrong. Please try again.');
+      setMessage('Une erreur est survenue. Réessayez dans quelques instants.');
     }
   };
 
@@ -48,7 +48,7 @@ export function NewsletterForm() {
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
         <Input
           type="email"
-          placeholder="Enter your email"
+          placeholder="Votre adresse e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={status === 'loading'}
@@ -59,7 +59,7 @@ export function NewsletterForm() {
           disabled={status === 'loading'}
           className="sm:w-auto"
         >
-          {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+          {status === 'loading' ? 'Inscription...' : "S'inscrire"}
         </Button>
       </form>
       

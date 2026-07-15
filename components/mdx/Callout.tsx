@@ -26,13 +26,13 @@ export function Callout({
       icon: AlertTriangle,
       classes: 'border-yellow-200 bg-yellow-50 text-yellow-800',
       iconClasses: 'text-yellow-500',
-      defaultTitle: 'Warning',
+      defaultTitle: 'Attention',
     },
     tip: {
       icon: Lightbulb,
       classes: 'border-green-200 bg-green-50 text-green-800',
       iconClasses: 'text-green-500',
-      defaultTitle: 'Tip',
+      defaultTitle: 'Conseil',
     },
     danger: {
       icon: XCircle,

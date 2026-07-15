@@ -30,7 +30,7 @@ export function CopyButton({ text, className }: CopyButtonProps) {
       className={className}
     >
       <LinkIcon className="h-4 w-4 mr-2" />
-      {copied ? 'Copied!' : 'Copy'}
+      {copied ? 'Lien copié !' : 'Copier le lien'}
     </Button>
   );
 }
