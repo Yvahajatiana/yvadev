@@ -1,57 +1,214 @@
 ---
-title: "Guide : utiliser Entity Framework Core sans perdre le contrôle sur la persistance"
-excerpt: "Entity Framework Core accélère la productivité en .NET, mais il faut comprendre clairement ce qu il abstrait et ce qu il faut continuer à maîtriser."
+title: "Entity Framework Core : garder le contrôle des données"
+excerpt: "Utiliser Entity Framework Core sans masquer les requêtes, les transactions ni la concurrence : une méthode claire pour une persistance .NET fiable et durable."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["Entity Framework Core", ".NET", "Persistence", "Database", "Architecture"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Utilisation de Entity Framework Core pour la persistance .NET"
+coverImageAlt: "Flux de persistance entre une application .NET, Entity Framework Core et une base de données"
 featured: false
 filename: "guide-utiliser-entity-framework-core-pour-simplifier-la-gestion-de-donnees-net-et-les-bases-de-donnees-net"
 ---
 
-Entity Framework Core simplifie beaucoup de tâches de persistance en .NET:
+Entity Framework Core réduit le code nécessaire pour lire, modifier et faire évoluer une base de données. Il ne supprime pourtant ni le coût des requêtes, ni les conflits concurrents, ni les décisions de transaction.
 
-- mapping objet-relationnel
-- migrations
-- suivi des entités
-- requêtes LINQ
+Le bon usage d'un ORM consiste à profiter de ses abstractions tout en gardant visibles les opérations importantes : le SQL exécuté, le volume chargé, la durée de vie du `DbContext`, la frontière transactionnelle et la stratégie de migration.
 
-Mais cette simplification peut devenir dangereuse si elle donne l'illusion que la persistance n'a plus de coût.
+## Le DbContext porte déjà une unité de travail
 
-## Ce qu'EF Core fait très bien
+Dans une API ASP.NET Core, `AddDbContext` enregistre généralement le contexte avec une durée de vie scoped. Une requête HTTP obtient alors une instance, charge les données nécessaires, applique un cas d'usage et appelle `SaveChangesAsync`.
 
-EF Core est excellent pour:
+```csharp
+builder.Services.AddDbContext<OrdersDbContext>(options =>
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("Orders")));
+```
 
-- accélérer la mise en place d'un modèle
-- centraliser la configuration de mapping
-- faciliter les migrations
-- réduire le code boilerplate d'accès aux données
+Cette durée de vie convient lorsque la requête correspond à une unité de travail courte. Un `DbContext` n'est pas thread-safe et ne doit pas être partagé entre plusieurs traitements concurrents.
 
-Pour une grande partie des applications métier, cela apporte une vraie productivité.
+Pour un worker ou un traitement qui enchaîne de nombreux messages, crée un contexte par unité de travail avec `IDbContextFactory<TContext>`. Garder le même contexte pendant des milliers d'opérations augmente le nombre d'entités suivies et rend l'état plus difficile à comprendre.
 
-## Ce qu'il faut continuer à surveiller
+## Configurer le modèle explicitement
 
-Même avec EF Core, il faut garder la maîtrise sur:
+Les conventions d'EF Core accélèrent le démarrage, mais les contraintes importantes doivent apparaître dans la configuration du modèle : taille des colonnes, index uniques, relations, conversions et concurrence.
 
-- la forme des requêtes SQL
-- le nombre d'aller-retours base de données
-- le chargement eager, explicite ou lazy
-- la taille des projections
-- les transactions
+```csharp
+public sealed class OrderConfiguration
+    : IEntityTypeConfiguration<Order>
+{
+    public void Configure(EntityTypeBuilder<Order> builder)
+    {
+        builder.ToTable("orders");
+        builder.HasKey(order => order.Id);
 
-Une requête LINQ lisible peut produire un SQL coûteux. C'est pourquoi il faut observer ce qui se passe réellement.
+        builder.Property(order => order.Number)
+            .HasMaxLength(32)
+            .IsRequired();
 
-## Le bon usage
+        builder.HasIndex(order => order.Number)
+            .IsUnique();
 
-EF Core est plus utile quand:
+        builder.Property(order => order.Version)
+            .IsRowVersion();
+    }
+}
+```
 
-- les aggregate roots sont clairs
-- les projections sont choisies explicitement
-- les repositories ou requêtes encapsulent l'accès utile
-- les décisions de transaction restent visibles
+La validation applicative peut retourner une erreur agréable, mais la base reste la dernière protection contre deux écritures concurrentes. Une contrainte unique est donc nécessaire même si l'application vérifie préalablement qu'un numéro n'existe pas.
+
+## Projeter les lectures au lieu de charger un graphe complet
+
+Une page de liste n'a généralement pas besoin d'entités suivies ni de toutes leurs colonnes. Projette directement le résultat attendu :
+
+```csharp
+public Task<List<OrderListItem>> GetRecentOrdersAsync(
+    Guid customerId,
+    CancellationToken cancellationToken) =>
+    _dbContext.Orders
+        .Where(order => order.CustomerId == customerId)
+        .OrderByDescending(order => order.CreatedAt)
+        .Select(order => new OrderListItem(
+            order.Id,
+            order.Number,
+            order.Status,
+            order.Total,
+            order.Items.Count))
+        .Take(50)
+        .ToListAsync(cancellationToken);
+```
+
+La projection réduit les colonnes transférées et évite de matérialiser un agrégat uniquement pour construire un DTO. Comme le résultat ne contient aucune entité, EF Core n'active pas le suivi dans cet exemple : ajouter `AsNoTracking` serait redondant.
+
+`AsNoTracking` devient utile lorsqu'une requête matérialise des entités destinées uniquement à la lecture. Ce choix n'est toutefois pas universel. Une requête suivie effectue aussi la résolution d'identité : plusieurs lignes qui référencent la même entité peuvent réutiliser la même instance. Pour un graphe contenant beaucoup de références répétées, mesure avant de supposer que le no-tracking sera toujours plus efficace.
+
+## Examiner le SQL réellement produit
+
+Une expression LINQ lisible peut générer une requête coûteuse. En développement, `ToQueryString()` permet d'inspecter sa traduction sans l'exécuter :
+
+```csharp
+var query = _dbContext.Orders
+    .TagWith("Orders.RecentForCustomer")
+    .Where(order => order.CustomerId == customerId)
+    .OrderByDescending(order => order.CreatedAt)
+    .Take(50);
+
+var sql = query.ToQueryString();
+```
+
+`TagWith` aide à retrouver la requête dans les logs ou les outils de diagnostic. L'étape suivante reste l'analyse côté base : plan d'exécution, index utilisés, cardinalité et nombre de lectures.
+
+Surveille notamment :
+
+- les N+1 provoqués par des chargements répétés ;
+- les `Include` qui récupèrent plusieurs collections ;
+- les filtres exécutés côté client après matérialisation ;
+- les colonnes volumineuses dupliquées par des jointures ;
+- les listes sans limite ni pagination ;
+- les appels multiples qui pourraient être évités.
+
+## Single query ou split query : choisir le coût acceptable
+
+Charger plusieurs collections avec des jointures peut produire une explosion cartésienne. `AsSplitQuery` demande à EF Core d'exécuter plusieurs requêtes :
+
+```csharp
+var order = await _dbContext.Orders
+    .AsSplitQuery()
+    .Include(current => current.Items)
+    .Include(current => current.Payments)
+    .SingleAsync(current => current.Id == orderId, cancellationToken);
+```
+
+La split query réduit la duplication des lignes, mais introduit plusieurs allers-retours et peut observer des états différents si les données changent entre les requêtes. Le mode single query reste celui par défaut. Choisis selon le volume, la latence réseau et le besoin de cohérence, puis mesure le SQL et les résultats.
+
+Pour un écran de lecture, une projection ciblée est souvent plus simple qu'un grand graphe chargé avec plusieurs `Include`.
+
+## Modifier un agrégat avec un contexte court
+
+Pour une écriture métier, charge l'agrégat nécessaire, invoque son comportement puis enregistre :
+
+```csharp
+public async Task HandleAsync(
+    CancelOrderCommand command,
+    CancellationToken cancellationToken)
+{
+    var order = await _dbContext.Orders
+        .SingleOrDefaultAsync(
+            current => current.Id == command.OrderId,
+            cancellationToken)
+        ?? throw new OrderNotFoundException(command.OrderId);
+
+    order.Cancel(command.Reason);
+
+    await _dbContext.SaveChangesAsync(cancellationToken);
+}
+```
+
+Le domaine décide si l'annulation est autorisée. EF Core détecte les changements et construit l'`UPDATE`. Le handler orchestre le cas d'usage sans réimplémenter les invariants dans la couche de persistance.
+
+Un repository générique qui expose `Add`, `Update`, `Delete` et `IQueryable<T>` apporte rarement une frontière plus claire que le `DbContext`. Si une abstraction est nécessaire, donne-lui un vocabulaire métier ou une intention de requête précise.
+
+## Gérer explicitement la concurrence optimiste
+
+Deux utilisateurs peuvent charger la même commande puis la modifier. Avec un token de concurrence, EF Core ajoute sa valeur d'origine à la clause `WHERE` de l'`UPDATE`. Si aucune ligne ne correspond, `SaveChangesAsync` lève `DbUpdateConcurrencyException`.
+
+```csharp
+try
+{
+    await _dbContext.SaveChangesAsync(cancellationToken);
+}
+catch (DbUpdateConcurrencyException)
+{
+    throw new OrderChangedByAnotherUserException(command.OrderId);
+}
+```
+
+L'application doit choisir une stratégie : demander à l'utilisateur de recharger, fusionner certains champs ou rejouer une opération idempotente. Réessayer automatiquement sans recharger les données peut reproduire le même conflit ou écraser une décision plus récente.
+
+## Utiliser les transactions au bon niveau
+
+Par défaut, un appel à `SaveChanges` est transactionnel lorsque le fournisseur le permet. Toutes les modifications de cet appel réussissent ou sont annulées. Pour de nombreux cas d'usage, cela suffit.
+
+Une transaction manuelle devient pertinente lorsqu'une opération atomique contient plusieurs appels à `SaveChanges` ou mélange EF Core avec des commandes sur la même connexion. Elle ne doit pas englober un appel HTTP distant ou un traitement long : cela conserve des verrous et fragilise le système.
+
+Pour publier un événement après une écriture, une table Outbox enregistrée dans la même transaction locale est généralement plus fiable qu'une transaction distribuée avec le broker.
+
+## Déployer les migrations comme du code de production
+
+Une migration générée n'est pas automatiquement sûre. Elle peut transformer un renommage en suppression de colonne, verrouiller une grande table ou nécessiter un déploiement en plusieurs étapes.
+
+Avant la production :
+
+1. inspecte le code et le SQL générés ;
+2. teste la migration sur un volume représentatif ;
+3. vérifie la compatibilité entre l'ancienne et la nouvelle version de l'application ;
+4. prépare le retour arrière ou la correction ;
+5. applique la migration avec un processus contrôlé.
+
+Microsoft recommande les scripts SQL pour les déploiements où une revue est nécessaire. Un script idempotent peut être généré ainsi :
+
+```bash
+dotnet ef migrations script --idempotent
+```
+
+Les migration bundles constituent une autre option pour la CI/CD. Évite d'accorder par défaut à chaque instance de l'application les droits de modifier le schéma au démarrage.
+
+## Checklist de persistance
+
+- Le `DbContext` vit-il uniquement pendant l'unité de travail ?
+- Les lectures projettent-elles les colonnes réellement nécessaires ?
+- Les requêtes non modifiées ont-elles besoin du tracking ?
+- Le SQL et son plan d'exécution ont-ils été observés ?
+- Les listes sont-elles bornées ou paginées ?
+- Les contraintes uniques et étrangères existent-elles dans la base ?
+- Les conflits concurrents sont-ils traduits en comportement métier ?
+- La transaction est-elle aussi courte que possible ?
+- Les migrations sont-elles relues et testées avant déploiement ?
 
 ## Conclusion
 
-Entity Framework Core simplifie la persistance, mais il ne remplace pas la compréhension de la base de données. Bien utilisé, il augmente la vitesse de livraison. Mal maîtrisé, il masque des coûts qui réapparaissent plus tard sous forme de latence et de dette.
+Entity Framework Core est une bonne abstraction lorsque ses effets restent observables. Il accélère le mapping, le suivi des changements et les migrations, mais la base de données conserve ses propres contraintes de coût et de concurrence.
 
+Projette les lectures, garde les contextes courts, observe le SQL, laisse la base garantir l'intégrité et traite les migrations comme une opération de production. Cette discipline permet de profiter d'EF Core sans transformer la persistance en boîte noire.
+
+Pour approfondir, consulte la documentation Microsoft sur les [requêtes efficaces](https://learn.microsoft.com/ef/core/performance/efficient-querying), la [concurrence optimiste](https://learn.microsoft.com/ef/core/saving/concurrency), les [transactions](https://learn.microsoft.com/ef/core/saving/transactions) et le [déploiement des migrations](https://learn.microsoft.com/ef/core/managing-schemas/migrations/applying).
