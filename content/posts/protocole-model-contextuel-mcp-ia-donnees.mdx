@@ -1,60 +1,181 @@
 ---
-title: "Model Context Protocol (MCP) : relier l'IA aux données sans bricolage"
-excerpt: "Le Model Context Protocol standardise la façon dont une application d'IA découvre des outils, des ressources et des instructions issus de systèmes externes."
+title: "MCP : connecter une IA aux données et outils métier"
+excerpt: "Comprenez l'architecture de MCP, ses outils, ressources et prompts, puis concevez un serveur sécurisé en C# sans confondre protocole et agent autonome."
 date: "2026-03-11"
 author: "Yva Hajatiana"
-tags: ["MCP", "AI Engineering", "LLM", "Architecture", "Intégration"]
+tags: ["MCP", "AI Engineering", "LLM", "Architecture", "C#"]
 coverImage: "/images/posts/csharp-ai-agents.png"
-coverImageAlt: "Intégration standardisée entre un modèle et des sources de contexte"
+coverImageAlt: "Architecture MCP reliant une application IA à des données et des outils métier"
 featured: false
 filename: "protocole-model-contextuel-mcp-ia-donnees"
 ---
 
-Un modèle de langage n'est utile dans une application que s'il peut travailler avec du contexte réel:
+Une application d'IA devient vraiment utile lorsqu'elle peut consulter une documentation interne, rechercher un ticket ou déclencher une opération métier. Sans convention commune, chaque connexion demande pourtant son propre format, son code de découverte et sa gestion des erreurs.
 
-- documents
-- bases de connaissances
-- API internes
-- outils métier
+Le Model Context Protocol (MCP) standardise cet échange. Il permet à une application IA de découvrir les capacités fournies par des serveurs, puis de lire du contexte ou d'appeler un outil avec des messages structurés. MCP ne remplace ni le modèle, ni l'agent, ni les règles métier : il définit la prise qui les relie.
 
-Le problème est que chaque intégration a longtemps été implémentée comme un cas particulier. Le Model Context Protocol (MCP) cherche à corriger cela en proposant une façon plus standard de brancher un modèle sur des sources de contexte et des outils.
+## Le problème résolu par MCP
 
-## Pourquoi MCP est intéressant
+Imaginez un assistant destiné aux développeurs. Il doit accéder à GitHub, à la documentation de l'entreprise et au suivi des incidents. Une intégration classique crée trois connecteurs propriétaires, étroitement liés au client IA choisi. Changer de client ou réutiliser le connecteur dans un autre produit implique souvent de réécrire une partie de l'ensemble.
 
-L'intérêt de MCP n'est pas uniquement fonctionnel. Il est architectural.
+Avec MCP, chaque système peut exposer ses capacités derrière une interface commune. Un client compatible sait les découvrir sans connaître à l'avance tous leurs détails. Le bénéfice principal est architectural : le fournisseur de contexte et l'application qui le consomme évoluent plus indépendamment.
 
-Il permet de mieux séparer:
+Cette standardisation ne rend pas automatiquement deux intégrations interchangeables. Les noms, les schémas et la sémantique métier restent propres à chaque serveur. Elle fournit néanmoins un cycle de connexion, une négociation de capacités et des primitives communes.
 
-- le modèle
-- les outils disponibles
-- la manière de décrire les capacités
-- l'accès au contexte
+## Comprendre l'architecture hôte, client et serveur
 
-Au lieu de coder une intégration ad hoc pour chaque application, on tend vers une interface plus uniforme.
+MCP suit une architecture client–serveur avec trois rôles :
 
-## Le vrai gain
+- **l'hôte** est l'application IA visible par l'utilisateur ;
+- **le client MCP** maintient une connexion dédiée avec un serveur ;
+- **le serveur MCP** publie du contexte ou des opérations.
 
-Le gain principal est la réduction du couplage entre:
+Un hôte connecté à trois serveurs crée donc généralement trois clients. Il réunit les capacités découvertes, décide lesquelles présenter au modèle et route les appels vers le bon serveur.
 
-- le client IA
-- les données
-- les outils
-- le runtime de l'application
+```text
+Utilisateur
+    │
+Application IA (hôte)
+    ├── Client MCP ── Serveur documentation
+    ├── Client MCP ── Serveur tickets
+    └── Client MCP ── Serveur déploiement
+```
 
-Cette standardisation est importante dès qu'on veut faire évoluer une plateforme IA sans réécrire chaque connexion.
+Le serveur ne pilote pas directement le modèle. Il décrit ce qu'il offre et répond aux requêtes. L'hôte conserve la maîtrise du contexte envoyé au modèle, de la validation utilisateur et de la boucle agentique éventuelle.
 
-## Ce que MCP ne règle pas tout seul
+Lors de l'initialisation, client et serveur annoncent leur version et leurs capacités. Le client peut ensuite lister les éléments disponibles. Cette découverte évite de coder leur catalogue en dur dans chaque application.
 
-MCP ne supprime pas:
+## Outils, ressources et prompts : trois usages différents
 
-- les sujets de sécurité
-- la gouvernance des données
-- les droits d'accès
-- la qualité du contexte fourni
-- la validation métier des actions
+Un serveur MCP peut exposer trois primitives principales. Les utiliser selon leur intention rend l'intégration plus compréhensible.
 
-Il fournit un cadre d'intégration. Il ne remplace pas les gardes applicatifs.
+| Primitive | Rôle | Exemple |
+| --- | --- | --- |
+| Ressource | fournir un contenu à lire | schéma d'une base, fichier, fiche client |
+| Outil | exécuter une opération | rechercher un ticket, créer un brouillon |
+| Prompt | proposer un modèle d'interaction | préparer une revue d'incident |
 
-## Conclusion
+Une **ressource** possède une URI et un type de contenu. Elle convient aux données que l'application choisit d'ajouter au contexte. Une documentation ou le schéma d'une base ne devrait pas devenir un outil artificiel si sa finalité est simplement d'être lu.
 
-MCP devient intéressant dès qu'on traite l'IA comme une capacité systémique et non comme une simple API de texte. Son apport principal est d'aider à structurer les intégrations et à rendre l'accès au contexte moins artisanal.
+Un **outil** est une fonction exécutable. Sa description explique quand l'utiliser et son schéma JSON définit ses arguments. Le modèle peut proposer son appel, mais l'hôte et le serveur doivent toujours valider les paramètres et les permissions.
+
+Un **prompt** est un gabarit réutilisable. Il structure une interaction connue, par exemple une analyse de ticket avec les bonnes questions. Il ne constitue pas une instruction secrète ni une frontière de sécurité.
+
+## Stdio ou Streamable HTTP ?
+
+Le transport dépend du lieu d'exécution et du nombre de consommateurs.
+
+**Stdio** relie directement deux processus par leurs entrées et sorties standard. Il convient à un serveur local lancé par l'application : accès à un projet, outil de développement ou connecteur personnel. Il évite d'ouvrir un port réseau, mais le processus hérite d'un environnement local qu'il faut limiter.
+
+**Streamable HTTP** convient à un serveur distant partagé. Les requêtes client–serveur passent par HTTP et peuvent utiliser le streaming. Ce choix exige une exposition réseau maîtrisée, HTTPS, une authentification, des limites de débit et une supervision de service.
+
+Ne choisissez pas HTTP uniquement pour « faire moderne ». Un outil utilisé par une seule application sur la même machine est souvent plus simple en stdio. À l'inverse, un service métier centralisé, maintenu par une équipe et consommé par plusieurs clients, justifie un serveur distant.
+
+## Exemple minimal de serveur MCP en C#
+
+Le SDK C# officiel fournit l'hébergement, l'injection de dépendances et les attributs nécessaires pour publier des outils. Après avoir ajouté le package `ModelContextProtocol`, un serveur local peut être configuré ainsi :
+
+```csharp
+var builder = Host.CreateApplicationBuilder(args);
+
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithTools<SupportTools>();
+
+await builder.Build().RunAsync();
+```
+
+L'outil reste un composant applicatif classique. Il reçoit un service métier plutôt qu'un accès direct et illimité aux données :
+
+```csharp
+[McpServerToolType]
+public sealed class SupportTools(ITicketReader tickets)
+{
+    [McpServerTool(Name = "support_read_ticket")]
+    [Description("Lit un ticket support autorisé à partir de son identifiant.")]
+    public Task<TicketSummary> ReadTicketAsync(
+        [Description("Identifiant public du ticket")] string ticketId,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(ticketId))
+            throw new ArgumentException("L'identifiant est obligatoire.");
+
+        return tickets.ReadAuthorizedAsync(ticketId, cancellationToken);
+    }
+}
+```
+
+Dans un projet réel, l'identité et le périmètre d'accès doivent parvenir jusqu'à `ITicketReader`. Le schéma d'entrée aide le client et le modèle ; il ne remplace pas une validation côté serveur.
+
+Pour un serveur ASP.NET Core distant, le package `ModelContextProtocol.AspNetCore` ajoute le transport HTTP. Gardez toutefois la configuration précise alignée sur la version du SDK utilisée : MCP et ses bibliothèques continuent d'évoluer.
+
+## Concevoir un bon contrat MCP
+
+Un catalogue de cinquante outils vagues rend le choix difficile pour le modèle et augmente la surface de risque. Préférez des capacités étroites, orientées métier et faciles à tester.
+
+Un bon outil possède :
+
+- un nom stable et non ambigu ;
+- une description précisant son effet et ses limites ;
+- un schéma strict avec tailles maximales et valeurs autorisées ;
+- un résultat structuré plutôt qu'un long texte libre ;
+- des erreurs distinguant refus, absence et panne temporaire ;
+- une opération idempotente lorsqu'il écrit des données.
+
+Évitez `execute_sql`, `call_api` ou `run_command`. Exposez plutôt `inventory_find_product` ou `support_create_reply_draft`. Cette granularité réduit les possibilités d'usage imprévu et permet d'appliquer une permission adaptée à chaque opération.
+
+Versionnez la sémantique avec prudence. Ajouter un champ optionnel est généralement moins risqué que modifier le sens d'un champ existant. Testez aussi le serveur avec le MCP Inspector et avec les clients réellement ciblés, car une conformité protocolaire ne garantit pas une expérience identique partout.
+
+## Sécurité : MCP n'est pas une zone de confiance
+
+Un serveur MCP donne potentiellement accès à des données ou actions sensibles. Il faut donc appliquer les mêmes contrôles qu'à une API, auxquels s'ajoutent les risques liés aux contenus manipulés par un modèle.
+
+Les règles essentielles sont les suivantes :
+
+- accorder uniquement les permissions nécessaires à chaque utilisateur ;
+- traiter les arguments et contenus externes comme non fiables ;
+- exiger une confirmation pour une action sensible ou irréversible ;
+- limiter durée, volume, fréquence et coût des appels ;
+- ne jamais écrire de jeton ou de secret dans les journaux ;
+- journaliser l'identité, l'outil, la cible et le résultat de l'opération ;
+- isoler les serveurs locaux et contrôler leurs accès au système de fichiers.
+
+Pour un serveur HTTP protégé, la spécification fournit un cadre d'autorisation fondé sur OAuth. Le serveur MCP agit comme ressource protégée et doit accepter uniquement des jetons émis pour lui. Il ne doit pas transmettre le jeton reçu à une API en aval : cette API nécessite son propre jeton et sa propre relation de confiance.
+
+Avec stdio, les identifiants viennent généralement de l'environnement local. Ne placez pas une clé dans la configuration MCP suivie par Git. Utilisez le gestionnaire de secrets du système ou de la plateforme, puis restreignez les variables transmises au processus enfant.
+
+Enfin, l'approbation humaine doit être construite par l'hôte à partir de paramètres validés. Un serveur ou une page consultée pourrait contenir une injection visant à présenter une action dangereuse comme bénigne.
+
+## Ce que MCP ne fait pas
+
+MCP est souvent confondu avec une plateforme d'agents. Pourtant, il ne décide pas :
+
+- quel modèle utiliser ;
+- quelles données envoyer dans son contexte ;
+- quand appeler un outil ;
+- combien de tours autoriser ;
+- comment évaluer la qualité de la réponse ;
+- quelles actions demandent une validation humaine.
+
+Ces responsabilités appartiennent à l'hôte et à l'application métier. Une API interne unique n'a d'ailleurs pas nécessairement besoin de MCP. Si elle possède un seul consommateur stable, un contrat HTTP ou un appel de fonction direct peut rester plus simple.
+
+MCP devient intéressant lorsqu'une capacité doit être découverte ou réutilisée par plusieurs applications IA, lorsque plusieurs serveurs indépendants alimentent un même hôte, ou lorsque l'on veut séparer clairement l'intégration métier de l'orchestration du modèle.
+
+## Checklist avant de publier un serveur
+
+- La capacité sera-t-elle réellement réutilisée par des clients MCP ?
+- Chaque primitive correspond-elle à une intention claire ?
+- Les outils sont-ils petits, typés et testables sans modèle ?
+- Les autorisations sont-elles vérifiées au moment de chaque appel ?
+- Les écritures sont-elles confirmées, idempotentes ou réversibles ?
+- Les réponses excluent-elles les secrets et données inutiles ?
+- Les limites de temps, de taille et de fréquence sont-elles définies ?
+- Les versions du protocole et du SDK sont-elles compatibles ?
+- Les traces permettent-elles d'auditer une action sans exposer son contenu sensible ?
+
+## Ressources officielles
+
+La documentation MCP explique en détail l'[architecture hôte, client et serveur](https://modelcontextprotocol.io/docs/learn/architecture) et la différence entre les primitives. La [spécification d'autorisation](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization) décrit les exigences applicables aux serveurs HTTP protégés. Pour .NET, le dépôt du [SDK C# officiel](https://github.com/modelcontextprotocol/csharp-sdk) fournit les packages, exemples et versions actuelles.
+
+MCP apporte une convention d'intégration, pas une garantie de qualité ou de sécurité. Sa valeur apparaît lorsque des contrats métier bien conçus, des permissions minimales et une application IA responsable de ses décisions l'entourent.
