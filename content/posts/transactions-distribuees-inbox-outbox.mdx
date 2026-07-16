@@ -1,58 +1,276 @@
 ---
-title: "Transactions distribuées : comprendre le pattern Inbox / Outbox"
-excerpt: "Le pattern Inbox / Outbox permet de rendre les intégrations asynchrones plus fiables sans dépendance à une transaction distribuée globale."
+title: "Inbox et Outbox en .NET : fiabiliser les messages métier"
+excerpt: "Implémenter Inbox et Outbox en .NET pour éviter les événements perdus, supporter les doublons et préserver la cohérence des traitements asynchrones métier."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["Distributed Systems", "Architecture", ".NET", "Messaging", "Reliability"]
 coverImage: "/images/posts/aspnet-core-channels-background-processing.png"
-coverImageAlt: "Fiabilisation des messages avec le pattern Inbox Outbox"
+coverImageAlt: "Publication fiable de messages entre une Outbox, un broker et une Inbox"
 featured: false
 filename: "transactions-distribuees-inbox-outbox"
 ---
 
-Dans un système distribué, une opération métier implique souvent plusieurs effets:
+Une application confirme une commande dans sa base, puis publie `OrderConfirmed` sur un broker. Si le processus tombe entre les deux opérations, la commande existe mais aucun consommateur n'est averti. Si l'événement part avant que la transaction SQL échoue, les consommateurs réagissent à un état qui n'existe pas.
 
-- écriture en base
-- publication d'un événement
-- appel d'un autre service
+C'est le problème du **dual write** : une même décision doit modifier deux systèmes qui ne partagent pas une transaction fiable. Inbox et Outbox ne créent pas une transaction distribuée. Ils transforment plutôt le problème en transactions locales, livraison au moins une fois et traitements idempotents.
 
-Le problème apparaît quand l'un réussit et l'autre échoue. La base est mise à jour, mais le message n'est jamais envoyé. Ou l'inverse.
+## Ce que garantit réellement l'Outbox
 
-Le pattern Inbox / Outbox est une réponse pragmatique à ce problème.
+L'Outbox enregistre l'état métier et le message à publier dans la même base et la même transaction locale :
 
-## L'idée de l'Outbox
+1. l'agrégat applique la décision métier ;
+2. l'application ajoute un message dans la table Outbox ;
+3. `SaveChanges` valide les deux écritures atomiquement ;
+4. un worker publie plus tard les messages non traités ;
+5. le worker marque chaque message comme publié.
 
-Au lieu d'écrire en base **puis** publier un message de manière séparée, l'application:
+Si la transaction échoue, ni l'état ni le message n'existent. Si le broker est indisponible, le message reste dans l'Outbox et sera repris.
 
-1. enregistre les données métier
-2. enregistre aussi le message à publier dans une table Outbox
-3. valide le tout dans la même transaction locale
+La table peut contenir :
 
-Ensuite, un processus distinct lit l'Outbox et publie les messages.
+```csharp
+public sealed class OutboxMessage
+{
+    public Guid Id { get; init; }
+    public DateTimeOffset OccurredAt { get; init; }
+    public required string Type { get; init; }
+    public required string Payload { get; init; }
+    public string? AggregateId { get; init; }
+    public long? Sequence { get; init; }
+    public int Attempts { get; set; }
+    public DateTimeOffset? NextAttemptAt { get; set; }
+    public DateTimeOffset? ProcessedAt { get; set; }
+    public string? LastError { get; set; }
+}
+```
 
-Le bénéfice est clair: la vérité transactionnelle est conservée dans la base applicative.
+`Id` devient aussi l'identifiant du message envoyé au broker. `Type` et `Payload` forment le contrat à publier. `AggregateId` et `Sequence` sont utiles lorsque l'ordre doit être préservé pour une même entité.
 
-## L'idée de l'Inbox
+## Écrire l'état et le message avec EF Core
 
-Du côté consommateur, l'Inbox sert à enregistrer les messages déjà traités pour éviter:
+Le cas d'usage construit un événement d'intégration à partir de la décision métier :
 
-- les doublons
-- les replays dangereux
-- les effets de bord non idempotents
+```csharp
+public async Task HandleAsync(
+    ConfirmOrderCommand command,
+    CancellationToken cancellationToken)
+{
+    var order = await _dbContext.Orders
+        .SingleOrDefaultAsync(
+            current => current.Id == command.OrderId,
+            cancellationToken)
+        ?? throw new OrderNotFoundException(command.OrderId);
 
-Chaque message reçu est marqué comme traité avec une clé unique.
+    order.Confirm();
 
-## Pourquoi ce pattern reste pertinent
+    var integrationEvent = new OrderConfirmedV1(
+        order.Id,
+        order.CustomerId,
+        order.Total.Amount,
+        order.Total.Currency);
 
-Le pattern Inbox / Outbox permet:
+    _dbContext.OutboxMessages.Add(new OutboxMessage
+    {
+        Id = Guid.NewGuid(),
+        OccurredAt = DateTimeOffset.UtcNow,
+        Type = "orders.order-confirmed.v1",
+        Payload = JsonSerializer.Serialize(integrationEvent),
+        AggregateId = order.Id.ToString(),
+        Sequence = order.Version
+    });
 
-- d'éviter une transaction distribuée globale
-- de fiabiliser les événements
-- de rendre les retries plus surs
-- d'améliorer l'idempotence
+    await _dbContext.SaveChangesAsync(cancellationToken);
+}
+```
 
-Il ne supprime pas toute la complexité, mais il la rend gérable.
+Un seul `SaveChangesAsync` est déjà transactionnel lorsque le fournisseur de base le permet. Une transaction manuelle n'est nécessaire que si le cas d'usage contient plusieurs sauvegardes qui doivent rester atomiques.
+
+L'événement d'intégration ne doit pas être une sérialisation brute de l'entité EF Core. Il constitue un contrat externe versionné. Sa structure doit rester stable même si le modèle interne ou la persistance évoluent.
+
+## Publier les messages avec un relay
+
+Un `BackgroundService`, un job planifié ou un processus séparé lit périodiquement un lot de messages prêts à être envoyés :
+
+```csharp
+public sealed class OutboxRelay(
+    IDbContextFactory<OrdersDbContext> contextFactory,
+    IMessagePublisher publisher,
+    TimeProvider timeProvider)
+{
+    public async Task PublishBatchAsync(CancellationToken cancellationToken)
+    {
+        await using var dbContext =
+            await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+
+        var messages = await dbContext.OutboxMessages
+            .Where(message => message.ProcessedAt == null)
+            .Where(message => message.NextAttemptAt == null ||
+                              message.NextAttemptAt <= now)
+            .OrderBy(message => message.OccurredAt)
+            .Take(100)
+            .ToListAsync(cancellationToken);
+
+        foreach (var message in messages)
+        {
+            await publisher.PublishAsync(
+                message.Id,
+                message.Type,
+                message.Payload,
+                cancellationToken);
+
+            message.ProcessedAt = timeProvider.GetUtcNow();
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+}
+```
+
+Cet extrait montre le flux, pas toute la coordination nécessaire en production. Avec plusieurs workers, une simple lecture peut sélectionner les mêmes lignes sur deux instances. Il faut réclamer atomiquement un lot avec un verrou adapté au fournisseur, une colonne de lease avec expiration, ou un mécanisme de file intégré à la base.
+
+Ne conserve pas une transaction SQL ouverte pendant un appel réseau au broker uniquement pour verrouiller les lignes. Une publication lente prolongerait les verrous et réduirait le débit.
+
+## Pourquoi les doublons restent possibles
+
+Considère cette séquence :
+
+1. le relay publie le message ;
+2. le broker l'accepte ;
+3. le processus tombe avant de remplir `ProcessedAt` ;
+4. au redémarrage, le même message est publié à nouveau.
+
+L'Outbox garantit que le message ne sera pas oublié, pas qu'il sera publié une seule fois. Les brokers eux-mêmes utilisent souvent une livraison **at least once**. Une déduplication proposée par le broker peut réduire les doublons, mais elle ne dispense pas le consommateur de protéger ses effets métier.
+
+Le bon objectif est un effet observable idempotent : traiter deux fois le même identifiant doit produire le même état que le traiter une fois.
+
+## L'Inbox protège le consommateur
+
+Le consommateur conserve l'identifiant de chaque message traité dans une table avec une contrainte unique :
+
+```csharp
+public sealed class InboxMessage
+{
+    public required Guid MessageId { get; init; }
+    public DateTimeOffset ProcessedAt { get; init; }
+}
+```
+
+Le traitement métier et l'enregistrement dans l'Inbox doivent appartenir à la même transaction locale :
+
+```csharp
+public async Task HandleAsync(
+    MessageEnvelope<OrderConfirmedV1> envelope,
+    CancellationToken cancellationToken)
+{
+    await using var transaction = await _dbContext.Database
+        .BeginTransactionAsync(cancellationToken);
+
+    var alreadyProcessed = await _dbContext.InboxMessages
+        .AnyAsync(
+            message => message.MessageId == envelope.MessageId,
+            cancellationToken);
+
+    if (alreadyProcessed)
+    {
+        await transaction.CommitAsync(cancellationToken);
+        return;
+    }
+
+    var invoice = Invoice.CreateForOrder(
+        envelope.Payload.OrderId);
+
+    _dbContext.Invoices.Add(invoice);
+
+    _dbContext.InboxMessages.Add(new InboxMessage
+    {
+        MessageId = envelope.MessageId,
+        ProcessedAt = DateTimeOffset.UtcNow
+    });
+
+    await _dbContext.SaveChangesAsync(cancellationToken);
+    await transaction.CommitAsync(cancellationToken);
+}
+```
+
+La vérification préalable améliore le chemin courant, mais deux consommateurs concurrents peuvent encore la passer simultanément. La contrainte unique sur `MessageId` tranche la course : l'une des transactions échoue et doit être reconnue comme un doublon. Comme les changements métier appartiennent à la même transaction, ils sont annulés avec l'insertion Inbox refusée.
+
+Tout effet qui sort de cette transaction — e-mail, appel HTTP ou second broker — demande sa propre stratégie. Il peut lui-même être placé dans une Outbox ou rendu idempotent avec une clé stable.
+
+## Préserver l'ordre seulement là où il compte
+
+Un ordre global réduit fortement le parallélisme et reste rarement nécessaire. Le besoin réel concerne souvent un agrégat : `OrderCreated` doit précéder `OrderConfirmed` pour une commande donnée.
+
+Pour préserver cet ordre :
+
+- attribue une séquence croissante par agrégat ;
+- publie les événements d'un même agrégat dans la même partition ou session ;
+- refuse, diffère ou réconcilie un événement reçu hors séquence ;
+- garde les handlers capables de recevoir des doublons.
+
+Ne suppose pas que l'ordre d'insertion dans une table garantit à lui seul l'ordre de traitement sur plusieurs workers et plusieurs partitions du broker.
+
+## Gérer les erreurs persistantes
+
+Un retry immédiat et infini transforme un message invalide en boucle coûteuse. Le relay et les consommateurs ont besoin de :
+
+- backoff avec une limite de tentatives ;
+- date de prochaine tentative ;
+- dernière erreur exploitable ;
+- file ou état de quarantaine pour les messages poison ;
+- procédure de correction et de rejeu ;
+- alerte lorsque l'âge du plus ancien message augmente.
+
+Un message ne doit être marqué comme traité qu'après confirmation du broker. À l'inverse, une erreur de désérialisation permanente ne doit pas bloquer éternellement tous les messages suivants d'une partition.
+
+## Observer et nettoyer le système
+
+Les métriques utiles sont :
+
+- nombre de messages Outbox en attente ;
+- âge du plus ancien message ;
+- délai entre création et publication ;
+- taux de publication et d'échec ;
+- nombre moyen de tentatives ;
+- doublons détectés par l'Inbox ;
+- messages placés en quarantaine.
+
+Les lignes traitées ne doivent pas rester indéfiniment dans les tables opérationnelles. Définis une rétention compatible avec les besoins d'audit et de rejeu, puis archive ou supprime par petits lots pour éviter de créer de longues transactions de maintenance.
+
+## Outbox, CDC ou bibliothèque existante ?
+
+Le polling d'une table Outbox est simple et portable. Le Change Data Capture ou le change feed d'une base peut réduire le polling et préserver un journal de modifications, mais ajoute une dépendance à la plateforme et ses propres checkpoints.
+
+Des bibliothèques et bus .NET proposent déjà Inbox et Outbox. Les utiliser peut éviter des erreurs de concurrence, de retry et de sérialisation. Il faut néanmoins comprendre leurs garanties, leur stockage et leur comportement en cas de crash avant de leur confier la cohérence du système.
+
+## Quand ne pas introduire ce pattern
+
+Inbox/Outbox ajoute des tables, un relay, du nettoyage et de l'observabilité. Il n'est pas nécessaire lorsque :
+
+- aucun message ne dépend d'une écriture locale ;
+- la perte occasionnelle de la notification est explicitement acceptable ;
+- le traitement peut être reconstruit depuis une source fiable ;
+- un mécanisme transactionnel natif de la plateforme couvre déjà le besoin.
+
+Le pattern ne remplace pas non plus une saga lorsque plusieurs services doivent coordonner une longue transaction métier avec des compensations.
+
+## Checklist de production
+
+- L'état métier et l'Outbox sont-ils enregistrés dans la même transaction ?
+- L'identifiant publié est-il stable lors des retries ?
+- Les consommateurs protègent-ils leurs effets avec une Inbox ou une clé idempotente ?
+- Plusieurs workers peuvent-ils réclamer des messages sans collision ?
+- L'ordre est-il défini par agrégat plutôt que globalement ?
+- Les messages poison quittent-ils le flux normal après une limite ?
+- L'âge de l'Outbox et les doublons sont-ils mesurés ?
+- Une politique de rétention et de rejeu existe-t-elle ?
 
 ## Conclusion
 
-Inbox / Outbox n'est pas un pattern « avancé » réservé aux architectures exotiques. C'est un mécanisme de fiabilité très utile dès qu'une application doit synchroniser état métier et messaging sans perdre en cohérence.
+L'Outbox résout le dual write en enregistrant la décision métier et le message dans une transaction locale. L'Inbox protège le consommateur lorsque ce message est livré plusieurs fois.
+
+La fiabilité vient de leur combinaison avec des identifiants stables, des contraintes uniques, des handlers idempotents, une coordination correcte des workers et une observabilité opérationnelle. Le résultat n'est pas une livraison magique « exactement une fois », mais un système capable de reprendre après une panne sans perdre l'intention métier ni répéter ses effets.
+
+Pour approfondir, consulte les descriptions du pattern Transactional Outbox chez [Microsoft](https://learn.microsoft.com/azure/architecture/databases/guide/transactional-out-box-cosmos) et [AWS](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html), ainsi que les recommandations Azure sur les [traitements idempotents](https://learn.microsoft.com/azure/architecture/best-practices/api-implementation).
