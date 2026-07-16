@@ -1,105 +1,177 @@
 ---
-title: "Créer un agent IA en 8 étapes utiles"
-excerpt: "Construire un agent IA ne consiste pas à brancher un modèle à quelques outils. Il faut cadrer le problème, limiter l'autonomie et concevoir un workflow observable."
+title: "Agent IA en production : architecture et garde-fous"
+excerpt: "Concevez un agent IA fiable en C# avec des outils bornés, des permissions explicites, des budgets, une validation humaine et des évaluations reproductibles."
 date: "2026-03-11"
 author: "Yva Hajatiana"
-tags: ["AI Agents", "AI Engineering", "LLM", "Architecture", "Automation"]
+tags: ["AI Agents", "AI Engineering", "LLM", "Architecture", "C#"]
 coverImage: "/images/posts/csharp-ai-agents.png"
-coverImageAlt: "Conception d'un agent IA avec outils et workflow contrôle"
+coverImageAlt: "Architecture bornée d'un agent IA avec outils, contrôles et validation humaine"
 featured: false
 filename: "creer-agent-ia-etapes"
 ---
 
-Le terme "agent IA" est souvent utilisé pour décrire n'importe quelle application qui combine un LLM avec des appels de fonctions. Cette définition est trop large. Un agent utile est un composant logiciel capable de raisonner dans un cadre borné, d'utiliser des outils et de produire un résultat exploitable sans sortir de son périmètre.
+Un agent IA n'est pas un chatbot auquel on a ajouté quelques fonctions. C'est un système dans lequel un modèle choisit une action, observe son résultat puis décide de la suite jusqu'à atteindre un objectif ou une condition d'arrêt.
 
-Le point critique n'est pas l'autonomie. C'est le contrôle.
+Cette capacité est utile quand le chemin ne peut pas être entièrement prévu. Elle introduit aussi une nouvelle catégorie de risques : appels inutiles, boucle coûteuse, mauvaise interprétation d'une donnée externe ou action irréversible. L'enjeu n'est donc pas de rendre l'agent aussi autonome que possible, mais de lui accorder l'autonomie minimale nécessaire.
 
-## 1. Définir une tâche précise
+## Workflow déterministe ou agent IA ?
 
-Un agent n'est pas fait pour "tout faire". Il doit traiter une responsabilité délimitée:
+Commencez par vérifier qu'un agent est réellement nécessaire. Un workflow classique reste préférable lorsque les étapes, les règles et les exceptions sont connues. Il est plus simple à tester, moins coûteux et plus prévisible.
 
-- rechercher une information
-- préparer un brouillon
-- classer une demande
-- exécuter un workflow d'assistance
+Un agent devient pertinent lorsque la tâche combine plusieurs caractéristiques :
 
-Plus le problème est flou, plus l'agent devient instable.
+- le parcours dépend d'informations découvertes pendant l'exécution ;
+- les entrées sont principalement des textes ou des documents non structurés ;
+- les règles déterministes deviennent trop nombreuses à maintenir ;
+- plusieurs outils sont disponibles et leur ordre dépend du contexte.
 
-## 2. Identifier les outils nécessaires
+Par exemple, produire chaque matin le même rapport depuis trois API relève d'un workflow. Rechercher les causes probables d'un incident, choisir les bonnes sources puis préparer un diagnostic argumenté peut justifier un agent.
 
-Un agent ne devrait disposer que des outils indispensables:
+La distinction est importante : le modèle doit décider uniquement là où cette flexibilité crée de la valeur. Les contrôles métier, les permissions et les écritures en base restent du code applicatif déterministe.
 
-- recherche documentaire
-- lecture d'un statut
-- création d'un brouillon
-- appel d'une API interne
+## Définir le contrat avant le prompt
 
-Trop d'outils augmentent la surface d'erreur et la complexité de validation.
+Une consigne comme « aide les équipes support » est impossible à évaluer. Le contrat fonctionnel doit préciser l'entrée, le résultat attendu et les limites.
 
-## 3. Encadrer les permissions
+Pour un agent chargé de préparer une réponse à un ticket, le contrat pourrait être :
 
-Chaque outil doit avoir:
+- lire le ticket et la documentation approuvée ;
+- rechercher au maximum cinq articles pertinents ;
+- produire un brouillon avec les sources utilisées ;
+- ne jamais envoyer la réponse ;
+- transférer le dossier si les informations sont insuffisantes.
 
-- un schéma d'entrée clair
-- des gardes métier
-- des limites d'usage
-- une journalisation
+Ajoutez des critères observables : le brouillon doit répondre à la question, ne pas inventer de procédure et citer une source valide. Ces critères serviront ensuite aux tests et aux tableaux de bord.
 
-Le modèle propose une action. L'application vérifie avant d'exécuter.
+## Concevoir des outils petits et explicites
 
-## 4. Structurer le contexte
+Le modèle ne devrait jamais recevoir un accès générique à une base de données, un terminal ou une API interne. Exposez des opérations étroites, nommées selon l'intention métier : `RechercherDocumentation`, `LireTicket` ou `CreerBrouillon`.
 
-Un agent efficace travaille avec un contexte cible:
+Chaque outil possède :
 
-- données pertinentes
-- historique utile
-- instructions stables
-- contraintes métier
+- un schéma d'entrée strict avec les champs obligatoires ;
+- une validation indépendante du modèle ;
+- une identité utilisateur et des droits vérifiés côté serveur ;
+- un délai d'expiration et une taille de réponse maximale ;
+- un résultat structuré distinguant succès, refus et erreur temporaire.
 
-Un contexte trop large dégrade souvent la qualité et augmente le coût.
+Commencez avec des outils en lecture seule. Pour les écritures, utilisez une clé d'idempotence afin qu'une relance ne crée pas deux commandes ou deux messages. Un outil ne doit pas gagner des privilèges simplement parce que le modèle le demande.
 
-## 5. Prévoir un nombre limite de tours
+Les descriptions d'outils font partie du produit. « Cherche quelque chose » est ambigu. « Recherche jusqu'à cinq articles publiés dans la base support à partir d'une requête de 200 caractères maximum » donne au modèle un cadre exploitable.
 
-Un agent ne doit pas tourner indéfiniment. Il faut limiter:
+## Séparer décision et autorisation
 
-- le nombre d'appels outils
-- la profondeur de raisonnement
-- la durée maximale d'exécution
+Le modèle propose une action ; l'application décide si elle peut être exécutée. Cette séparation empêche une sortie plausible, mais incorrecte, de devenir automatiquement une opération réelle.
 
-Ces garde-fous sont indispensables en production.
+Une politique peut classer les outils en trois catégories :
 
-## 6. Prévoir les cas de fallback
+| Niveau | Exemple | Contrôle |
+| --- | --- | --- |
+| Faible | lire une fiche publique | exécution automatique |
+| Moyen | créer un brouillon privé | règles métier et journalisation |
+| Élevé | envoyer, supprimer ou payer | confirmation humaine explicite |
 
-Un agent utile doit pouvoir dire:
+La confirmation doit afficher l'opération réelle, sa cible et ses paramètres issus du code. Ne demandez pas au modèle de rédiger lui-même le message d'approbation : une donnée malveillante présente dans une page ou un e-mail pourrait le rendre trompeur.
 
-- je ne sais pas
-- j'ai besoin d'un humain
-- le contexte est insuffisant
-- l'outil n'est pas disponible
+Traitez d'ailleurs toutes les données externes comme non fiables. Une instruction trouvée dans un document est du contenu, pas une nouvelle règle pour l'agent. Les instructions stables, les données et les retours d'outils doivent rester séparés.
 
-L'échec propre vaut mieux qu'une autonomie mal contrôlée.
+## Borner la boucle d'exécution
 
-## 7. Mesurer ce qui se passe
+Un agent de production possède plusieurs conditions d'arrêt, pas seulement « tâche terminée ». Fixez au minimum :
 
-Sans mesure, impossible d'améliorer un agent. Il faut suivre:
+- un nombre maximal d'étapes et d'appels d'outils ;
+- une durée totale et un délai par outil ;
+- un budget de tokens ou de coût ;
+- un nombre maximal de nouvelles tentatives ;
+- un mécanisme d'annulation demandé par l'utilisateur.
 
-- taux de succès
-- latence
-- nombre d'appels outils
-- taux de fallback
-- erreurs fonctionnelles
+Voici une boucle C# volontairement indépendante d'un fournisseur de modèles :
 
-## 8. Évaluer sur des cas réels
+```csharp
+public async Task<AgentResult> RunAsync(
+    AgentRequest request,
+    CancellationToken cancellationToken)
+{
+    var state = AgentState.Start(request, maxToolCalls: 6);
 
-Un agent doit être testé sur des scénarios proches de la production:
+    for (var step = 0; step < 10; step++)
+    {
+        var decision = await model.DecideAsync(state, cancellationToken);
 
-- demandes simples
-- demandes ambiguës
-- erreurs d'outils
-- contexte incomplet
+        if (decision is FinalAnswer answer)
+            return AgentResult.Completed(answer.Content, state.TraceId);
 
-La qualité d'un agent se juge dans les cas limites, pas uniquement dans les démos.
+        if (decision is not ToolCall call)
+            return AgentResult.Escalated("Décision non exploitable", state.TraceId);
 
-## Conclusion
+        var authorization = policy.Authorize(request.User, call, state);
+        if (!authorization.IsAllowed)
+            return AgentResult.Escalated(authorization.Reason, state.TraceId);
 
-Créer un agent IA utile revient à construire un workflow applicatif contraint, observable et défendable. La sophistication du modèle compte. Mais la robustesse du cadre compte encore plus.
+        var observation = await tools.ExecuteAsync(call, cancellationToken);
+        state = state.Add(call, observation);
+    }
+
+    return AgentResult.Escalated("Limite d'étapes atteinte", state.TraceId);
+}
+```
+
+Cette boucle rend les responsabilités visibles. Le modèle décide, la politique autorise, le registre exécute et l'état conserve uniquement les observations nécessaires. Une erreur d'outil n'est pas masquée dans une longue conversation : elle devient un résultat typé que l'agent peut traiter ou transmettre à un humain.
+
+## Garder un état utile, pas tout l'historique
+
+Réinjecter toute la conversation à chaque tour augmente le coût et finit par noyer les informations importantes. L'état devrait contenir l'objectif, les contraintes, les faits confirmés, les actions déjà exécutées et les erreurs utiles à la prochaine décision.
+
+Une mémoire persistante demande encore plus de prudence. N'enregistrez pas automatiquement chaque message. Définissez ce qui mérite d'être mémorisé, combien de temps et pour quel utilisateur. Une information mémorisée doit pouvoir être corrigée ou supprimée.
+
+Pour une exécution longue, créez des points de reprise applicatifs. Stockez l'étape atteinte et les identifiants des opérations réussies. Après une panne, le système reprend depuis un état connu au lieu de rejouer aveuglément toute la séquence.
+
+## Observer sans exposer de données sensibles
+
+Un journal technique utile relie chaque exécution à un identifiant et enregistre :
+
+- la version du modèle, des instructions et des outils ;
+- les outils appelés, leur durée et leur statut ;
+- le nombre d'étapes, les tokens et le coût estimé ;
+- la condition d'arrêt et la décision d'escalade ;
+- le résultat métier évalué après l'exécution.
+
+Évitez de journaliser les prompts bruts par défaut. Ils peuvent contenir des données personnelles, des secrets ou des documents clients. Préférez des métadonnées, des extraits expurgés et une politique de rétention courte.
+
+L'observabilité sert à répondre à une question concrète : pourquoi cet agent a-t-il échoué ? Elle ne nécessite pas d'afficher le raisonnement interne du modèle. Les décisions, appels d'outils et observations structurées suffisent généralement à reconstruire le parcours.
+
+## Construire une évaluation reproductible
+
+Une démonstration réussie ne valide pas un agent. Constituez un jeu de cas proches de la production avec, pour chacun, un objectif et des critères vérifiables :
+
+- demandes nominales avec résultat attendu ;
+- demandes ambiguës qui doivent provoquer une clarification ;
+- informations manquantes qui doivent mener à une escalade ;
+- erreur ou lenteur d'un outil ;
+- contenu contenant une tentative d'instruction ;
+- demande d'action hors périmètre ou sans permission.
+
+Mesurez le taux de réussite par tâche, les refus corrects, les actions interdites, le coût et la latence. Exécutez ce jeu après chaque changement de modèle, de prompt ou d'outil. Une moyenne globale ne suffit pas : une amélioration sur les cas simples ne doit pas masquer une régression sur une action sensible.
+
+En production, échantillonnez des traces, recueillez les corrections humaines et transformez les échecs réels en nouveaux cas de test. C'est ce cycle, plus que l'ajout d'autonomie, qui améliore durablement le système.
+
+## Checklist avant la mise en production
+
+Avant d'ouvrir l'agent à des utilisateurs, vérifiez que :
+
+- son objectif et ses critères de succès sont mesurables ;
+- un workflow déterministe ne suffirait pas ;
+- chaque outil applique ses propres validations et permissions ;
+- les actions sensibles demandent une approbation fiable ;
+- la boucle possède des limites de temps, de coût et d'étapes ;
+- les écritures sont idempotentes ou réversibles ;
+- les données externes sont considérées comme non fiables ;
+- les traces sont exploitables sans conserver de secrets ;
+- les scénarios d'échec et d'attaque font partie des évaluations ;
+- l'agent sait s'arrêter et transmettre le contrôle.
+
+## Aller plus loin
+
+Le guide d'OpenAI sur la [conception d'agents](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/) détaille le choix des cas d'usage, les outils, l'orchestration et les garde-fous. Anthropic propose une méthode complémentaire pour [évaluer les agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents). Pour la sécurité, la fiche OWASP sur l'[autonomie excessive](https://owasp.org/www-project-top-10-for-large-language-model-applications/2_0_vulns/LLM06_ExcessiveAgency.html) explique pourquoi les permissions minimales et la validation humaine doivent être imposées par l'application.
+
+Un agent fiable n'est pas celui qui peut tout faire. C'est celui dont le périmètre, les outils, les coûts et les échecs sont compris avant qu'il agisse pour un utilisateur.
