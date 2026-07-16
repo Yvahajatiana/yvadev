@@ -50,7 +50,8 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
     };
   }
 
-  const ogImage = post.coverImage.startsWith('http') ? post.coverImage : `${siteConfig.url}${post.coverImage}`;
+  const socialImagePath = post.socialImage || post.coverImage;
+  const socialImage = socialImagePath.startsWith('http') ? socialImagePath : `${siteConfig.url}${socialImagePath}`;
   const postUrl = `${siteConfig.url}/blog/${post.slug}`;
 
   return {
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       tags: post.tags,
       images: [
         {
-          url: ogImage,
+          url: socialImage,
           width: 1200,
           height: 630,
           alt: post.coverImageAlt,
@@ -83,7 +84,7 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
       card: 'summary_large_image',
       title: post.title,
       description: post.excerpt,
-      images: [ogImage],
+      images: [socialImage],
     },
   };
 }
