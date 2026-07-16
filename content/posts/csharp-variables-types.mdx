@@ -2,6 +2,7 @@
 title: "Variables et types en C# : bien commencer"
 excerpt: "Apprenez à déclarer des variables C#, choisir entre int, decimal, double, string et bool, utiliser var, const et l’interpolation de chaînes."
 date: "2017-10-15"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["C#", ".NET", "Débutant", "Variables", "Tutoriel"]
 coverImage: "/images/posts/default-dotnet.png"
@@ -13,6 +14,29 @@ filename: "csharp-variables-types"
 Une variable est une zone de mémoire à laquelle on donne un nom et un type. Ce type indique au compilateur ce que la variable peut contenir et quelles opérations sont autorisées. Bien choisir ses types évite des erreurs de calcul et rend l’intention du code plus claire.
 
 Ce premier épisode reprend le projet historique **Episode 0**, publié en 2017, avec une syntaxe actualisée pour .NET 8.
+
+## C#, .NET et le SDK : trois rôles différents
+
+Avant d'écrire le premier programme, il est utile de distinguer les éléments installés :
+
+- **C#** est le langage utilisé pour exprimer le programme ;
+- **.NET** fournit le runtime, les bibliothèques de base et l'écosystème d'exécution ;
+- **le SDK .NET** contient le compilateur et les outils nécessaires pour créer, construire, tester et publier une application.
+
+La commande `dotnet --info` affiche les SDK et runtimes présents sur la machine. Une application peut cibler une version précise de .NET, tandis que plusieurs SDK coexistent sur un poste de développement.
+
+## Choisir un premier type de projet
+
+Le SDK propose des templates adaptés à plusieurs usages :
+
+| Template | Commande | Usage |
+| --- | --- | --- |
+| application console | `dotnet new console` | apprendre le langage ou construire un outil en ligne de commande |
+| API web | `dotnet new webapi` | exposer des endpoints HTTP avec ASP.NET Core |
+| traitement en arrière-plan | `dotnet new worker` | exécuter un processus long ou consommer une file de messages |
+| bibliothèque | `dotnet new classlib` | partager du code entre plusieurs applications |
+
+Cette série commence avec une application console. Elle permet de travailler la syntaxe et le comportement du langage sans introduire immédiatement HTTP, la persistance ou l'injection de dépendances.
 
 ## Créer le projet
 
