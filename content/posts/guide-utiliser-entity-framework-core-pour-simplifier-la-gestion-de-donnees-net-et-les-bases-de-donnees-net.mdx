@@ -66,7 +66,6 @@ public Task<List<OrderListItem>> GetRecentOrdersAsync(
     Guid customerId,
     CancellationToken cancellationToken) =>
     _dbContext.Orders
-        .AsNoTracking()
         .Where(order => order.CustomerId == customerId)
         .OrderByDescending(order => order.CreatedAt)
         .Select(order => new OrderListItem(
@@ -79,9 +78,9 @@ public Task<List<OrderListItem>> GetRecentOrdersAsync(
         .ToListAsync(cancellationToken);
 ```
 
-La projection réduit les colonnes transférées et évite de matérialiser un agrégat uniquement pour construire un DTO. `AsNoTracking` supprime le coût du suivi lorsqu'aucune modification ne sera enregistrée.
+La projection réduit les colonnes transférées et évite de matérialiser un agrégat uniquement pour construire un DTO. Comme le résultat ne contient aucune entité, EF Core n'active pas le suivi dans cet exemple : ajouter `AsNoTracking` serait redondant.
 
-Ce choix n'est pas universel. Une requête suivie effectue aussi la résolution d'identité : plusieurs lignes qui référencent la même entité peuvent réutiliser la même instance. Pour un graphe contenant beaucoup de références répétées, mesure avant de supposer que le no-tracking sera toujours plus efficace.
+`AsNoTracking` devient utile lorsqu'une requête matérialise des entités destinées uniquement à la lecture. Ce choix n'est toutefois pas universel. Une requête suivie effectue aussi la résolution d'identité : plusieurs lignes qui référencent la même entité peuvent réutiliser la même instance. Pour un graphe contenant beaucoup de références répétées, mesure avant de supposer que le no-tracking sera toujours plus efficace.
 
 ## Examiner le SQL réellement produit
 
