@@ -79,7 +79,7 @@ export function ArticleStructuredData({ post, url }: ArticleStructuredDataProps)
     description: post.excerpt,
     image: {
       '@type': 'ImageObject',
-      url: `${siteConfig.url}${post.coverImage}`,
+      url: `${siteConfig.url}${post.socialImage || post.coverImage}`,
       alt: post.coverImageAlt,
     },
     author: {

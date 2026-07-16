@@ -36,6 +36,7 @@ export function getPostBySlug(slug: string): Post | null {
       author: data.author || 'Yva Hajatiana',
       tags: data.tags || [],
       coverImage: data.coverImage || '/images/default-cover.jpg',
+      socialImage: data.socialImage,
       coverImageAlt: data.coverImageAlt || data.title || '',
       featured: data.featured || false,
       content,
