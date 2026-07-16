@@ -2,6 +2,7 @@
 title: "MCP : connecter une IA aux données et outils métier"
 excerpt: "Comprenez l'architecture de MCP, ses outils, ressources et prompts, puis concevez un serveur sécurisé en C# sans confondre protocole et agent autonome."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["MCP", "AI Engineering", "LLM", "Architecture", "C#"]
 coverImage: "/images/posts/csharp-ai-agents.png"
@@ -55,7 +56,7 @@ Un serveur MCP peut exposer trois primitives principales. Les utiliser selon leu
 | Outil | exécuter une opération | rechercher un ticket, créer un brouillon |
 | Prompt | proposer un modèle d'interaction | préparer une revue d'incident |
 
-Une **ressource** possède une URI et un type de contenu. Elle convient aux données que l'application choisit d'ajouter au contexte. Une documentation ou le schéma d'une base ne devrait pas devenir un outil artificiel si sa finalité est simplement d'être lu.
+Une **ressource** possède une URI et peut indiquer un type de contenu. Elle convient aux données que l'application choisit d'ajouter au contexte. Une documentation ou le schéma d'une base ne devrait pas devenir un outil artificiel si sa finalité est simplement d'être lu.
 
 Un **outil** est une fonction exécutable. Sa description explique quand l'utiliser et son schéma JSON définit ses arguments. Le modèle peut proposer son appel, mais l'hôte et le serveur doivent toujours valider les paramètres et les permissions.
 
