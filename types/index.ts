@@ -7,6 +7,7 @@ export interface Post {
   author: string;
   tags: string[];
   coverImage: string;
+  socialImage?: string;
   coverImageAlt: string;
   featured: boolean;
   content: string;
@@ -22,6 +23,7 @@ export interface PostMetadata {
   author: string;
   tags: string[];
   coverImage: string;
+  socialImage?: string;
   coverImageAlt: string;
   featured: boolean;
   readingTime: string;
