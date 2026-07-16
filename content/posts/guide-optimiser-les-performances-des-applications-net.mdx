@@ -1,53 +1,202 @@
 ---
-title: "Guide : optimiser les performances des applications .NET"
-excerpt: "L'optimisation en .NET n'est utile que lorsqu'elle part de mesures fiables. Le vrai travail consiste à trouver les goulets d'étranglement et à réduire les coûts dominants."
+title: "Performance .NET : mesurer, profiler puis optimiser"
+excerpt: "Une méthode concrète pour diagnostiquer une application .NET lente, identifier le coût dominant et vérifier chaque optimisation avec des mesures fiables."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: [".NET", "Performance", "Profiling", "Backend", "Optimization"]
 coverImage: "/images/posts/csharp-multithreading-finance.png"
-coverImageAlt: "Optimisation de performances dans une application .NET"
+coverImageAlt: "Analyse des métriques, traces et goulets d'étranglement d'une application .NET"
 featured: false
 filename: "guide-optimiser-les-performances-des-applications-net"
 ---
 
-Optimiser une application .NET ne consiste pas à appliquer une liste de micro-optimisations. Une démarche sérieuse commence par la mesure, puis par la compréhension des coûts dominants.
+Une application .NET « lente » ne décrit pas encore un problème exploitable. Est-ce la médiane ou le 99e percentile qui se dégrade ? Le temps est-il consommé par le CPU, la base de données, un service externe, le garbage collector ou une file d'attente ? Le comportement apparaît-il à froid, sous charge ou après plusieurs heures ?
 
-## Mesurer avant de changer
+Optimiser avant d'avoir répondu à ces questions produit surtout des changements difficiles à justifier. Une démarche fiable transforme d'abord une impression en mesure, puis une mesure en hypothèse vérifiable.
 
-Les premiers réflexes doivent être:
+## Commencer par un objectif observable
 
-- profiler CPU
-- observer allocations mémoire
-- mesurer latence et throughput
-- vérifier les accès I/O
-- identifier les appels réseau ou base de données dominants
+Une optimisation doit viser un comportement utilisateur ou opérationnel. Pour une API, le point de départ peut être :
 
-Sans ces mesures, on optimise souvent la mauvaise chose.
+- un percentile de latence, par exemple `p95 < 300 ms` ;
+- un débit minimal à charge constante ;
+- un taux d'erreur maximal ;
+- une limite de CPU ou de mémoire par instance ;
+- un temps de traitement maximal pour un job ;
+- un budget de coût par requête.
 
-## Les sources classiques de lenteur
+La moyenne ne suffit pas. Une API qui répond en 40 ms la plupart du temps et en 4 secondes pour 5 % des appels peut afficher une moyenne acceptable tout en restant pénible pour les utilisateurs.
 
-Dans les applications .NET, les problèmes fréquents sont:
+Fixe aussi le scénario : volume de données, concurrence, environnement, version du runtime et dépendances utilisées. Une mesure effectuée en `Debug` sur une base vide ne prédit pas le comportement d'un service publié en `Release` avec plusieurs millions de lignes.
 
-- allocations inutiles
-- requêtes SQL trop nombreuses
-- sérialisations répétitives
-- contention sur ressources partagées
-- appels synchrones dans des flux asynchrones
-- traitement réseau trop verbeux
+## Étape 1 : reproduire le problème
 
-Les problèmes d'architecture comptent souvent plus que les détails syntaxiques.
+Avant de profiler, construis le scénario le plus petit qui reproduit la dégradation :
 
-## La bonne approche
+1. lance l'application avec une configuration proche de la production ;
+2. prépare un jeu de données représentatif ;
+3. applique une charge stable ;
+4. laisse passer le démarrage, le JIT et le remplissage des caches ;
+5. conserve une mesure de référence avant toute modification.
 
-Un plan d'optimisation efficace suit souvent cet ordre:
+Le test doit rester reproductible. Si la latence varie fortement entre deux exécutions identiques, cherche d'abord la source de cette variance : dépendance distante, contention, collecte du GC, limitation de ressources ou bruit de l'environnement.
 
-1. mesurer
-2. identifier le goulet dominant
-3. corriger à la source
-4. remesurer
+## Étape 2 : localiser le coût avant de lire le code
 
-Cette discipline evite les optimisations cosmétiques.
+Une trace distribuée répond souvent à la première question : où passe le temps d'une requête ? Elle distingue le traitement local des appels SQL, HTTP, cache ou messagerie.
+
+Si 850 ms sur 900 ms sont consommées par une requête SQL, réécrire une boucle C# ne changera rien. À l'inverse, si les dépendances répondent vite mais que le processus utilise un cœur complet, un profil CPU devient pertinent.
+
+Observe au minimum :
+
+- durée totale et percentiles ;
+- spans des dépendances externes ;
+- CPU du processus ;
+- taille et croissance du tas managé ;
+- fréquence et durée des collectes GC ;
+- taux d'exceptions ;
+- nombre de threads et longueur de la file du ThreadPool.
+
+L'outil `dotnet-counters` fournit une première vue sans modifier l'application :
+
+```bash
+dotnet tool update --global dotnet-counters
+dotnet-counters monitor --process-id <PID>
+```
+
+Les compteurs indiquent qu'un phénomène existe ; ils n'identifient pas toujours la ligne responsable. Utilise-les pour orienter l'enquête, pas pour conclure trop vite.
+
+## Étape 3 : choisir l'outil adapté au symptôme
+
+| Symptôme | Premier outil | Question traitée |
+| --- | --- | --- |
+| CPU élevé | `dotnet-counters`, puis `dotnet-trace` | quelles piles sont exécutées le plus souvent ? |
+| mémoire qui augmente | compteurs GC, `dotnet-gcdump` ou `dotnet-dump` | quels objets restent vivants et pourquoi ? |
+| latence irrégulière | traces distribuées et métriques | quelle dépendance ou attente explique les pics ? |
+| threads bloqués | compteurs ThreadPool, trace ou dump | le code bloque-t-il des opérations asynchrones ? |
+| requêtes lentes | télémétrie SQL et plan d'exécution | le coût vient-il du nombre ou de la forme des requêtes ? |
+
+Pour collecter une trace .NET :
+
+```bash
+dotnet tool update --global dotnet-trace
+dotnet-trace collect --process-id <PID> \
+  --profile dotnet-sampled-thread-time,dotnet-common
+```
+
+La trace doit couvrir le scénario problématique, mais rester assez courte pour être analysable. Une capture énorme dilue les piles utiles et augmente le coût de collecte.
+
+## Les accès aux données dominent souvent la latence
+
+Dans une API métier, les gains les plus importants viennent fréquemment de la base : suppression d'un N+1, index adapté, projection plus petite ou réduction des allers-retours.
+
+Une lecture qui retourne des DTO n'a pas besoin de charger un graphe d'entités suivi par EF Core :
+
+```csharp
+public Task<OrderSummary?> GetOrderAsync(
+    Guid orderId,
+    CancellationToken cancellationToken) =>
+    _dbContext.Orders
+        .AsNoTracking()
+        .Where(order => order.Id == orderId)
+        .Select(order => new OrderSummary(
+            order.Id,
+            order.Number,
+            order.Total,
+            order.Items.Count))
+        .SingleOrDefaultAsync(cancellationToken);
+```
+
+Cette projection exprime les colonnes nécessaires et évite le suivi d'entités pour une lecture seule. Elle ne garantit toutefois pas une requête rapide : examine le SQL produit, le plan d'exécution, les index et la cardinalité réelle.
+
+Le cache ne doit venir qu'après cette analyse. Mettre en cache une requête inutilement coûteuse masque parfois le problème tout en ajoutant invalidation, mémoire et cohérence distribuée.
+
+## Éviter de bloquer le pipeline asynchrone
+
+Dans ASP.NET Core, appeler `.Result`, `.Wait()` ou exécuter un travail long et bloquant dans le chemin d'une requête peut provoquer une pénurie de threads sous charge.
+
+La chaîne doit rester asynchrone jusqu'aux entrées-sorties :
+
+```csharp
+app.MapGet("/orders/{id:guid}", async (
+    Guid id,
+    IOrderQueries queries,
+    CancellationToken cancellationToken) =>
+{
+    var order = await queries.GetOrderAsync(id, cancellationToken);
+    return order is null ? Results.NotFound() : Results.Ok(order);
+});
+```
+
+L'asynchronisme ne rend pas un calcul CPU plus rapide. Un traitement lourd doit être borné, déplacé hors de la requête si sa durée est importante, ou exécuté sur une architecture prévue pour ce travail.
+
+## Comprendre allocations et garbage collection
+
+Réduire les allocations peut améliorer un chemin très fréquent, mais uniquement si les profils montrent une pression mémoire significative.
+
+Cherche notamment :
+
+- de gros tableaux ou chaînes recréés à chaque requête ;
+- des matérialisations multiples avec `ToList()` ;
+- une sérialisation répétée du même contenu ;
+- des objets conservés par un cache sans limite ;
+- des événements ou callbacks jamais désabonnés ;
+- des buffers placés fréquemment sur le Large Object Heap.
+
+Une mémoire élevée n'est pas automatiquement une fuite. Le runtime peut conserver de la mémoire pour la réutiliser. Une fuite se caractérise plutôt par des objets qui restent accessibles alors qu'ils ne servent plus. Compare plusieurs captures et étudie les chemins de rétention avant de modifier le code.
+
+## Instrumenter les mesures métier importantes
+
+Les métriques runtime ne savent pas qu'une file de commandes attend depuis dix minutes. Ajoute des métriques applicatives à faible cardinalité :
+
+```csharp
+public sealed class OrderMetrics
+{
+    public const string MeterName = "YvaDev.Orders";
+
+    private readonly Histogram<double> _processingDuration;
+
+    public OrderMetrics(IMeterFactory meterFactory)
+    {
+        var meter = meterFactory.Create(MeterName);
+
+        _processingDuration = meter.CreateHistogram<double>(
+            "orders.processing.duration",
+            unit: "ms");
+    }
+
+    public void RecordProcessingDuration(TimeSpan duration) =>
+        _processingDuration.Record(duration.TotalMilliseconds);
+}
+```
+
+Conserve un seul `Meter` et crée les instruments une fois. Évite les dimensions contenant un identifiant client, une URL brute ou une valeur presque unique : cette forte cardinalité augmente rapidement le coût du système de métriques.
+
+## Microbenchmark ou test de charge ?
+
+Un microbenchmark mesure une fonction isolée : parseur, algorithme, allocation ou sérialisation. Il est utile lorsque le profil a déjà identifié ce code comme chaud.
+
+Un test de charge mesure le comportement du système : concurrence, dépendances, files, pools de connexions et percentiles. Il répond mieux aux problèmes d'API.
+
+Les deux approches ne sont pas interchangeables. Gagner 20 % sur une méthode qui représente 1 % de la durée totale ne réduit la latence que de façon marginale.
+
+## Vérifier le gain et son coût
+
+Après chaque changement :
+
+1. rejoue exactement le scénario de référence ;
+2. compare plusieurs exécutions, pas un résultat isolé ;
+3. vérifie les percentiles, le débit, les erreurs, le CPU et la mémoire ;
+4. contrôle que le comportement fonctionnel reste correct ;
+5. documente le compromis introduit.
+
+Une optimisation peut réduire la latence mais augmenter la mémoire, la complexité ou le coût d'infrastructure. Elle n'est valable que si ce compromis correspond aux contraintes du produit.
 
 ## Conclusion
 
-La performance en .NET est un sujet d'observabilité et d'architecture avant d'être un sujet de tricks. Ce qui compte, c'est de réduire les coûts dominants là où ils pénalisent vraiment le service.
+Optimiser une application .NET est une enquête : définir le symptôme, reproduire la charge, localiser le coût, choisir l'outil adapté et vérifier le résultat.
+
+Commence par les frontières les plus coûteuses — base de données, réseau, files et sérialisation — avant les détails syntaxiques. Utilise les compteurs pour orienter le diagnostic, les traces et dumps pour expliquer le phénomène, puis protège les gains importants avec des tests reproductibles.
+
+La documentation Microsoft fournit un [point d'entrée sur les outils de diagnostic .NET](https://learn.microsoft.com/dotnet/core/diagnostics/), ainsi que les références de [`dotnet-trace`](https://learn.microsoft.com/dotnet/core/diagnostics/dotnet-trace) et de la [collecte de métriques](https://learn.microsoft.com/dotnet/core/diagnostics/metrics-collection).
