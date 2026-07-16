@@ -1,7 +1,8 @@
 ---
-title: "Clean Architecture : une méthode utile ou une cérémonie de plus ?"
-excerpt: "La Clean Architecture peut clarifier une application, mais elle devient vite contre-productive lorsqu'elle est appliquée comme un schéma rigide au lieu d'une discipline de frontières."
+title: "Clean Architecture en .NET : utile sans dogmatisme"
+excerpt: "Appliquez la Clean Architecture en .NET sans multiplier les couches : dépendances, cas d'usage, structure de solution et critères pour choisir plus simple."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["Clean Architecture", "Architecture", ".NET", "Maintainability", "Software Engineering"]
 coverImage: "/images/posts/default-dotnet.png"
@@ -16,7 +17,7 @@ Le sujet n'est donc pas de "faire de la Clean Architecture". Le sujet est de sav
 
 ## Ce que la Clean Architecture cherche à protéger
 
-L'idée centrale est simple:
+L'idée centrale est simple : les dépendances du code pointent vers les règles les plus stables. Le domaine ne connaît ni Entity Framework Core, ni ASP.NET Core, ni le fournisseur d'e-mails. L'infrastructure connaît le cœur applicatif et implémente les ports dont il a besoin.
 
 - le domaine ne doit pas dépendre des détails techniques
 - l'infrastructure doit rester remplaçable
@@ -26,17 +27,19 @@ Quand ces objectifs sont atteints, les bénéfices sont concrets:
 
 - règles métier plus lisibles
 - tests plus simples
-- code applicatif moins couple à la base de données ou aux API externes
+- code applicatif moins couplé à la base de données ou aux API externes
+
+La règle ne demande pas d'isoler chaque classe derrière une interface. Une entité métier pure n'a pas besoin d'une abstraction artificielle. Les interfaces sont surtout utiles aux frontières où l'application dépend d'un comportement externe : persistance, horloge, stockage de fichiers, messagerie ou API distante.
 
 ## La version utile
 
-La version utile de la Clean Architecture consiste à:
+La version utile de la Clean Architecture consiste à :
 
 - isoler les invariants métier
 - rendre les cas d'usage explicites
 - repousser les détails techniques vers la périphérie
 
-Une structure simple suffit souvent:
+Une structure simple suffit souvent :
 
 ```text
 Domain/
@@ -47,9 +50,56 @@ Api/
 
 Inutile d'ajouter dix projets si quatre frontières claires suffisent.
 
+Une répartition pragmatique pour une API ASP.NET Core peut être :
+
+| Projet | Contenu principal | Dépend de |
+| --- | --- | --- |
+| `Domain` | entités, valeurs, invariants | rien |
+| `Application` | cas d'usage, ports, résultats | `Domain` |
+| `Infrastructure` | EF Core, API externes, fichiers | `Application` |
+| `Api` | endpoints, authentification, composition | `Application`, `Infrastructure` |
+
+La référence d'`Api` vers `Infrastructure` au point de démarrage n'annule pas le principe. Elle sert à enregistrer les implémentations dans le conteneur d'injection de dépendances. Le code métier, lui, continue d'ignorer ces détails.
+
+## Découper par cas d'usage, pas uniquement par type
+
+Des dossiers globaux `Controllers`, `Services`, `Repositories` obligent souvent à parcourir toute la solution pour comprendre une fonctionnalité. Dans `Application`, regroupez plutôt les éléments qui changent ensemble :
+
+```text
+Application/
+└── Orders/
+    └── PlaceOrder/
+        ├── Command.cs
+        ├── Handler.cs
+        └── Result.cs
+```
+
+Le cas d'usage orchestre le domaine et les ports externes. Il ne contient pas de logique HTTP ni de requête SQL. Voici une forme volontairement simple :
+
+```csharp
+public sealed class PlaceOrderHandler(
+    IOrderRepository orders,
+    IUnitOfWork unitOfWork)
+{
+    public async Task<PlaceOrderResult> HandleAsync(
+        PlaceOrderCommand command,
+        CancellationToken cancellationToken)
+    {
+        var order = Order.Create(command.CustomerId, command.Lines);
+
+        await orders.AddAsync(order, cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new PlaceOrderResult(order.Id);
+    }
+}
+```
+
+`Order.Create` porte les invariants métier. Le handler décrit le flux applicatif. Le dépôt et l'unité de travail représentent la frontière de persistance. Cette séparation est utile si elle rend le scénario lisible et testable ; elle ne justifie pas d'ajouter un médiateur, une factory et six mappings sans besoin identifié.
+
 ## La version dogmatique
 
-La version dogmatique produit souvent:
+La version dogmatique produit souvent :
 
 - une interface pour chaque classe
 - des DTO partout
@@ -57,20 +107,46 @@ La version dogmatique produit souvent:
 - des services applicatifs vides
 - des dépôts génériques
 
-Le résultat est un base de code plus cérémoniel, pas forcément plus clair.
+Le résultat est une base de code plus cérémonielle, pas forcément plus claire. Une interface `IOrderService` avec une seule implémentation n'apporte rien si elle ne représente aucune frontière. Un dépôt générique qui expose toutes les opérations de données peut même masquer le langage métier et laisser chaque cas d'usage reconstruire ses propres règles.
+
+Les DTO ont, eux, une vraie utilité aux frontières : ils empêchent un contrat HTTP ou le schéma d'un fournisseur externe de contaminer le domaine. Il n'est toutefois pas nécessaire de recopier mécaniquement chaque objet entre toutes les couches. Le coût du mapping doit protéger une variation réelle.
+
+## Quand une architecture plus simple suffit
+
+Pour un prototype, un CRUD interne ou un service au domaine très pauvre, une seule application ASP.NET Core organisée par fonctionnalité peut être préférable :
+
+```text
+Features/
+├── Products/
+├── Orders/
+└── Customers/
+```
+
+Chaque fonctionnalité peut contenir son endpoint, sa validation et son accès aux données. Les règles partagées apparaîtront seulement lorsqu'elles existent réellement. Il reste possible de conserver de bonnes frontières dans un seul projet ; un assemblage .NET n'est pas une condition de qualité architecturale.
+
+Envisagez une séparation plus forte lorsque le domaine contient des invariants importants, que plusieurs interfaces utilisent les mêmes cas d'usage, que les dépendances externes changent souvent ou que des tests rapides du métier apportent une valeur claire.
 
 ## Le bon critère
 
 Une architecture est bonne si elle rend les évolutions moins risquées.
 
-Pose simplement ces questions:
+Posez simplement ces questions :
 
 - peut-on comprendre un cas d'usage sans lire toute la pile ?
 - les règles métier sont-elles testables sans infrastructure ?
 - un changement d'outil technique force-t-il un changement global ?
 - l'équipe gagne-t-elle en lisibilité ou perd-elle du temps en cérémonie ?
+- les dépendances interdites sont-elles détectées automatiquement ?
 
-Si les réponses sont mauvaises, la structure doit être simplifiée.
+Si les réponses sont mauvaises, la structure doit être simplifiée. Pour empêcher les frontières de se dégrader, un test d'architecture peut vérifier que `Domain` ne référence pas `Infrastructure` et que `Application` ne dépend pas d'ASP.NET Core. Cette règle automatisée vaut mieux qu'un diagramme oublié dans un wiki.
+
+## Une stratégie d'adoption progressive
+
+Il n'est pas nécessaire de réorganiser toute une application existante. Choisissez une fonctionnalité qui change souvent, rendez son cas d'usage explicite, déplacez ses invariants hors du contrôleur et isolez uniquement ses dépendances externes. Mesurez ensuite si les changements et les tests deviennent plus simples.
+
+Évitez la migration horizontale consistant à créer toutes les couches vides avant de déplacer la moindre fonctionnalité. Une migration verticale produit rapidement une tranche complète et permet d'ajuster la structure à partir d'un besoin réel.
+
+Microsoft présente les [architectures courantes des applications web .NET](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures) et rappelle que la logique métier se trouve au centre tandis que l'infrastructure dépend de ce cœur. La documentation souligne également qu'un monolithe reste, dans de nombreux cas, plus simple à développer, déployer et diagnostiquer qu'un ensemble de services.
 
 ## Conclusion
 
