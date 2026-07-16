@@ -1,95 +1,99 @@
 ---
-title: "7 ressources GitHub utiles pour progresser en architecture .NET"
-excerpt: "GitHub regorge de repositories sur l'architecture .NET, mais peu valent vraiment le temps d'un développeur. Voici comment identifier les ressources qui élèvent le niveau technique."
+title: "4 dépôts GitHub pour étudier l'architecture .NET"
+excerpt: "Quatre projets .NET vérifiés pour étudier les frontières, les tests, le monolithe modulaire et les systèmes distribués sans copier aveuglément un template."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: [".NET", "Architecture", "GitHub", "Learning", "Software Engineering"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Sélection de ressources GitHub pour l'architecture .NET"
+coverImageAlt: "Analyse de quatre dépôts GitHub consacrés à l'architecture .NET"
 featured: false
 filename: "ressources-github-architecture-dotnet"
 ---
 
-Chercher des ressources GitHub sur l'architecture .NET semble simple. En réalité, la plupart des dépôts servent surtout de vitrine: beaucoup de patterns, peu de contexte, et rarement des décisions d'architecture expliquées.
+Un dépôt GitHub d'architecture ne doit pas être traité comme une recette. Il représente les contraintes, les préférences et parfois les objectifs pédagogiques de ses auteurs. Copier sa structure sans comprendre ces choix produit facilement plus de couches que de valeur.
 
-Le bon enjeu n'est pas de collectionner des dépôts. C'est d'identifier ceux qui t'aident vraiment à mieux concevoir un système.
+La bonne méthode consiste à étudier une question précise : comment les modules communiquent-ils ? Où vivent les règles métier ? Comment les tests traversent-ils l'infrastructure ? Quelles décisions sont documentées et lesquelles restent implicites ?
 
-## Ce qu'une bonne ressource GitHub doit montrer
+Les quatre dépôts ci-dessous donnent des réponses différentes. Ils ont été vérifiés en juillet 2026, mais leur activité et leurs dépendances peuvent évoluer.
 
-Une ressource utile sur l'architecture .NET devrait au moins exposer:
+## 1. dotnet/eShop : observer un système distribué avec Aspire
 
-- une structure de solution cohérente
-- des frontières claires entre domaine et infrastructure
-- des conventions de test
-- des choix d'intégration explicites
-- un minimum de contexte sur les compromis
+Le dépôt officiel [`dotnet/eShop`](https://github.com/dotnet/eShop) présente une application e-commerce basée sur une architecture orientée services et orchestrée avec Aspire.
 
-Sans cela, on regarde surtout du code "bien range", pas une vraie architecture.
+Il est surtout utile pour étudier :
 
-## 1. Dépôts d'architecture référence
+- la composition de plusieurs services dans un `AppHost` ;
+- la découverte de services et les dépendances d'infrastructure ;
+- l'observabilité locale d'un système distribué ;
+- la séparation entre catalogue, panier, identité et commandes ;
+- le coût structurel introduit par la distribution.
 
-Les plus utiles montrent comment organiser:
+Il ne faut pas en conclure qu'une application e-commerce doit commencer avec plusieurs services. Le dépôt montre ce que demande cette architecture lorsque la distribution est déjà justifiée. Pour un produit plus jeune, compare cette complexité à celle d'un monolithe modulaire.
 
-- Domain
-- Application
-- Infrastructure
-- API
+## 2. jasontaylordev/CleanArchitecture : analyser un template moderne
 
-Leur valeur vient moins du pattern affiche que de la discipline de séparation.
+[`jasontaylordev/CleanArchitecture`](https://github.com/jasontaylordev/CleanArchitecture) est un template ASP.NET Core qui sépare domaine, application, infrastructure et interface web. Il documente également plusieurs décisions avec des ADR.
 
-## 2. Dépôts centrés sur l'observabilité et la production
+Les points intéressants à inspecter sont :
 
-Une architecture qui ne traite pas:
+- le sens des dépendances entre projets ;
+- la composition de l'application au démarrage ;
+- le placement de la validation et des comportements transverses ;
+- la stratégie de tests ;
+- les variantes proposées selon la version de .NET.
 
-- logs
-- metrics
-- tracing
-- retries
-- idempotence
+Un template optimise le démarrage d'une certaine catégorie de projets. Il contient donc des choix dont ton application n'a peut-être pas besoin. Avant de reprendre une abstraction, cherche le problème qu'elle résout et vérifie que ce problème existe réellement chez toi.
 
-reste incomplete. Les meilleures ressources montrent aussi comment un service vit en production.
+## 3. kgrzybek/modular-monolith-with-ddd : comprendre les frontières de modules
 
-## 3. Dépôts avec tests crédibles
+[`kgrzybek/modular-monolith-with-ddd`](https://github.com/kgrzybek/modular-monolith-with-ddd) va plus loin qu'une simple arborescence. Le dépôt documente son domaine, ses modules, leurs communications, les décisions d'architecture et plusieurs niveaux de tests.
 
-Un projet d'architecture sans tests dit peu de choses sur sa maintenabilité. Les meilleurs exemples montrent:
+Il permet notamment d'étudier :
 
-- tests de domaine
-- tests d'application
-- tests d'intégration
-- parfois tests contractuels
+- l'encapsulation forte de chaque module ;
+- la communication asynchrone entre modules ;
+- la séparation des schémas de données ;
+- les tests d'architecture qui contrôlent les dépendances ;
+- les tests d'intégration avec de vraies dépendances externes ;
+- la documentation des décisions et des compromis.
 
-## 4. Dépôts qui assument leurs limites
+Le projet est volontairement riche. Cette richesse le rend utile pour apprendre, mais trop lourd à reproduire mécaniquement dans une petite application. Lis-le comme un catalogue de décisions vérifiables, pas comme une structure minimale obligatoire.
 
-Une bonne ressource explique ce qu'elle ne couvre pas:
+## 4. ardalis/CleanArchitecture : comparer deux interprétations du même principe
 
-- haute volumétrie
-- architecture distribuée
-- contraintes multi-équipes
-- sécurité avancée
+[`ardalis/CleanArchitecture`](https://github.com/ardalis/CleanArchitecture) propose une autre interprétation de la Clean Architecture, avec un template complet et une variante plus minimale.
 
-Cette honnêteté technique à plus de valeur qu'un repo qui prétend être universel.
+La comparaison avec le template de Jason Taylor est particulièrement instructive. Les deux projets partagent une intention de découplage, mais ne placent pas toujours les responsabilités, les bibliothèques et les conventions au même endroit.
 
-## 5. Dépôts de bibliothèques et frameworks secondaires
+Regarde en priorité :
 
-Certains repos ne montrent pas une architecture complete, mais restent utiles pour comprendre:
+- ce que chaque template considère comme le noyau de l'application ;
+- la façon dont les cas d'usage sont exposés ;
+- le rôle accordé aux événements de domaine ;
+- la frontière entre infrastructure et interface web ;
+- les éléments retirés dans la version minimale.
 
-- validation
-- messaging
-- mapping
-- pipelines
-- mediator patterns
+Cette comparaison montre qu'un principe d'architecture ne conduit pas à une seule structure de dossiers.
 
-Ils sont utiles si on les étudie comme briques, pas comme architecture totale.
+## Une méthode de lecture en cinq étapes
 
-## 6. Dépôts qui privilégient la lisibilité
+Pour tirer quelque chose de ces dépôts, évite de commencer par cloner le code. Choisis d'abord un seul flux métier, puis suis-le de bout en bout.
 
-Un bon repo d'apprentissage doit pouvoir être parcouru rapidement. Si tout est abstrait à l'excès, la ressource devient démonstrative mais peu pédagogique.
+1. Identifie le point d'entrée HTTP ou applicatif.
+2. Suis la commande ou la requête jusqu'à la règle métier.
+3. Repère l'endroit où l'infrastructure intervient.
+4. Trouve les tests qui protègent ce flux.
+5. Note les abstractions réellement nécessaires à ce parcours.
 
-## 7. Repositories vivants
+Ensuite seulement, compare ce flux avec ton propre système. Une abstraction est intéressante si elle réduit un risque concret : dépendance instable, règle métier dispersée, test impossible ou intégration difficile à remplacer.
 
-Un dépôt mis à jour, avec issues, discussions et évolutions visibles, en dit souvent plus qu'un "template" parfait mais abandonné.
+## Les dépôts à ne plus prendre comme référence principale
+
+Plusieurs anciennes listes recommandent encore `eShopOnWeb` ou `eShopOnContainers`. Les dépôts Microsoft historiques ont été archivés et renvoient maintenant vers `dotnet/eShop`. Ils restent utiles pour comprendre l'évolution des architectures .NET, mais ne constituent plus le meilleur point de départ pour choisir des dépendances actuelles.
 
 ## Conclusion
 
-Les meilleures ressources GitHub sur l'architecture .NET ne donnent pas une recette. Elles montrent des choix, des frontières et des compromis. C'est cela qu'il faut étudier, pas seulement la forme finale du code.
+La valeur de ces dépôts ne vient ni de leur nombre d'étoiles ni du nombre de patterns qu'ils contiennent. Elle vient des décisions qu'ils rendent observables.
 
+Étudie `dotnet/eShop` pour la distribution et Aspire, les deux templates Clean Architecture pour comparer des frontières applicatives, et le monolithe modulaire de Kamil Grzybek pour approfondir l'encapsulation et les tests d'architecture. Puis conserve uniquement les idées qui répondent aux contraintes réelles de ton projet.

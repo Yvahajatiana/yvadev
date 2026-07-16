@@ -2,6 +2,7 @@
 title: "Comment structurer un projet ASP.NET Core pour rester maintenable"
 excerpt: "Une approche concrète pour organiser un projet ASP.NET Core de manière lisible, testable et maintenable, même quand l'équipe et le code grossissent."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["ASP.NET Core", "Maintainability", "Architecture", ".NET", "Backend"]
 coverImage: "/images/posts/aspnet-core-channels-background-processing.png"
@@ -54,6 +55,41 @@ src/
 ```
 
 Cette organisation n'est pas magique, mais elle donne des frontières utiles.
+
+## Poser les conventions de configuration dès le départ
+
+La structure des dossiers ne suffit pas. Un projet devient également difficile à maintenir lorsque chaque composant lit directement une variable d'environnement ou une clé de configuration écrite en dur.
+
+ASP.NET Core fournit déjà une chaîne de configuration adaptée aux différents environnements :
+
+- `appsettings.json` contient les valeurs communes et non sensibles ;
+- `appsettings.Development.json` adapte le poste de développement ;
+- les variables d'environnement remplacent les valeurs au déploiement ;
+- `dotnet user-secrets` conserve les secrets locaux hors du dépôt Git ;
+- le gestionnaire de secrets de la plateforme héberge les secrets de production.
+
+Le code applicatif ne devrait pas connaître les noms de clés dispersés dans la configuration. Des options typées rendent le contrat visible et vérifiable au démarrage :
+
+```csharp
+public sealed class PaymentOptions
+{
+    public const string SectionName = "Payments";
+
+    public required Uri BaseUrl { get; init; }
+    public required string ApiKey { get; init; }
+    public int TimeoutSeconds { get; init; } = 10;
+}
+
+builder.Services
+    .AddOptions<PaymentOptions>()
+    .BindConfiguration(PaymentOptions.SectionName)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+Cette validation évite de découvrir une configuration manquante lors de la première requête en production. Elle fait échouer le démarrage avec une cause identifiable.
+
+Une convention simple aide à garder le système lisible : la couche `Api` compose la configuration et les dépendances, tandis que les couches `Application` et `Domain` reçoivent des contrats typés sans dépendre du fournisseur de configuration.
 
 ## Règle 1: les contrôleurs et endpoints doivent rester minces
 
