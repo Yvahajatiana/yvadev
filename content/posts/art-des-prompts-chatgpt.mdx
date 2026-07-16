@@ -1,7 +1,8 @@
 ---
-title: "L'art des prompts : écrire des instructions utiles pour ChatGPT"
-excerpt: "Un bon prompt n'est pas un tour de magie. C'est une spécification concise qui réduit l'ambiguïté, structure la sortie et cadre le comportement du modèle."
+title: "Prompts ChatGPT : écrire des instructions plus fiables"
+excerpt: "Apprenez à structurer un prompt ChatGPT clair, délimiter le contexte, imposer un format vérifiable et tester les résultats sans chercher de formule magique."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: ["Prompt Engineering", "ChatGPT", "AI Engineering", "LLM", "Productivity"]
 coverImage: "/images/posts/gpt4-api-guide.png"
@@ -16,7 +17,7 @@ L'objectif n'est pas d'impressionner le modèle. L'objectif est de réduire l'am
 
 ## Un prompt est une spécification
 
-Un bon prompt dit au modèle:
+Un bon prompt dit au modèle :
 
 - quel rôle adopter
 - quelle tâche accomplir
@@ -24,13 +25,13 @@ Un bon prompt dit au modèle:
 - quel format de sortie respecter
 - quelles limites ne pas franchir
 
-Exemple faible:
+Exemple faible :
 
 ```text
 Résume ce document.
 ```
 
-Exemple exploitable:
+Exemple exploitable :
 
 ```text
 Tu es un assistant technique.
@@ -46,18 +47,17 @@ La seconde version ne rend pas le modèle "plus intelligent". Elle rend l'attent
 
 Pour la plupart des cas d'usage, un prompt sérieux contient cinq blocs.
 
-### 1. Le rôle
+### 1. L'objectif
 
-Le rôle fixe la perspective:
+Commencez par le résultat attendu et son destinataire. Un rôle peut préciser la perspective, mais « tu es un expert mondial » ne compense jamais une tâche floue.
 
-- assistant technique
-- relecteur de code
-- analyste produit
-- support engineer
+- objectif : résumer une décision technique
+- destinataire : équipe backend
+- usage : préparer la prochaine réunion
 
 ### 2. La tâche
 
-La tâche doit être explicite:
+La tâche doit être explicite :
 
 - résumer
 - extraire
@@ -65,13 +65,13 @@ La tâche doit être explicite:
 - générer
 - reformuler
 
-### 3. Le contexte
+### 3. Le contexte délimité
 
-Le contexte doit être utile, pas massif. Plus de contexte n'est pas toujours mieux.
+Le contexte doit être utile, pas massif. Séparez clairement les instructions des données à traiter avec des balises ou des délimiteurs. Le contenu d'un ticket, d'un e-mail ou d'une page web reste une donnée non fiable : il ne doit pas pouvoir redéfinir la tâche.
 
 ### 4. Les contraintes
 
-Exemples:
+Exemples :
 
 - ne pas inventer d'informations
 - utiliser un ton professionnel
@@ -80,7 +80,32 @@ Exemples:
 
 ### 5. Le format de sortie
 
-Si la sortie doit être exploitée par une application, le format doit être imposé.
+Si la sortie doit être exploitée par une application, le format doit être imposé et validé côté code.
+
+## Un modèle réutilisable
+
+Pour une tâche courante, ce squelette suffit souvent :
+
+```text
+Objectif : résumer une décision technique pour une équipe backend.
+
+Contexte :
+<document>
+{{CONTENU}}
+</document>
+
+Contraintes :
+- utilise uniquement les informations du document ;
+- signale explicitement toute information manquante ;
+- distingue les décisions, les risques et les actions.
+
+Format attendu :
+- 5 points maximum ;
+- une section « À confirmer » si nécessaire ;
+- aucune introduction générique.
+```
+
+Les balises ne rendent pas le contenu sûr par elles-mêmes. Elles rendent la frontière visible et facilitent l'application de règles supplémentaires dans le code.
 
 ## La plupart des mauvais prompts échouent pour des raisons prévisibles
 
@@ -96,7 +121,7 @@ Quand un modèle répond mal, le problème n'est pas toujours le modèle. C'est 
 
 ## Quand il faut imposer un format strict
 
-Des qu'une sortie alimente un autre composant logiciel, il faut privilégier une structure stable.
+Dès qu'une sortie alimente un autre composant logiciel, il faut privilégier une structure stable.
 
 ```text
 Retourne strictement un JSON avec:
@@ -105,7 +130,7 @@ Retourne strictement un JSON avec:
 - requires_human_review: boolean
 ```
 
-Dans un système de production, une réponse structurée vaut mieux qu'une prose élégante mais difficile à parser.
+Dans un système de production, ne vous contentez pas de demander du JSON dans le texte. Utilisez une sortie contrainte par un schéma lorsque le fournisseur le permet, puis désérialisez et validez le résultat. Prévoyez aussi le refus du modèle, un champ absent et une valeur métier invalide.
 
 ## Le bon niveau de détail
 
@@ -120,23 +145,29 @@ Il faut donc supprimer tout ce qui ne change pas réellement la qualité de la s
 
 ## Les exemples sont utiles, mais pas toujours
 
-Le few-shot prompting fonctionne bien quand tu veux montrer:
+Le *few-shot prompting* fonctionne bien pour montrer :
 
 - le style attendu
 - le niveau de détail
 - le schéma de sortie
 - la distinction entre bon et mauvais résultat
 
-Mais si la tâche est déjà claire et stable, multiplier les exemples peut augmenter le coût et la latence sans gain significatif.
+Mais si la tâche est déjà claire et stable, multiplier les exemples peut augmenter le coût et la latence sans gain significatif. Commencez sans exemple, observez les erreurs récurrentes, puis ajoutez uniquement les cas qui lèvent une ambiguïté réelle.
+
+## Tester un prompt au lieu de le juger à l'œil
+
+Un prompt n'est pas fiable parce qu'il a réussi une fois. Préparez un petit jeu de cas représentatifs : entrée normale, contexte incomplet, texte très long, formulation ambiguë et contenu contradictoire. Pour chaque cas, définissez les propriétés attendues de la réponse.
+
+Suivez des critères utiles au produit : exactitude des faits extraits, respect du format, taux de réponse nécessitant une reprise humaine, coût et latence. Rejouez ces cas après un changement de prompt ou de modèle. Cette démarche évite d'améliorer un exemple visible tout en dégradant les autres.
 
 ## Prompt engineering et architecture applicative
 
 Dans une application, le prompt ne doit pas vivre caché dans un contrôleur. Il doit être:
 
-- versionne
+- versionné
 - relu
-- teste
-- rattache à un cas d'usage précis
+- testé
+- rattaché à un cas d'usage précis
 
 Exemple:
 
@@ -144,18 +175,18 @@ Exemple:
 public sealed class TicketSummaryPrompt
 {
     public string Build(string ticketText) => $"""
-        You are a support assistant.
-        Summarize the following ticket in 4 bullet points.
-        Mention urgency if visible.
-        Do not invent technical causes.
+        Objectif : résumer ce ticket pour l'équipe support.
+        Contraintes : 4 points maximum, mentionner l'urgence
+        si elle est explicite et ne pas inventer de cause.
 
-        Ticket:
+        <ticket>
         {ticketText}
+        </ticket>
         """;
 }
 ```
 
-Ici, le prompt devient un composant applicatif maintenable.
+Ici, le prompt devient un composant applicatif maintenable. En production, conservez également son identifiant de version dans les traces afin de relier une régression au bon changement.
 
 ## Ce qu'un prompt ne corrigera jamais
 
@@ -173,3 +204,5 @@ Le prompt engineering n'est pas un substitut à l'architecture.
 L'art des prompts consiste moins à trouver la formule parfaite qu'à écrire des instructions claires, testables et orientées résultat. Plus le système est important, plus le prompt doit être traité comme une spécification technique.
 
 Un bon prompt ne cherche pas à "convaincre" le modèle. Il cherche à rendre la tâche difficile à mal comprendre.
+
+Pour approfondir, OpenAI publie ses [bonnes pratiques de prompt engineering pour ChatGPT](https://help.openai.com/en/articles/10032626-prompt-engineering-best-practices-for-chatgpt), notamment sur la clarté des consignes et l'amélioration itérative.
