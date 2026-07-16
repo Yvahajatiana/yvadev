@@ -25,6 +25,14 @@ export function PostCard({ post, featured = false }: PostCardProps) {
             className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
             sizes={featured ? '(max-width: 768px) 100vw, 66vw' : '(max-width: 768px) 100vw, 33vw'}
           />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground via-foreground/85 to-transparent px-5 pb-5 pt-16 md:px-6 md:pb-6">
+            <h2 className={`
+              line-clamp-3 font-bold leading-tight text-background
+              ${featured ? 'text-xl md:text-2xl' : 'text-lg'}
+            `}>
+              {post.title}
+            </h2>
+          </div>
           {post.featured && (
             <div className="absolute left-4 top-4">
               <Badge variant="accent">À la une</Badge>
@@ -45,13 +53,6 @@ export function PostCard({ post, featured = false }: PostCardProps) {
               </Badge>
             )}
           </div>
-
-          <h2 className={`
-            line-clamp-2 font-bold text-foreground transition-colors group-hover:text-primary
-            ${featured ? 'mb-3 text-xl md:text-2xl' : 'mb-3 text-lg'}
-          `}>
-            {post.title}
-          </h2>
 
           <p className={`
             mb-5 line-clamp-3 text-secondary
