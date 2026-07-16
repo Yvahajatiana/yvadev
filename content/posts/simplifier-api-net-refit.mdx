@@ -1,83 +1,260 @@
 ---
-title: "Simplifier vos API REST en .NET avec Refit"
-excerpt: "Refit permet de déclarer des clients HTTP plus lisibles en .NET, mais il faut l'utiliser comme un outil d'intégration propre, pas comme une couche magique."
+title: "Refit en .NET : concevoir des clients HTTP fiables"
+excerpt: "Utiliser Refit avec IHttpClientFactory pour créer des clients HTTP lisibles, résilients et correctement isolés du domaine dans une application .NET moderne."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: [".NET", "Refit", "HTTP", "API", "Intégration"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Client HTTP .NET simplifié avec Refit"
+coverImageAlt: "Client Refit reliant une application .NET à une API HTTP externe"
 featured: false
 filename: "simplifier-api-net-refit"
 ---
 
-L'intégration avec des API externes est un point de friction classique dans les applications .NET. Beaucoup de bases de code accumulent des `HttpClient` mal encapsulés, des routes concaténées à la main, des erreurs de sérialisation et des conventions hétérogènes.
+Refit transforme un contrat HTTP en interface .NET. Les routes, verbes, paramètres et corps de requête deviennent explicites, tandis que la bibliothèque génère l'implémentation du client.
 
-Refit apporte une réponse intéressante: décrire un client HTTP via une interface déclarative.
+Ce gain de lisibilité ne rend pas l'intégration fiable par lui-même. Une API distante reste un système partiellement disponible, versionné par une autre équipe et capable de retourner des données ou des erreurs inattendues. Refit décrit le protocole ; l'application doit encore gérer la durée de vie du client, l'authentification, les timeouts, les retries et la traduction vers son propre modèle.
 
-## Pourquoi Refit est utile
+## Installer uniquement les packages nécessaires
 
-Avec Refit, tu transformes un contrat HTTP en interface .NET:
+Dans une application utilisant l'injection de dépendances et `IHttpClientFactory`, installe Refit et son intégration dédiée :
+
+```bash
+dotnet add package Refit
+dotnet add package Refit.HttpClientFactory
+dotnet add package Microsoft.Extensions.Http.Resilience
+```
+
+Le dernier package n'est pas obligatoire pour Refit. Il fournit les stratégies modernes de résilience HTTP de .NET lorsque l'intégration en a réellement besoin.
+
+## Décrire le contrat HTTP, pas le domaine
+
+Supposons qu'une application doive interroger un fournisseur de paiement :
 
 ```csharp
-public interface IGitHubApi
+public sealed record ProviderPaymentRequest(
+    string OrderReference,
+    long AmountInMinorUnits,
+    string Currency);
+
+public sealed record ProviderPaymentResponse(
+    string PaymentId,
+    string Status,
+    string? FailureCode);
+
+public interface IPaymentProviderApi
 {
-    [Get("/users/{user}")]
-    Task<UserDto> GetUserAsync(string user);
+    [Post("/v1/payments")]
+    Task<ApiResponse<ProviderPaymentResponse>> CreatePaymentAsync(
+        [Body] ProviderPaymentRequest request,
+        [Header("Idempotency-Key")] string idempotencyKey,
+        CancellationToken cancellationToken);
+
+    [Get("/v1/payments/{paymentId}")]
+    Task<ApiResponse<ProviderPaymentResponse>> GetPaymentAsync(
+        string paymentId,
+        CancellationToken cancellationToken);
 }
 ```
 
-Puis tu enregistres ce client:
+Ces DTO représentent le contrat du fournisseur. Ils ne doivent pas devenir les objets métier de l'application. Si le fournisseur renomme `PaymentId` ou ajoute un statut, le changement doit rester contenu dans la couche d'intégration.
+
+Le `CancellationToken` placé en paramètre est transmis à l'appel HTTP. Cette propagation est indispensable pour arrêter le travail lorsque la requête entrante est annulée ou que le service s'arrête.
+
+## Choisir le type de retour selon la gestion d'erreur
+
+Avec `Task<T>`, Refit désérialise une réponse réussie et lève une `ApiException` pour une réponse HTTP en erreur. Avec `Task<ApiResponse<T>>`, le code appelant reçoit le statut, les en-têtes, le contenu et l'erreur éventuelle dans un résultat structuré.
+
+`ApiResponse<T>` est utile lorsqu'une couche d'intégration doit traduire précisément plusieurs statuts HTTP. Il ne faut toutefois pas propager ce type dans toute l'application : cela couplerait les cas d'usage à Refit.
+
+## Configurer le client avec IHttpClientFactory
+
+La configuration centralise l'adresse, les en-têtes stables et la durée maximale d'un appel :
 
 ```csharp
-services
-    .AddRefitClient<IGitHubApi>()
-    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
+builder.Services
+    .AddRefitClient<IPaymentProviderApi>()
+    .ConfigureHttpClient((services, client) =>
+    {
+        var options = services
+            .GetRequiredService<IOptions<PaymentProviderOptions>>()
+            .Value;
+
+        client.BaseAddress = options.BaseUrl;
+        client.Timeout = TimeSpan.FromSeconds(10);
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("YvaDev.Payments/1.0");
+    })
+    .RedactLoggedHeaders("Authorization", "X-Api-Key");
 ```
 
-Le gain principal est la lisibilité.
+`IHttpClientFactory` gère la mise en commun et le renouvellement des handlers sous-jacents. Le client Refit typé est transient et doit rester court. Le capturer dans un singleton peut empêcher le renouvellement attendu du handler et la prise en compte de changements DNS.
 
-## Ce que Refit simplifie vraiment
-
-Refit est utile pour:
-
-- centraliser les contrats HTTP
-- réduire le code boilerplate
-- clarifier routes, verbes et payloads
-- standardiser les intégrations
-
-Il est particulièrement efficace quand une équipe consomme plusieurs API externes et veut garder des contrats propres.
-
-## Ce que Refit ne doit pas remplacer
-
-Refit ne remplace pas:
-
-- la gestion métier des erreurs
-- les retries et timeouts
-- les politiques de résilience
-- la journalisation
-- la modélisation des DTO
-
-Refit simplifie le client. Il ne résout pas toute l'intégration.
-
-## Une bonne pratique
-
-Expose Refit derrière une frontière applicative plus stable:
+L'adresse et les secrets ne doivent pas être écrits dans le code. Valide les options au démarrage :
 
 ```csharp
-public sealed class PaymentGateway
+public sealed class PaymentProviderOptions
 {
-    private readonly IPaymentApi _api;
+    public const string SectionName = "PaymentProvider";
 
-    public async Task<PaymentResult> AuthorizeAsync(PaymentRequest request, CancellationToken ct)
+    public required Uri BaseUrl { get; init; }
+    public required string ApiKey { get; init; }
+}
+
+builder.Services
+    .AddOptions<PaymentProviderOptions>()
+    .BindConfiguration(PaymentProviderOptions.SectionName)
+    .Validate(options => options.BaseUrl.IsAbsoluteUri)
+    .Validate(options => !string.IsNullOrWhiteSpace(options.ApiKey))
+    .ValidateOnStart();
+```
+
+## Ajouter l'authentification dans un handler
+
+Un `DelegatingHandler` applique une préoccupation HTTP commune sans polluer chaque méthode Refit :
+
+```csharp
+public sealed class PaymentAuthenticationHandler(
+    IOptions<PaymentProviderOptions> options)
+    : DelegatingHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
-        var response = await _api.AuthorizeAsync(request, ct);
-        return Map(response);
+        request.Headers.TryAddWithoutValidation(
+            "X-Api-Key",
+            options.Value.ApiKey);
+
+        return base.SendAsync(request, cancellationToken);
     }
 }
 ```
 
-Cela evite de faire remonter partout les détails de l'API externe.
+Enregistre ensuite le handler dans la chaîne :
+
+```csharp
+builder.Services.AddTransient<PaymentAuthenticationHandler>();
+
+builder.Services
+    .AddRefitClient<IPaymentProviderApi>()
+    .ConfigureHttpClient(client =>
+        client.BaseAddress = new Uri("https://payments.example.com"))
+    .AddHttpMessageHandler<PaymentAuthenticationHandler>();
+```
+
+Dans le projet réel, conserve une seule inscription complète du client. Les deux extraits séparent volontairement les responsabilités pour la lecture.
+
+Si le jeton expire et doit être renouvelé, le handler peut dépendre d'un fournisseur de jetons. Ce composant doit synchroniser les renouvellements concurrents et ne jamais journaliser la valeur du secret.
+
+## Encadrer les retries et les timeouts
+
+Le handler standard de résilience de .NET combine limitation de concurrence, timeout total, retry, circuit breaker et timeout par tentative :
+
+```csharp
+builder.Services
+    .AddRefitClient<IPaymentProviderApi>()
+    .ConfigureHttpClient(client =>
+        client.BaseAddress = new Uri("https://payments.example.com"))
+    .AddStandardResilienceHandler();
+```
+
+Les valeurs par défaut ne remplacent pas une décision d'architecture. Avant d'activer un retry, réponds à trois questions :
+
+1. l'erreur est-elle réellement transitoire ?
+2. l'opération peut-elle être rejouée sans créer un second effet ?
+3. le temps total reste-t-il compatible avec le délai du cas d'usage ?
+
+Un `GET` est généralement rejouable. Un `POST` de paiement ne l'est que si le fournisseur garantit l'idempotence, par exemple avec une clé stable pour l'opération. Sans cette garantie, un timeout après l'envoi laisse une situation ambiguë : le paiement a peut-être été créé même si la réponse n'est jamais arrivée.
+
+Évite aussi l'empilement de retries. Si Refit, un proxy, le service appelant et un orchestrateur réessaient chacun trois fois, une panne peut multiplier brutalement la charge sur le fournisseur.
+
+## Traduire l'intégration derrière une frontière applicative
+
+Une gateway protège le domaine des DTO et des statuts du fournisseur :
+
+```csharp
+public sealed class PaymentGateway(IPaymentProviderApi api)
+    : IPaymentGateway
+{
+    public async Task<PaymentResult> AuthorizeAsync(
+        PaymentAttempt attempt,
+        CancellationToken cancellationToken)
+    {
+        var request = new ProviderPaymentRequest(
+            attempt.OrderNumber,
+            attempt.Amount.MinorUnits,
+            attempt.Amount.Currency);
+
+        var response = await api.CreatePaymentAsync(
+            request,
+            attempt.IdempotencyKey,
+            cancellationToken);
+
+        if (response.IsSuccessful && response.Content is not null)
+        {
+            return Map(response.Content);
+        }
+
+        return response.StatusCode switch
+        {
+            HttpStatusCode.BadRequest => PaymentResult.Rejected(
+                "provider_request_rejected"),
+            HttpStatusCode.TooManyRequests => PaymentResult.RetryLater(),
+            _ => PaymentResult.ProviderUnavailable()
+        };
+    }
+}
+```
+
+La traduction doit préserver les informations utiles sans exposer les détails internes ou sensibles du fournisseur. Une réponse `400` peut représenter une erreur définitive, tandis qu'un `429` indique une limitation temporaire. Les traiter de la même manière rendrait les retries inefficaces ou dangereux.
+
+## Observer sans divulguer les données
+
+Pour chaque dépendance HTTP, mesure :
+
+- la durée et ses percentiles ;
+- le statut HTTP ;
+- le nombre de timeouts ;
+- les ouvertures de circuit ;
+- les tentatives supplémentaires ;
+- le taux d'erreur par opération stable.
+
+Évite d'utiliser un identifiant client ou une URL complète comme dimension de métrique. Redacte les en-têtes d'authentification et ne journalise pas les corps par défaut : ils peuvent contenir des données personnelles, des jetons ou des informations de paiement.
+
+## Tester le contrat et la traduction
+
+Les tests unitaires de `PaymentGateway` peuvent utiliser une implémentation contrôlée de `IPaymentProviderApi` pour vérifier la traduction des résultats. Un test d'intégration doit ensuite exercer le vrai pipeline HTTP contre un serveur local simulé : sérialisation JSON, en-têtes, routes, statuts et annulation.
+
+Ces tests détectent des erreurs que la compilation ne voit pas : nom JSON différent, format de date, paramètre oublié ou corps d'erreur incompatible. Pour une API importante, complète-les par un test contractuel ou une validation dans l'environnement sandbox du fournisseur.
+
+## Quand ne pas utiliser Refit
+
+Refit apporte peu de valeur lorsque :
+
+- le client ne contient qu'un appel trivial et stable ;
+- le protocole n'est pas principalement REST/HTTP ;
+- le streaming exige un contrôle très fin de la réponse ;
+- la signature de requête dépend d'un traitement bas niveau complexe ;
+- l'équipe doit maîtriser précisément chaque étape de sérialisation.
+
+Un client écrit directement avec `HttpClient` reste parfois plus explicite. Le bon critère n'est pas le nombre de lignes économisées, mais la lisibilité du contrat et la capacité à diagnostiquer l'intégration.
+
+## Checklist avant la production
+
+- Les DTO externes restent-ils dans la couche d'intégration ?
+- L'adresse et les secrets sont-ils validés au démarrage ?
+- Le client typé évite-t-il d'être capturé par un singleton ?
+- L'annulation traverse-t-elle toutes les méthodes ?
+- Les timeouts couvrent-ils le budget total du cas d'usage ?
+- Chaque retry est-il limité à une opération rejouable ?
+- Les erreurs HTTP sont-elles traduites en résultats applicatifs ?
+- Les en-têtes sensibles sont-ils masqués dans les logs ?
+- Le contrat JSON est-il couvert par un test d'intégration ?
 
 ## Conclusion
 
-Refit est un bon outil pour simplifier les intégrations REST en .NET, tant qu'il reste à sa place: une couche déclarative de contrat HTTP. Utilise correctement, il rend le code plus lisible. Utilise comme substitut à une vraie conception d'intégration, il déplace seulement le problème.
+Refit rend un contrat REST lisible, typé et facile à enregistrer avec `IHttpClientFactory`. Sa responsabilité s'arrête là.
+
+Une intégration fiable exige encore une frontière applicative, des DTO externes isolés, une authentification maîtrisée, des délais bornés, des retries idempotents et une observabilité qui ne divulgue pas les données. Utilisé dans ce cadre, Refit réduit le bruit sans masquer les risques du réseau.
+
+Pour approfondir, consulte le [dépôt officiel Refit](https://github.com/reactiveui/refit), la documentation d'[`IHttpClientFactory`](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory) et les [stratégies de résilience HTTP .NET](https://learn.microsoft.com/dotnet/core/resilience/http-resilience).
