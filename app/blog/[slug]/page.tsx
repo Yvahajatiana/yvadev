@@ -138,8 +138,6 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                     ))}
                   </div>
 
-                  <h1 className="mb-4 text-3xl font-bold text-foreground md:text-4xl lg:text-5xl">{post.title}</h1>
-
                   <p className="mb-6 text-lg text-secondary">{post.excerpt}</p>
 
                   <div className="mb-6 flex flex-wrap items-center gap-6 text-sm text-secondary">
@@ -174,8 +172,13 @@ export default function BlogPostPage({ params }: BlogPostPageProps) {
                     <CopyButton text={postUrl} />
                   </div>
 
-                  <div className="relative mb-8 aspect-video w-full overflow-hidden rounded-xl border border-border">
+                  <div className="relative mb-8 aspect-[40/21] w-full overflow-hidden rounded-[1.5rem] border border-border bg-muted">
                     <Image src={post.coverImage} alt={post.coverImageAlt} fill className="object-cover" priority />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-foreground via-foreground/85 to-transparent px-6 pb-6 pt-24 md:px-10 md:pb-9 md:pt-32">
+                      <h1 className="max-w-4xl text-3xl font-bold leading-tight text-background md:text-4xl lg:text-5xl">
+                        {post.title}
+                      </h1>
+                    </div>
                   </div>
                 </header>
 
