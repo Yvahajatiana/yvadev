@@ -1,53 +1,227 @@
 ---
-title: "FluentValidation en .NET : où placer les validations et pourquoi"
-excerpt: "FluentValidation est utile quand il clarifie les règles d'entrée et évite la duplication. Il devient moins utile lorsqu'il remplace la vraie logique métier."
+title: "FluentValidation et ASP.NET Core : règles et limites"
+excerpt: "Intégrer FluentValidation dans une API ASP.NET Core sans confondre validation des entrées, invariants métier et contraintes de persistance fiables et durables."
 date: "2026-03-11"
+updatedAt: "2026-07-16"
 author: "Yva Hajatiana"
 tags: [".NET", "FluentValidation", "Validation", "ASP.NET Core", "Architecture"]
 coverImage: "/images/posts/default-dotnet.png"
-coverImageAlt: "Validation déclarative en .NET avec FluentValidation"
+coverImageAlt: "Flux de validation entre une API ASP.NET Core, FluentValidation et le domaine"
 featured: false
 filename: "fluent-validation-net-core"
 ---
 
-FluentValidation est largement utilisé dans les applications .NET pour valider des commandes, des requêtes ou des DTO HTTP. C'est un outil utile, mais il faut être clair sur son rôle. Il ne sert pas à porter toute la logique métier. Il sert à exprimer proprement les règles d'entrée.
+FluentValidation rend les règles d'entrée lisibles et testables dans une application .NET. Le problème commence lorsqu'un validateur devient l'endroit où l'on place indistinctement formats HTTP, accès à la base et décisions métier.
 
-## Ce que FluentValidation fait bien
+Une validation saine répond d'abord à cette question : **quelle frontière protège cette règle ?** Une adresse e-mail vide concerne le contrat d'entrée. L'interdiction d'annuler une commande déjà expédiée appartient au domaine. L'unicité d'une valeur doit rester garantie par la base, même si une vérification préalable améliore l'expérience utilisateur.
 
-Il est excellent pour:
+## Trois catégories de règles à ne pas confondre
 
-- vérifier qu'un champ est requis
-- contrôler un format
-- imposer une longueur ou une plage
-- centraliser la validation d'entrée
-
-Exemple:
+Prenons une commande de création de compte :
 
 ```csharp
-public sealed class CreateUserValidator : AbstractValidator<CreateUserCommand>
+public sealed record RegisterCustomerCommand(
+    string Email,
+    string DisplayName,
+    DateOnly BirthDate);
+```
+
+Les règles ne vivent pas toutes au même endroit.
+
+| Règle | Protection attendue | Emplacement principal |
+| --- | --- | --- |
+| e-mail obligatoire et correctement formé | contrat d'entrée | validateur FluentValidation |
+| nom limité à 80 caractères | contrat applicatif | validateur FluentValidation |
+| client majeur pour un produit réglementé | invariant métier | domaine |
+| e-mail unique | cohérence concurrente | contrainte unique en base |
+| fournisseur externe disponible | condition d'exécution | cas d'usage et gestion d'erreur |
+
+Cette séparation évite de présenter une règle comme fiable alors qu'elle ne l'est pas. Par exemple, un appel `MustAsync` qui cherche un e-mail existant peut réduire les erreurs retournées à l'utilisateur, mais deux requêtes concurrentes peuvent passer le contrôle en même temps. Seule une contrainte unique protège réellement les données.
+
+## Écrire un validateur ciblé
+
+Le validateur porte les règles déterministes qui peuvent être évaluées à partir de la commande :
+
+```csharp
+using FluentValidation;
+
+public sealed class RegisterCustomerValidator
+    : AbstractValidator<RegisterCustomerCommand>
 {
-    public CreateUserValidator()
+    public RegisterCustomerValidator()
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress();
-        RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
+        RuleFor(x => x.Email)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty()
+            .EmailAddress()
+            .MaximumLength(254);
+
+        RuleFor(x => x.DisplayName)
+            .NotEmpty()
+            .MaximumLength(80);
+
+        RuleFor(x => x.BirthDate)
+            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow));
     }
 }
 ```
 
-## Ce qu'il ne faut pas lui déléguer
+`CascadeMode.Stop` évite d'exécuter les règles suivantes d'une même chaîne lorsque la première a déjà échoué. Ce choix ne doit pas être global par réflexe : retourner plusieurs erreurs indépendantes en une réponse reste souvent plus utile au client.
 
-FluentValidation ne doit pas remplacer:
+Les messages affichés à l'utilisateur peuvent être localisés à la frontière HTTP. Pour les traitements applicatifs, préfère aussi des codes d'erreur stables aux chaînes de caractères utilisées comme identifiants.
 
-- les invariants du domaine
-- les règles métier complexes
-- les décisions qui dépendent de l'état profond du système
+## Enregistrer les validateurs dans l'injection de dépendances
 
-La validation d'entrée n'est pas la logique métier.
+Le package `FluentValidation.DependencyInjectionExtensions` permet de découvrir les validateurs d'un assembly :
 
-## Ou le placer
+```csharp
+builder.Services.AddValidatorsFromAssemblyContaining<
+    RegisterCustomerValidator>();
+```
 
-Le placement le plus sain est souvent dans la couche application, au plus près des commandes et requêtes. Cela permet de filtrer les entrées avant l'exécution du cas d'usage, tout en laissant le domaine protéger ses propres invariants.
+L'enregistrement explicite reste adapté aux petits projets :
+
+```csharp
+builder.Services.AddTransient<
+    IValidator<RegisterCustomerCommand>,
+    RegisterCustomerValidator>();
+```
+
+La documentation recommande le cycle de vie transient comme choix simple et sûr. Si un validateur reçoit des dépendances, son cycle de vie ne doit jamais être plus long que celui de ces dépendances.
+
+## Préférer une validation manuelle dans une API moderne
+
+Le package historique `FluentValidation.AspNetCore` n'est plus maintenu. Son pipeline automatique MVC ne prend pas en charge les règles asynchrones et ne couvre pas les Minimal APIs. Pour un nouveau projet, l'appel manuel rend le comportement explicite :
+
+```csharp
+app.MapPost("/customers", async (
+    RegisterCustomerCommand command,
+    IValidator<RegisterCustomerCommand> validator,
+    RegisterCustomerHandler handler,
+    CancellationToken cancellationToken) =>
+{
+    var validation = await validator.ValidateAsync(
+        command,
+        cancellationToken);
+
+    if (!validation.IsValid)
+    {
+        return Results.ValidationProblem(
+            validation.Errors
+                .GroupBy(error => error.PropertyName)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group
+                        .Select(error => error.ErrorMessage)
+                        .ToArray()));
+    }
+
+    var customerId = await handler.HandleAsync(
+        command,
+        cancellationToken);
+
+    return Results.Created($"/customers/{customerId}");
+});
+```
+
+`ValidateAsync` exécute les règles synchrones et asynchrones. Il est donc possible de faire évoluer le validateur sans créer plus tard une exécution synchrone invalide.
+
+Dans une application avec beaucoup d'endpoints, cette logique peut être centralisée dans un filtre d'endpoint ou un pipeline applicatif. L'objectif reste le même : rendre l'ordre d'exécution visible et conserver une réponse HTTP cohérente.
+
+## Les règles asynchrones demandent une limite claire
+
+FluentValidation propose `MustAsync` et `CustomAsync`, mais leur disponibilité ne signifie pas que tous les appels externes doivent entrer dans un validateur.
+
+Une règle asynchrone est raisonnable lorsqu'elle complète rapidement la validation d'une entrée. Elle devient problématique si elle :
+
+- déclenche plusieurs requêtes réseau ;
+- modifie des données ;
+- dépend d'un workflow métier complexe ;
+- décide si une opération est autorisée ;
+- remplace une contrainte transactionnelle.
+
+Dans ces cas, le handler du cas d'usage est un meilleur emplacement. Il peut gérer les indisponibilités, les délais, la concurrence et la traduction d'une erreur métier sans transformer le validateur en orchestrateur caché.
+
+## Le domaine doit encore refuser les états invalides
+
+Même avec une validation d'entrée complète, une entité doit protéger ses invariants :
+
+```csharp
+public sealed class Customer
+{
+    public DateOnly BirthDate { get; }
+
+    private Customer(DateOnly birthDate)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var minimumBirthDate = today.AddYears(-18);
+
+        if (birthDate > minimumBirthDate)
+        {
+            throw new CustomerMustBeAdultException();
+        }
+
+        BirthDate = birthDate;
+    }
+}
+```
+
+Pourquoi répéter une partie du contrôle ? Parce que le domaine peut être appelé depuis une API, un consommateur de messages, un traitement batch ou un test. Son intégrité ne doit pas dépendre du fait qu'un validateur HTTP ait été exécuté auparavant.
+
+## Tester les règles comme une boîte noire
+
+Les extensions de test de FluentValidation permettent de fournir une entrée et d'observer les erreurs sans tester l'implémentation interne :
+
+```csharp
+using FluentValidation.TestHelper;
+
+public sealed class RegisterCustomerValidatorTests
+{
+    private readonly RegisterCustomerValidator _validator = new();
+
+    [Fact]
+    public void Empty_email_is_rejected()
+    {
+        var command = new RegisterCustomerCommand(
+            "",
+            "Yva",
+            new DateOnly(1990, 1, 1));
+
+        var result = _validator.TestValidate(command);
+
+        result.ShouldHaveValidationErrorFor(x => x.Email);
+    }
+
+    [Fact]
+    public void Valid_input_has_no_validation_error()
+    {
+        var command = new RegisterCustomerCommand(
+            "yva@example.com",
+            "Yva",
+            new DateOnly(1990, 1, 1));
+
+        var result = _validator.TestValidate(command);
+
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+}
+```
+
+Il est préférable d'utiliser le vrai validateur plutôt que de le simuler. Les tests restent ainsi centrés sur son contrat observable et résistent mieux aux changements internes.
+
+## Checklist avant d'ajouter une règle
+
+- La règle protège-t-elle la forme de l'entrée ou un invariant métier ?
+- Peut-elle être évaluée sans effet de bord ?
+- Une contrainte de base de données doit-elle garantir le résultat final ?
+- L'appel est-il asynchrone et correctement annulable ?
+- L'erreur produite sera-t-elle stable et compréhensible par le client ?
+- Le même invariant est-il protégé si le cas d'usage est appelé hors HTTP ?
 
 ## Conclusion
 
-FluentValidation est utile lorsqu'il réduit le bruit, standardise les règles d'entrée et clarifie les contrats. Il devient problématique quand il sert à déplacer hors du domaine des règles qui devraient y rester.
+FluentValidation est efficace lorsqu'il reste une frontière explicite de validation, pas lorsqu'il devient une couche métier parallèle.
+
+Utilise-le pour rejeter tôt les entrées mal formées, appelle les validateurs manuellement dans les nouvelles APIs ASP.NET Core, laisse les entités protéger leurs invariants et confie la cohérence concurrente à la persistance. Cette répartition produit un système plus prévisible qu'un validateur capable, en apparence, de tout décider.
+
+Pour approfondir l'API actuelle, consulte la [documentation ASP.NET Core de FluentValidation](https://docs.fluentvalidation.net/en/latest/aspnet.html), les [règles asynchrones](https://docs.fluentvalidation.net/en/latest/async.html) et les [extensions de test](https://docs.fluentvalidation.net/en/latest/testing.html).
