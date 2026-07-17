@@ -107,9 +107,12 @@ export default function RootLayout({
         <WebsiteStructuredData />
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
+        <a href="#main-content" className="skip-link">
+          Aller au contenu principal
+        </a>
         <div className="relative flex min-h-screen flex-col">
           <Header />
-          <main className="flex-1">{children}</main>
+          <main id="main-content" className="flex-1" tabIndex={-1}>{children}</main>
           <Footer />
         </div>
       </body>

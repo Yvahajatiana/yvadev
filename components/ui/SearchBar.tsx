@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useId, useRef } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from './Input';
@@ -28,6 +28,8 @@ export function SearchBar({ className, placeholder = "Rechercher un article...",
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsId = useId();
+  const statusId = useId();
 
   // Cleanup ref for timeout
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -175,12 +177,20 @@ export function SearchBar({ className, placeholder = "Rechercher un article...",
           onFocus={() => query.trim() && results.length > 0 && setIsOpen(true)}
           placeholder={placeholder}
           className="pl-10 pr-10"
+          type="search"
+          aria-label="Rechercher dans les articles"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-controls={resultsId}
+          aria-describedby={statusId}
+          aria-activedescendant={selectedIndex >= 0 ? `${resultsId}-option-${selectedIndex}` : undefined}
         />
         
         {/* Loading/Clear Button */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {isLoading ? (
-            <Loader2 className="h-4 w-4 text-secondary animate-spin" />
+            <Loader2 className="h-4 w-4 text-secondary animate-spin" aria-hidden="true" />
           ) : query ? (
             <button
               onClick={clearSearch}
@@ -192,6 +202,14 @@ export function SearchBar({ className, placeholder = "Rechercher un article...",
           ) : null}
         </div>
       </div>
+
+      <span id={statusId} className="sr-only" role="status" aria-live="polite">
+        {isLoading
+          ? 'Recherche en cours'
+          : query.trim().length >= 2
+            ? `${results.length} résultat${results.length !== 1 ? 's' : ''}`
+            : ''}
+      </span>
 
       {/* Search Results Dropdown */}
       {isOpen && (
@@ -210,10 +228,13 @@ export function SearchBar({ className, placeholder = "Rechercher un article...",
               </div>
 
               {/* Results List */}
-              <div className="py-2">
+              <div id={resultsId} role="listbox" aria-label="Résultats de recherche" className="py-2">
                 {results.map((post, index) => (
                   <Link
                     key={post.slug}
+                    id={`${resultsId}-option-${index}`}
+                    role="option"
+                    aria-selected={selectedIndex === index}
                     href={`/blog/${post.slug}`}
                     onClick={() => setIsOpen(false)}
                     className={cn(

@@ -37,16 +37,6 @@ export function TableOfContents({ items, className }: TableOfContentsProps) {
     return () => observer.disconnect();
   }, [items]);
 
-  const handleClick = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  };
-
   if (items.length === 0) {
     return null;
   }
@@ -54,12 +44,13 @@ export function TableOfContents({ items, className }: TableOfContentsProps) {
   return (
     <div className={cn('space-y-2', className)}>
       <h4 className="font-semibold text-sm text-foreground mb-4">Dans cet article</h4>
-      <nav>
+      <nav aria-label="Sommaire de l’article">
         <ul className="space-y-2">
           {items.map((item) => (
             <li key={item.id}>
-              <button
-                onClick={() => handleClick(item.id)}
+              <a
+                href={`#${item.id}`}
+                aria-current={activeId === item.id ? 'location' : undefined}
                 className={cn(
                   'text-left text-sm transition-colors hover:text-primary block w-full',
                   item.level === 2 ? 'font-medium' : 'pl-4 font-normal',
@@ -69,7 +60,7 @@ export function TableOfContents({ items, className }: TableOfContentsProps) {
                 )}
               >
                 {item.title}
-              </button>
+              </a>
             </li>
           ))}
         </ul>
