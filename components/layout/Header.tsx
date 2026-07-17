@@ -17,7 +17,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-      <nav className="container flex h-16 items-center justify-between">
+      <nav className="container flex h-16 items-center justify-between" aria-label="Navigation principale">
         <div className="flex items-center">
           <Link href="/" className="flex items-center space-x-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/20">
@@ -49,8 +49,10 @@ export function Header() {
             type="button"
             className="inline-flex items-center justify-center rounded-md p-2 text-secondary hover:text-foreground focus-ring"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
+            aria-label={mobileMenuOpen ? 'Fermer le menu principal' : 'Ouvrir le menu principal'}
           >
-            <span className="sr-only">Ouvrir le menu principal</span>
             {mobileMenuOpen ? (
               <X className="h-6 w-6" aria-hidden="true" />
             ) : (
@@ -60,7 +62,7 @@ export function Header() {
         </div>
       </nav>
 
-      <div className={cn('md:hidden', mobileMenuOpen ? 'block' : 'hidden')}>
+      <div id="mobile-navigation" className={cn('md:hidden', mobileMenuOpen ? 'block' : 'hidden')}>
         <div className="space-y-4 border-t border-border bg-background px-4 py-6">
           {navigation.map((item) => (
             <Link
