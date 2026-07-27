@@ -1,0 +1,315 @@
+---
+title: "Évaluer une application IA .NET dans une pipeline CI"
+excerpt: "Construisez un filet de sécurité pour une application IA .NET : scénarios, évaluateurs, cache, rapports et seuils robustes dans GitHub Actions."
+date: "2026-07-27"
+author: "Yva Hajatiana"
+tags: [".NET", "C#", "AI Engineering", "DevOps", "GitHub Actions", "Tests"]
+coverImage: "/images/posts/cover-ai.webp"
+coverImageAlt: "Composition éditoriale abstraite sur l’intelligence artificielle appliquée"
+featured: false
+filename: "evaluer-application-ia-dotnet-pipeline-ci"
+---
+
+Un test unitaire classique vérifie une règle déterministe : pour une entrée donnée, le résultat attendu est connu. Une application qui appelle un modèle de langage n'offre pas cette garantie. Un changement de prompt, de modèle, de contexte récupéré ou de dépendance peut dégrader une réponse sans provoquer d'exception ni faire échouer une compilation.
+
+Les évaluations IA comblent cet écart. Elles transforment des scénarios représentatifs en signaux de qualité, de sécurité et de coût que l'équipe peut suivre avant une mise en production. Dans l'écosystème .NET, les bibliothèques `Microsoft.Extensions.AI.Evaluation` s'intègrent à `dotnet test`, proposent des évaluateurs prêts à l'emploi, du cache et des rapports. C'est une évolution importante : l'IA devient un élément contrôlé du pipeline, et non une dépendance observée uniquement après déploiement.
+
+Ce tutoriel construit une porte de qualité pour un assistant de support. Le même principe s'applique à un RAG, un agent ou une fonctionnalité de génération de code.
+
+## Ce que doit vérifier une pipeline IA
+
+Une bonne pipeline ne cherche pas à prouver qu'un LLM est « correct » dans l'absolu. Elle détecte une régression utile à l'équipe. Organisez les contrôles en trois couches :
+
+| Couche | Question | Exemple de contrôle |
+| --- | --- | --- |
+| Déterministe | La réponse respecte-t-elle le contrat non négociable ? | longueur maximale, JSON valide, aucune URL interdite |
+| Qualité | La réponse aide-t-elle réellement l'utilisateur ? | pertinence, cohérence, complétude |
+| Opérationnelle | La régression est-elle visible et explicable ? | rapport par scénario, cache, coût et durée |
+
+Les évaluateurs de qualité de Microsoft utilisent eux-mêmes un LLM : ils sont adaptés à la pertinence, la cohérence ou l'ancrage dans le contexte. Les évaluateurs déterministes restent indispensables pour les règles métier, car ils sont rapides, reproductibles et ne consomment aucun token.
+
+N'utilisez pas un seul prompt de démonstration. Constituez un jeu de scénarios versionné dans le dépôt : demande nominale, demande ambiguë, absence d'information, contenu qui tente d'injecter une instruction et action hors périmètre. Chaque scénario doit exprimer une attente observable, pas seulement une réponse « qui semble bonne ».
+
+## Prérequis et architecture de l'exemple
+
+Il faut .NET 8 ou une version ultérieure, un déploiement de modèle de conversation dans Azure OpenAI et des droits d'appel sur ce déploiement. L'exemple emploie `DefaultAzureCredential` : en local, il peut utiliser votre connexion Azure habituelle ; dans GitHub Actions, il utilisera une identité fédérée OIDC.
+
+Créez un projet de tests dédié. Le séparer du projet web évite d'exécuter les évaluations coûteuses avec chaque test unitaire ordinaire.
+
+```powershell
+dotnet new mstest -o tests/AiQualityGate.Tests --framework net8.0
+Set-Location tests/AiQualityGate.Tests
+
+dotnet add package Azure.AI.OpenAI
+dotnet add package Azure.Identity
+dotnet add package Microsoft.Extensions.AI.Abstractions
+dotnet add package Microsoft.Extensions.AI.OpenAI
+dotnet add package Microsoft.Extensions.AI.Evaluation
+dotnet add package Microsoft.Extensions.AI.Evaluation.Quality
+dotnet add package Microsoft.Extensions.AI.Evaluation.Reporting
+dotnet restore --use-lock-file
+```
+
+Pour un poste de développement, ne mettez pas les valeurs dans `appsettings.json` ni dans Git. Utilisez les secrets utilisateur :
+
+```powershell
+dotnet user-secrets init
+dotnet user-secrets set AZURE_OPENAI_ENDPOINT "https://mon-ressource.openai.azure.com/"
+dotnet user-secrets set AZURE_OPENAI_DEPLOYMENT "mon-deploiement"
+```
+
+En CI, ces deux valeurs seront des variables de dépôt. Elles ne sont pas des clés, mais traitez tout de même l'URL et le nom du déploiement comme des informations de configuration à ne pas afficher inutilement dans les logs.
+
+## Écrire un évaluateur déterministe
+
+Commencez par une règle qui ne dépend pas d'un modèle : l'assistant ne doit pas produire plus de 120 mots. Créez `WordCountEvaluator.cs` dans le projet de test.
+
+```csharp
+using System.Text.RegularExpressions;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.AI.Evaluation;
+
+namespace AiQualityGate.Tests;
+
+public sealed class WordCountEvaluator(int maximum) : IEvaluator
+{
+    public const string MetricName = "Words";
+
+    public IReadOnlyCollection<string> EvaluationMetricNames => [MetricName];
+
+    public ValueTask<EvaluationResult> EvaluateAsync(
+        IEnumerable<ChatMessage> messages,
+        ChatResponse modelResponse,
+        ChatConfiguration? chatConfiguration = null,
+        IEnumerable<EvaluationContext>? additionalContext = null,
+        CancellationToken cancellationToken = default)
+    {
+        var count = Regex.Matches(modelResponse.Text ?? string.Empty, @"\b\w+\b").Count;
+        var acceptable = count is > 5 && <= maximum;
+        var interpretation = new EvaluationMetricInterpretation(
+            acceptable ? EvaluationRating.Good : EvaluationRating.Unacceptable,
+            failed: !acceptable,
+            reason: $"La réponse contient {count} mots ; la limite est {maximum}.");
+
+        var metric = new NumericMetric(MetricName, count, interpretation.Reason)
+        {
+            Interpretation = interpretation,
+        };
+
+        return ValueTask.FromResult(new EvaluationResult(metric));
+    }
+}
+```
+
+Cet évaluateur est un bon endroit pour vos politiques spécifiques : présence obligatoire de citations, liste blanche de produits, format JSON ou refus explicite quand le contexte est insuffisant. Il ne faut pas confier ces invariants à un juge LLM.
+
+## Ajouter un scénario évalué et rapporté
+
+Le fichier suivant est un test MSTest complet. Il utilise les évaluateurs `RelevanceEvaluator` et `CoherenceEvaluator`, puis ajoute la règle déterministe. `DiskBasedReportingConfiguration` enregistre les résultats et met les réponses en cache. Lorsqu'un prompt, le modèle et le contexte ne changent pas, les relances deviennent plus rapides et moins coûteuses.
+
+Créez `SupportAssistantEvaluationTests.cs` :
+
+```csharp
+using Azure.AI.OpenAI;
+using Azure.Identity;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.AI.Evaluation;
+using Microsoft.Extensions.AI.Evaluation.Quality;
+using Microsoft.Extensions.AI.Evaluation.Reporting;
+using Microsoft.Extensions.AI.Evaluation.Reporting.Storage;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace AiQualityGate.Tests;
+
+[TestClass]
+public sealed class SupportAssistantEvaluationTests
+{
+    private static readonly ReportingConfiguration Reporting = CreateReporting();
+
+    [TestMethod]
+    public async Task Password_reset_answer_is_useful_and_concise()
+    {
+        await using var scenario = await Reporting.CreateScenarioRunAsync(
+            "support.password-reset",
+            additionalTags: ["critical", "fr"]);
+
+        IList<ChatMessage> messages =
+        [
+            new(ChatRole.System, """
+                Tu assistes le support. Réponds en français, en moins de 120 mots.
+                Utilise uniquement le contexte fourni. Si une information manque,
+                dis-le clairement et ne crée pas de procédure.
+                """),
+            new(ChatRole.User, "J'ai oublié mon mot de passe. Que dois-je faire ?")
+        ];
+
+        var options = new ChatOptions
+        {
+            Temperature = 0.0f,
+            ResponseFormat = ChatResponseFormat.Text,
+        };
+
+        ChatResponse response = await scenario.ChatConfiguration!.ChatClient
+            .GetResponseAsync(messages, options);
+
+        EvaluationResult result = await scenario.EvaluateAsync(messages, response);
+
+        AssertAcceptable(result, RelevanceEvaluator.RelevanceMetricName);
+        AssertAcceptable(result, CoherenceEvaluator.CoherenceMetricName);
+        AssertAcceptable(result, WordCountEvaluator.MetricName);
+    }
+
+    private static ReportingConfiguration CreateReporting()
+    {
+        var reportsPath = Environment.GetEnvironmentVariable("AI_EVAL_REPORTS_PATH")
+            ?? Path.Combine(AppContext.BaseDirectory, "ai-eval-reports");
+        var executionName = Environment.GetEnvironmentVariable("GITHUB_RUN_ID")
+            ?? DateTimeOffset.UtcNow.ToString("yyyyMMddTHHmmssZ");
+
+        return DiskBasedReportingConfiguration.Create(
+            storageRootPath: reportsPath,
+            evaluators:
+            [
+                new RelevanceEvaluator(),
+                new CoherenceEvaluator(),
+                new WordCountEvaluator(maximum: 120),
+            ],
+            chatConfiguration: CreateChatConfiguration(),
+            enableResponseCaching: true,
+            executionName: executionName);
+    }
+
+    private static ChatConfiguration CreateChatConfiguration()
+    {
+        var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")
+            ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT est requis.");
+        var deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")
+            ?? throw new InvalidOperationException("AZURE_OPENAI_DEPLOYMENT est requis.");
+
+        var client = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential())
+            .GetChatClient(deployment)
+            .AsIChatClient();
+
+        return new ChatConfiguration(client);
+    }
+
+    private static void AssertAcceptable(EvaluationResult result, string metricName)
+    {
+        NumericMetric metric = result.Get<NumericMetric>(metricName);
+        Assert.IsNotNull(metric.Interpretation, metric.Reason);
+        Assert.IsFalse(metric.Interpretation.Failed, metric.Reason);
+        Assert.IsTrue(
+            metric.Interpretation.Rating is EvaluationRating.Good or EvaluationRating.Exceptional,
+            metric.Reason);
+        Assert.IsFalse(metric.ContainsDiagnostics(), metric.Reason);
+    }
+}
+```
+
+L'appel au modèle évalué et ceux des évaluateurs passent par le même `IChatClient` fourni par `ScenarioRun`. C'est essentiel : le cache couvre alors à la fois la réponse du scénario et les appels internes des évaluateurs. `await using` est également important, car la destruction de `ScenarioRun` persiste le résultat.
+
+Exécutez d'abord le scénario localement :
+
+```powershell
+dotnet test tests/AiQualityGate.Tests --configuration Release
+```
+
+Ne fixez pas trop tôt une valeur numérique précise pour une évaluation LLM. Les modèles et leurs scores peuvent évoluer. Les premiers passages servent à observer les variations, ajuster le jeu de scénarios et choisir un seuil qui détecte une dégradation substantielle, plutôt qu'un bruit normal.
+
+## Produire un rapport exploitable
+
+Le cache et les résultats précédents n'ont d'intérêt que s'ils restent accessibles après le job. Installez l'outil de rapport dans un manifeste local, puis générez le rapport HTML :
+
+```powershell
+dotnet tool install --create-manifest-if-needed Microsoft.Extensions.AI.Evaluation.Console
+dotnet tool run aieval report --path .\artifacts\ai-evals --output .\artifacts\ai-evals\report.html
+```
+
+Le rapport permet de comparer les scénarios par exécution, de lire les raisons associées aux métriques et de localiser la régression. Utilisez le numéro de build comme `executionName` : plusieurs assemblages ou scénarios d'une même pipeline seront ainsi regroupés au lieu d'écraser l'exécution précédente.
+
+## Exécuter la porte de qualité dans GitHub Actions
+
+Le workflow ci-dessous isole les évaluations dans un job dédié. Il demande un jeton OIDC de courte durée à GitHub, se connecte à Azure sans secret client statique, conserve le rapport et échoue si les assertions du test échouent.
+
+```yaml
+name: AI quality gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    environment: ai-evaluations
+    env:
+      AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+      AI_EVAL_REPORTS_PATH: ${{ github.workspace }}/artifacts/ai-evals
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: tests/AiQualityGate.Tests/packages.lock.json
+
+      - name: Authenticate to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Restore and run evaluations
+        run: dotnet test tests/AiQualityGate.Tests --configuration Release --logger "trx;LogFileName=ai-evals.trx"
+
+      - name: Generate evaluation report
+        if: always()
+        run: |
+          dotnet tool install --create-manifest-if-needed Microsoft.Extensions.AI.Evaluation.Console
+          dotnet tool run aieval report --path "$AI_EVAL_REPORTS_PATH" --output "$AI_EVAL_REPORTS_PATH/report.html"
+
+      - name: Upload evaluation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-evaluation-${{ github.run_id }}
+          path: artifacts/ai-evals
+          if-no-files-found: warn
+```
+
+Créez au préalable une identité fédérée Microsoft Entra qui fait confiance à ce dépôt et à l'environnement GitHub `ai-evaluations`. Accordez-lui uniquement le droit d'inférence requis sur la ressource Azure OpenAI. Les valeurs `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` et `AZURE_SUBSCRIPTION_ID` sont des secrets ou variables d'environnement GitHub ; aucune clé API n'est nécessaire.
+
+Si les évaluations doivent être déclenchées pour des pull requests venant de forks, ne leur donnez pas automatiquement accès à l'identité Azure. Exécutez alors seulement les tests déterministes, ou planifiez les évaluations distantes après validation humaine sur une branche de confiance.
+
+## Choisir des seuils qui résistent au bruit
+
+Faire échouer une pull request à la moindre réponse moins élégante produit une pipeline ignorée. Préférez une progression en trois étapes :
+
+1. **Observer.** Exécutez les scénarios sur la branche principale pendant quelques jours et conservez les rapports.
+2. **Bloquer les invariants.** Échouez immédiatement pour un format invalide, une donnée sensible, une instruction ignorée ou une limite de budget dépassée.
+3. **Bloquer les régressions agrégées.** Comparez plusieurs scénarios et refusez une baisse importante de la médiane ou du taux de réussite, plutôt qu'un seul score isolé.
+
+Les évaluateurs qualité sont eux-mêmes probabilistes. La documentation Microsoft précise que, dans une pipeline réelle, il peut être préférable de suivre les tendances du rapport et de ne bloquer que les baisses significatives sur plusieurs tests. Conservez aussi la version du modèle, du prompt, des outils et du corpus : sans ces métadonnées, une variation n'est pas investigable.
+
+## Points de vigilance en production
+
+- **Ne versez pas de données clients dans les artefacts.** Les résultats sur disque peuvent contenir les messages, les réponses et les motifs des métriques. Utilisez des données synthétiques ou expurgées, une rétention courte et des artefacts à accès restreint.
+- **Séparez l'évaluation du déploiement.** Une panne de fournisseur IA ne doit pas masquer les tests déterministes ni déployer un changement non validé. Donnez au job IA son propre statut et sa propre politique de relance.
+- **Maîtrisez le coût.** Exécutez d'abord un petit ensemble bloquant sur chaque pull request, puis une suite plus large planifiée. Le cache réduit les appels identiques, mais il est invalidé lorsque les paramètres de requête changent.
+- **Évaluez les refus.** Un assistant sûr doit savoir répondre « je ne dispose pas de cette information » au lieu d'inventer une procédure. Ajoutez des scénarios négatifs et vérifiez cette escalade.
+- **Ne confondez pas score et vérité.** Une bonne note de pertinence ne valide ni les droits d'accès, ni les calculs, ni une action d'agent. Les contrôles métier doivent rester déterministes et côté serveur.
+
+## Ressources officielles
+
+La documentation .NET présente les [bibliothèques Microsoft.Extensions.AI.Evaluation](https://learn.microsoft.com/en-us/dotnet/ai/evaluation/libraries), les métriques disponibles et leur intégration à `dotnet test`. Le [tutoriel Microsoft sur le cache et les rapports](https://learn.microsoft.com/en-us/dotnet/ai/evaluation/evaluate-with-reporting) détaille `ScenarioRun`, le stockage disque et la génération du rapport `aieval`. Pour la CI, GitHub explique la [construction et les tests .NET dans Actions](https://docs.github.com/en/actions/tutorials/build-and-test-code/net), y compris le cache NuGet et les artefacts. Enfin, Microsoft documente l'[authentification Azure depuis GitHub Actions par OIDC](https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure-openid-connect), qui évite d'entreposer un secret client à longue durée.
+
+Une application IA prête pour la production n'est pas celle dont une démo répond bien une fois. C'est celle dont les scénarios importants, les risques et les régressions deviennent visibles à chaque changement.
