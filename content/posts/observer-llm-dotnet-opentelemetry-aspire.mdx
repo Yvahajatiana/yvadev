@@ -1,0 +1,258 @@
+---
+title: "Observer les LLM .NET avec OpenTelemetry et Aspire"
+excerpt: "Tracez les appels LLM, tokens, outils et latence dans une application .NET avec Microsoft.Extensions.AI, OpenTelemetry et Aspire Dashboard."
+date: "2026-07-30"
+author: "Yva Hajatiana"
+tags: [".NET", "C#", "AI Engineering", "DevOps", "OpenTelemetry", "Aspire"]
+coverImage: "/images/posts/cover-ai.webp"
+coverImageAlt: "Composition éditoriale abstraite sur l’intelligence artificielle appliquée"
+featured: false
+filename: "observer-llm-dotnet-opentelemetry-aspire"
+---
+
+Un agent répond trop lentement, appelle un outil inattendu ou consomme deux fois plus de tokens après une modification de prompt. Sans traces, l'équipe ne peut que deviner : le délai vient-il du modèle, d'une requête HTTP, d'un retry ou de l'outil appelé par l'agent ?
+
+L'observabilité des applications IA devient une pratique concrète dans l'écosystème .NET. `Microsoft.Extensions.AI` peut désormais émettre des traces et métriques conformes aux conventions GenAI d'OpenTelemetry. Le tableau de bord Aspire peut les recevoir en local, même sans AppHost ni application distribuée. Le résultat est un diagnostic de bout en bout : requête HTTP, appel LLM, appel d'outil, durée et usage de tokens dans une même trace.
+
+Ce tutoriel construit un petit assistant .NET 10 traçable, l'envoie vers un Aspire Dashboard autonome, puis explique comment transformer ces signaux en garde-fous DevOps. Il utilise Azure OpenAI pour l'exemple, mais la couche `IChatClient` laisse l'application indépendante du fournisseur.
+
+## Pourquoi cette tendance mérite l'attention
+
+OpenTelemetry est un standard ouvert pour collecter et exporter logs, traces et métriques. .NET s'appuie naturellement sur `ILogger`, `Meter` et `ActivitySource`, tandis qu'OTel fournit les conventions et les exporteurs interopérables. Les conventions GenAI normalisent notamment le modèle appelé, la durée, la raison de fin et l'usage des tokens. Elles permettent de comparer les signaux d'un service .NET, d'un outil Python ou d'un backend de supervision sans inventer un schéma propriétaire.
+
+Pour une application IA, les trois questions opérationnelles les plus utiles sont les suivantes :
+
+| Signal | Question à laquelle il répond | Exemple de décision |
+| --- | --- | --- |
+| Trace | Où se situe la lenteur ou l'échec ? | Corriger un retry, limiter un outil ou revoir le timeout |
+| Métrique | Le coût ou la latence dérive-t-il ? | Définir un budget de tokens par opération |
+| Log corrélé | Quel contexte applicatif explique ce comportement ? | Relier un incident à une version de prompt ou à un déploiement |
+
+`UseOpenTelemetry()` ajoute cette instrumentation au pipeline `IChatClient`. Les appels de complétion et les invocations de fonctions deviennent alors des spans enfants de l'opération métier. C'est plus utile qu'un log isolé du type « appel au modèle réussi » : on observe la durée complète et la causalité entre les composants.
+
+> Les conventions sémantiques GenAI restent expérimentales et peuvent évoluer. Évitez donc d'écrire des alertes qui dépendent d'un nom d'attribut trop précis sans tester la version des packages mise à jour. En revanche, le principe — exporter des traces OTLP et surveiller latence, erreurs et tokens — est stable.
+
+## Prérequis
+
+Vous aurez besoin de :
+
+- du SDK .NET 10 ;
+- d'un déploiement Azure OpenAI et de son endpoint, de sa clé et de son nom de déploiement ;
+- de Docker Desktop **ou** de Node.js pour lancer Aspire Dashboard ;
+- de PowerShell sous Windows.
+
+Ne placez jamais la clé dans le code, un fichier MDX, un `appsettings.json` committé ou les logs de CI. Pour ce laboratoire local, définissez les variables seulement dans la session PowerShell en cours :
+
+```powershell
+$env:AZURE_OPENAI_ENDPOINT = "https://<ressource>.openai.azure.com/"
+$env:AZURE_OPENAI_API_KEY = "<cle-api>"
+$env:AZURE_OPENAI_DEPLOYMENT = "<nom-du-deploiement>"
+```
+
+En production, remplacez cette clé par une identité managée ou un mécanisme de secrets adapté à votre plateforme. L'important pour le reste de l'exemple est de ne jamais faire dépendre le code applicatif de la façon dont le secret est fourni.
+
+## Créer l'application et ajouter les dépendances
+
+Créez un projet de console. Les versions ne sont volontairement pas figées dans les commandes : choisissez une même version compatible de `Microsoft.Extensions.AI` dans votre solution et validez-la dans votre pipeline de dépendances.
+
+```powershell
+dotnet new console --framework net10.0 --output LlmObservability
+Set-Location LlmObservability
+
+dotnet add package Azure.AI.OpenAI
+dotnet add package Microsoft.Extensions.AI.OpenAI
+dotnet add package OpenTelemetry
+dotnet add package OpenTelemetry.Exporter.Console
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+dotnet restore
+```
+
+`Azure.AI.OpenAI` fournit le client du fournisseur. `Microsoft.Extensions.AI.OpenAI` l'adapte à `IChatClient`, une abstraction qui permet d'insérer des middlewares de résilience, de cache, de tool calling ou d'observabilité sans faire fuiter le SDK fournisseur dans l'application.
+
+## Lancer Aspire Dashboard sans AppHost
+
+Aspire Dashboard n'est pas réservé aux projets Aspire. En mode autonome, il reçoit les données de toute application compatible OTLP. C'est très pratique pour adopter l'observabilité avant une éventuelle migration vers une architecture distribuée.
+
+Avec la CLI Aspire, lancez le dashboard dans un autre terminal :
+
+```powershell
+npx -y @microsoft/aspire-cli dashboard run --allow-anonymous
+```
+
+Le dashboard écoute par défaut sur `http://localhost:18888`, avec un endpoint OTLP gRPC sur le port `4317` et un endpoint OTLP/HTTP sur le port `4318`. L'option `--allow-anonymous` convient uniquement à un poste local : l'interface contient des informations de diagnostic et ne doit pas être exposée ainsi sur un réseau.
+
+Si votre environnement est déjà centré sur Docker, l'équivalent est :
+
+```powershell
+docker run --rm -it -d --name aspire-dashboard `
+  -p 18888:18888 -p 4317:18889 -p 4318:18890 `
+  mcr.microsoft.com/dotnet/aspire-dashboard:latest
+```
+
+Configurez ensuite l'exporteur du projet pour OTLP/HTTP. Le protocole explicite évite d'interpréter par erreur une URL HTTP comme une cible gRPC.
+
+```powershell
+$env:OTEL_SERVICE_NAME = "support-assistant"
+$env:OTEL_EXPORTER_OTLP_PROTOCOL = "http/protobuf"
+$env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:4318"
+```
+
+## Instrumenter le client de conversation
+
+Remplacez le contenu de `Program.cs` par le code suivant. Il crée une span métier `support.answer`, installe un exporteur console et OTLP, puis place le middleware OpenTelemetry autour du client Azure OpenAI. L'exporteur console est facultatif mais très utile lors du premier essai : il confirme que l'application produit effectivement une trace avant même d'ouvrir le dashboard.
+
+```csharp
+using System.Diagnostics;
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.AI;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+const string aiSourceName = "SupportAssistant.AI";
+using var activitySource = new ActivitySource(aiSourceName);
+
+var endpoint = GetRequiredEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
+var apiKey = GetRequiredEnvironmentVariable("AZURE_OPENAI_API_KEY");
+var deployment = GetRequiredEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
+
+using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+    .SetResourceBuilder(
+        ResourceBuilder.CreateDefault().AddService("support-assistant"))
+    .AddSource(aiSourceName)
+    .AddSource("Experimental.Microsoft.Extensions.AI")
+    .AddConsoleExporter()
+    .AddOtlpExporter()
+    .Build();
+
+IChatClient innerClient = new AzureOpenAIClient(
+        new Uri(endpoint),
+        new AzureKeyCredential(apiKey))
+    .GetChatClient(deployment)
+    .AsIChatClient();
+
+IChatClient chatClient = innerClient
+    .AsBuilder()
+    .UseOpenTelemetry(
+        sourceName: "Experimental.Microsoft.Extensions.AI",
+        configure: telemetry => telemetry.EnableSensitiveData = false)
+    .Build();
+
+using (Activity? activity = activitySource.StartActivity("support.answer"))
+{
+    activity?.SetTag("support.channel", "console-demo");
+
+    var messages = new[]
+    {
+        new ChatMessage(ChatRole.System, "Réponds en français en deux phrases maximum."),
+        new ChatMessage(ChatRole.User, "Pourquoi instrumenter les appels LLM ?"),
+    };
+
+    ChatResponse response = await chatClient.GetResponseAsync(messages);
+    Console.WriteLine(response.Text);
+}
+
+static string GetRequiredEnvironmentVariable(string name) =>
+    Environment.GetEnvironmentVariable(name)
+    ?? throw new InvalidOperationException($"La variable {name} est requise.");
+```
+
+Exécutez le projet :
+
+```powershell
+dotnet run
+```
+
+Ouvrez ensuite `http://localhost:18888`, sélectionnez le service `support-assistant`, puis l'onglet **Traces**. Une exécution réussie montre une hiérarchie semblable à celle-ci :
+
+```text
+support.answer
+└─ chat <nom-du-modèle>
+```
+
+La span enfant contient les attributs GenAI exposés par le middleware : modèle, durée, statut et, lorsque le fournisseur les retourne, compteurs d'entrée et de sortie. Les noms exacts suivent les conventions OpenTelemetry et peuvent évoluer pendant leur phase expérimentale ; servez-vous du dashboard pour les inspecter plutôt que de les recopier à l'aveugle dans une requête de supervision.
+
+## Comprendre ce que le code protège déjà
+
+La ligne suivante est volontairement explicite :
+
+```csharp
+telemetry => telemetry.EnableSensitiveData = false
+```
+
+Par défaut, `OpenTelemetryChatClient` n'exporte pas le texte brut des messages, les arguments des fonctions ni leurs résultats. Il conserve les métadonnées utiles, comme les tokens et la durée. La variable d'environnement `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` peut changer ce comportement ; l'affectation explicite dans le code prend ici le dessus.
+
+Ne l'activez pas globalement en production. Un prompt peut inclure une donnée client, un secret récupéré par un outil ou une instruction interne. Si un incident impose temporairement de capturer du contenu, limitez l'activation à un environnement isolé, utilisez des données synthétiques, contrôlez l'accès au backend de traces et supprimez les données selon une rétention courte et documentée.
+
+Les tags applicatifs demandent la même prudence. `support.channel` possède une cardinalité réduite et ne permet pas d'identifier une personne. En revanche, évitez de placer un e-mail, un identifiant client ou le texte d'une demande dans un tag : ils seraient indexés et rendraient la recherche coûteuse, voire risquée.
+
+## Ajouter des outils sans perdre la trace
+
+L'observabilité devient encore plus importante lorsqu'un agent appelle des fonctions. Ajoutez une fonction pure et testable dans le même fichier :
+
+```csharp
+static string GetSupportHours(string countryCode) => countryCode switch
+{
+    "FR" => "Le support est disponible du lundi au vendredi, de 9 h à 18 h.",
+    _ => "Les horaires ne sont pas disponibles pour ce pays.",
+};
+```
+
+Puis déclarez-la et activez son invocation dans le pipeline du client :
+
+```csharp
+var supportHours = AIFunctionFactory.Create(
+    GetSupportHours,
+    name: "get_support_hours",
+    description: "Retourne les horaires du support pour un code pays ISO.");
+
+IChatClient chatClient = innerClient
+    .AsBuilder()
+    .UseFunctionInvocation()
+    .UseOpenTelemetry(
+        sourceName: "Experimental.Microsoft.Extensions.AI",
+        configure: telemetry => telemetry.EnableSensitiveData = false)
+    .Build();
+
+ChatResponse response = await chatClient.GetResponseAsync(
+    new ChatMessage(ChatRole.User, "Quels sont les horaires du support en France ?"),
+    new ChatOptions { Tools = [supportHours] });
+```
+
+`UseFunctionInvocation()` exécute les fonctions locales demandées par le modèle. Il ne remplace pas les contrôles métier : une fonction qui modifie une commande, efface une donnée ou appelle un système tiers doit vérifier l'autorisation côté serveur, valider ses paramètres et conserver un journal d'audit indépendant du LLM. La trace explique ce qui s'est produit ; elle ne transforme pas une action proposée par le modèle en action autorisée.
+
+Pour qu'une fonction apparaisse comme un enfant utile de l'appel LLM, gardez le middleware OpenTelemetry dans la chaîne. Les conventions GenAI sont justement conçues pour relier complétions, outils et consommation de tokens au même flux de requête.
+
+## Passer du diagnostic local à un signal DevOps
+
+Le dashboard Aspire autonome conserve ses données en mémoire : c'est un excellent outil de développement et de diagnostic court, pas un stockage de production. En environnement déployé, conservez le même protocole OTLP mais pointez `OTEL_EXPORTER_OTLP_ENDPOINT` vers votre collecteur ou votre backend d'observabilité sécurisé. Aucun changement du code de l'exemple n'est requis.
+
+Les contrôles suivants sont généralement plus fiables que « la réponse semble correcte » :
+
+1. **Latence p95 par modèle et opération.** Séparez une lenteur de fournisseur d'un outil lent ou d'une boucle d'agent.
+2. **Tokens par requête.** Déclenchez une alerte sur une dérive agrégée après une modification de prompt ou de retrieval, pas sur une requête isolée.
+3. **Taux d'erreur et de timeout.** Une hausse immédiate après un déploiement est souvent plus exploitable qu'un feedback utilisateur tardif.
+4. **Nombre d'appels d'outils.** Un plafond raisonnable détecte des boucles et des agents qui recherchent inutilement la même information.
+
+Ajoutez des attributs de déploiement fournis par votre plateforme — version de service, environnement, région — au niveau de la ressource OpenTelemetry. Ne les ajoutez pas à chaque span. En CI, testez aussi la configuration : une intégration qui compile mais n'exporte rien à cause d'un endpoint OTLP absent est une zone aveugle.
+
+Dans une application ASP.NET Core, complétez ce tutoriel avec l'instrumentation ASP.NET Core et `HttpClient`. La span HTTP entrante deviendra le parent naturel de `support.answer`; on pourra alors mesurer l'expérience utilisateur depuis la requête jusqu'à la complétion du modèle. Les Service Defaults d'Aspire configurent déjà ces éléments pour les projets qui les utilisent.
+
+## Vérifications et pièges fréquents
+
+- **Aucune trace dans le dashboard.** Vérifiez que le dashboard tourne, que `OTEL_EXPORTER_OTLP_PROTOCOL` vaut `http/protobuf` et que l'endpoint se termine par `4318`. Pour diagnostiquer, conservez provisoirement `AddConsoleExporter()`.
+- **Une trace sans span LLM.** Le nom passé à `AddSource()` doit correspondre exactement à celui de `UseOpenTelemetry()`. Dans cet exemple, les deux utilisent `Experimental.Microsoft.Extensions.AI`.
+- **Tokens absents.** Ils dépendent de la réponse du fournisseur et du modèle. Ne calculez pas un coût fiable en supposant qu'ils seront toujours fournis ; complétez au besoin avec les métriques de facturation du fournisseur.
+- **Contenu sensible visible.** Recherchez `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` dans la configuration de vos environnements et conservez `EnableSensitiveData = false` tant qu'une exception formalisée ne l'impose pas.
+- **Dashboard exposé.** `--allow-anonymous` est réservé au poste de développement. En environnement partagé, utilisez l'authentification et un backend persistant avec contrôle d'accès.
+
+## Ressources officielles
+
+- Microsoft documente [`UseOpenTelemetry()` dans Microsoft.Extensions.AI](https://learn.microsoft.com/fr-fr/dotnet/api/microsoft.extensions.ai.opentelemetrychatclientbuilderextensions.useopentelemetry) et précise que l'instrumentation suit les conventions GenAI OpenTelemetry.
+- La propriété [`EnableSensitiveData`](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.ai.opentelemetrychatclient.enablesensitivedata) explique pourquoi les prompts et réponses bruts sont exclus par défaut.
+- La documentation Aspire explique comment [lancer le dashboard de façon autonome](https://aspire.dev/dashboard/standalone/), ses ports OTLP et ses limites de persistance en mémoire.
+- OpenTelemetry maintient les [conventions sémantiques GenAI](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/) et les avertissements associés aux attributs sensibles.
+- Pour le contexte .NET général, Microsoft présente [OpenTelemetry et les Service Defaults Aspire](https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-with-otel).
+
+Une application IA opérable n'est pas seulement capable de répondre : elle permet à l'équipe de comprendre, mesurer et corriger son comportement. Avec `IChatClient`, OpenTelemetry et OTLP, cette visibilité reste portable quand l'architecture, le fournisseur de modèle ou le backend de supervision évoluent.
