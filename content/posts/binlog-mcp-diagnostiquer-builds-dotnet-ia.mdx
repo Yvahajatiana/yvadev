@@ -1,0 +1,241 @@
+---
+title: "Binlog MCP : diagnostiquer les builds .NET avec l'IA"
+excerpt: "Utilisez Binlog MCP et Copilot pour expliquer les échecs MSBuild, repérer les tâches lentes et comparer les performances de deux builds .NET avec méthode."
+date: "2026-07-30"
+author: "Yva Hajatiana"
+tags: [".NET", "MSBuild", "MCP", "GitHub Copilot", "Performance"]
+coverImage: "/images/posts/cover-engineering.webp"
+coverImageAlt: "Composition éditoriale abstraite sur le diagnostic et la performance logicielle"
+featured: false
+filename: "binlog-mcp-diagnostiquer-builds-dotnet-ia"
+---
+
+Un build .NET qui échoue ou ralentit produit souvent beaucoup de texte, mais peu d'explications directement exploitables. L'erreur visible peut être la conséquence d'une propriété MSBuild redéfinie, d'un import inattendu, d'un package différent ou d'une cible qui ne s'exécute plus dans le bon ordre.
+
+Le journal binaire MSBuild conserve la structure de la compilation. Le Microsoft Binlog MCP Server expose cette structure à un assistant IA sous forme d'outils spécialisés. L'objectif n'est pas de demander au modèle de deviner la cause d'un échec, mais de lui permettre d'interroger les données réelles du build.
+
+## Pourquoi un fichier binlog est plus utile qu'une sortie texte
+
+Une sortie console présente les messages dans l'ordre où ils arrivent. Sur une solution compilée en parallèle, cet ordre ne reflète pas toujours les relations entre projets, cibles et tâches.
+
+Un fichier `.binlog` enregistre notamment :
+
+- les projets et leurs durées ;
+- les cibles et tâches exécutées ;
+- les propriétés et leurs réaffectations ;
+- les éléments MSBuild et leurs métadonnées ;
+- les fichiers `.props` et `.targets` importés ;
+- les avertissements et erreurs avec leur contexte.
+
+Cette structure permet de répondre à des questions précises : quelle définition a finalement fixé une propriété, quelle tâche occupe le chemin critique ou quelle référence de package diffère entre deux compilations.
+
+L'assistant IA intervient après cette collecte. Il choisit les requêtes pertinentes, relie les résultats et prépare une explication. Les valeurs restent issues du journal, pas de sa mémoire générale sur MSBuild.
+
+## Deux expériences pour le même moteur d'analyse
+
+Microsoft propose désormais deux façons principales d'utiliser l'analyse Binlog avec un assistant.
+
+| Expérience | Usage | Particularité |
+| --- | --- | --- |
+| MSBuild Binlog Analyzer pour VS Code | diagnostic interactif dans l'éditeur | exploration visuelle, commandes `@binlog` et comparaison |
+| Microsoft Binlog MCP Server | terminal, agent ou pipeline | serveur headless accessible à tout client MCP compatible |
+
+L'extension VS Code installe et configure le serveur sous-jacent. Elle convient à un développeur qui veut ouvrir un journal, parcourir ses erreurs et demander une analyse dans Copilot Chat.
+
+Le serveur MCP direct convient mieux à l'automatisation, à un client différent ou à une analyse en CI. Il expose actuellement des outils pour résumer un build, rechercher des éléments, expliquer des propriétés, classer les tâches coûteuses et comparer deux journaux.
+
+Ces deux produits sont en Preview au 30 juillet 2026. Il faut donc les évaluer sur des copies de journaux et vérifier les changements de version avant de les intégrer à un processus critique.
+
+## Capturer un journal binaire
+
+Le SDK .NET accepte l'option `-bl` ou `/bl` pour activer le logger binaire. Nommez explicitement le fichier afin de conserver des artefacts compréhensibles :
+
+```bash
+dotnet build MySolution.sln -c Release -bl:artifacts/build-release.binlog
+```
+
+La même option peut accompagner les commandes qui déclenchent une compilation MSBuild :
+
+```bash
+dotnet test MySolution.sln -c Release -bl:artifacts/test-release.binlog
+dotnet pack MyProject.csproj -c Release -bl:artifacts/pack-release.binlog
+```
+
+Un journal doit correspondre à une question. Pour analyser une régression, conservez un build de référence et un build candidat exécutés dans des environnements comparables : même machine ou runner, même SDK, même configuration, même état du cache lorsque c'est possible.
+
+Sans cette discipline, une différence de temps peut provenir d'un téléchargement NuGet, d'un cache froid ou de la charge du runner plutôt que du changement étudié.
+
+## Installer l'expérience VS Code
+
+L'extension MSBuild Binlog Analyzer demande actuellement :
+
+- VS Code 1.99 ou une version plus récente ;
+- GitHub Copilot ;
+- un SDK .NET disponible ;
+- l'extension en Preview depuis Visual Studio Marketplace.
+
+Après installation, un journal peut être chargé depuis la palette de commandes, capturé avec l'action **Build & Collect Binlog** ou ouvert depuis le Structured Log Viewer.
+
+Copilot Chat expose ensuite le participant `@binlog`. Commencez par des demandes étroites :
+
+```text
+@binlog /summary
+@binlog liste les erreurs avec leur projet et leur cible
+@binlog quelles tâches dominent la durée du build ?
+@binlog /incremental
+```
+
+Une bonne question précise le symptôme et le périmètre. « Pourquoi ce build est lent ? » peut fournir un premier classement. « Compare la durée exclusive des cibles de `Api.csproj` avec le journal de référence » produit une investigation plus vérifiable.
+
+## Configurer directement le serveur MCP
+
+Pour utiliser le moteur sans l'interface de l'extension, déclarez le .NET global tool dans `.vscode/mcp.json` :
+
+```json
+{
+  "servers": {
+    "binlog-mcp": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "tool",
+        "run",
+        "Microsoft.AITools.BinlogMcp"
+      ]
+    }
+  }
+}
+```
+
+Un journal précis peut être préchargé au démarrage :
+
+```json
+{
+  "servers": {
+    "binlog-mcp": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "tool",
+        "run",
+        "Microsoft.AITools.BinlogMcp",
+        "--",
+        "--binlog",
+        "artifacts/build-release.binlog"
+      ]
+    }
+  }
+}
+```
+
+Le transport stdio garde l'analyse locale. Le client lance le processus, découvre ses outils puis lui transmet les requêtes structurées. Le serveur ne doit recevoir que les journaux nécessaires à l'investigation.
+
+Pour comprendre la séparation entre hôte, client et serveur, consultez le guide consacré au [Model Context Protocol en C#](/blog/protocole-model-contextuel-mcp-ia-donnees).
+
+## Diagnostiquer un échec sans s'arrêter au premier message
+
+Une investigation utile suit une progression reproductible.
+
+Commencez par le résumé du build. Vérifiez son statut, sa durée, le nombre de projets et le volume d'erreurs. Demandez ensuite les erreurs avec leur contexte complet.
+
+Le serveur peut appeler :
+
+- `binlog_overview` pour la vue globale ;
+- `binlog_errors` et `binlog_warnings` pour les diagnostics ;
+- `binlog_projects` pour localiser le projet affecté ;
+- `binlog_explain_property` pour retrouver l'origine d'une valeur ;
+- `binlog_imports` pour examiner la chaîne des imports ;
+- `binlog_search` pour une recherche structurée.
+
+Supposons qu'un build échoue parce que `RuntimeIdentifier` possède une valeur inattendue. La ligne d'erreur ne suffit pas. Une analyse pertinente doit retrouver les réaffectations de cette propriété et le fichier `.props`, `.targets` ou la ligne de commande qui a fourni la valeur finale.
+
+Demandez toujours à l'assistant de présenter les éléments probants : nom du projet, cible, tâche, propriété et source. Une explication sans référence au journal reste une hypothèse.
+
+## Rechercher une régression de performance
+
+Le temps total indique qu'un problème existe, pas où il se trouve. Les durées exclusives aident à identifier les composants qui consomment réellement le temps au lieu de compter celui de leurs dépendances.
+
+Le serveur fournit notamment :
+
+- `binlog_expensive_projects` ;
+- `binlog_expensive_targets` ;
+- `binlog_expensive_tasks`.
+
+Une séquence d'analyse peut demander :
+
+1. les cinq projets les plus coûteux ;
+2. les cibles dominantes du premier projet ;
+3. les tâches les plus lentes dans ces cibles ;
+4. les différences de propriétés ou de packages avec le build de référence.
+
+Le résultat doit distinguer corrélation et cause. Une cible `CoreCompile` plus lente peut provenir d'une compilation froide, d'un analyseur ajouté, d'un changement de sources ou d'un cache invalidé. Le classement guide l'enquête ; il ne prouve pas seul le mécanisme.
+
+## Comparer deux builds correctement
+
+La comparaison devient particulièrement utile après une montée de version du SDK, un changement de package ou une modification de configuration.
+
+Capturez deux journaux nommés :
+
+```bash
+dotnet build MySolution.sln -c Release -bl:artifacts/baseline.binlog
+dotnet build MySolution.sln -c Release -bl:artifacts/candidate.binlog
+```
+
+Demandez ensuite une comparaison ciblée :
+
+```text
+Compare baseline.binlog et candidate.binlog.
+Liste les changements de packages et de propriétés.
+Relie-les aux projets, cibles ou tâches dont la durée a augmenté.
+Sépare les faits observés des causes encore hypothétiques.
+```
+
+L'outil `binlog_compare` relève les différences de propriétés et de packages. Les outils de performance peuvent ensuite vérifier si ces changements coïncident avec une hausse mesurée.
+
+Répétez les builds lorsqu'une variation est faible. Un écart observé une seule fois sur un runner partagé ne constitue pas une preuve suffisante.
+
+## Protéger les secrets présents dans les journaux
+
+Un fichier binlog n'est pas un simple rapport d'erreurs. Microsoft indique qu'il peut contenir les fichiers projet et les imports, les entrées et sorties de tâches, les chemins complets et les variables d'environnement consultées pendant la session MSBuild.
+
+Avant de conserver ou transmettre un journal :
+
+- considérez-le comme un artefact potentiellement sensible ;
+- vérifiez que les secrets ne sont pas injectés dans les propriétés MSBuild ;
+- limitez son accès aux personnes et outils chargés du diagnostic ;
+- appliquez une durée de rétention courte ;
+- ne l'ajoutez pas au dépôt Git ;
+- évitez de l'envoyer à un modèle ou service distant sans validation.
+
+Le Microsoft Binlog MCP Server annonce une télémétrie d'usage anonyme activée par défaut. Selon sa documentation, elle porte sur les noms d'outils, la latence, la taille des résultats et leur statut, sans collecter le contenu des journaux, les chemins ou les erreurs brutes. Les organisations doivent néanmoins vérifier ce comportement pour la version installée et appliquer leur propre politique de télémétrie.
+
+## Ajouter l'analyse à une pipeline CI avec prudence
+
+Une pipeline peut capturer le journal lorsqu'un build échoue et le conserver comme artefact protégé. Un agent headless peut ensuite produire un résumé ou comparer le build avec une référence.
+
+Gardez cependant le diagnostic distinct de la décision :
+
+- l'agent peut identifier une erreur ou suggérer un correctif ;
+- la pipeline vérifie le correctif avec un nouveau build et les tests ;
+- une modification ne doit pas être fusionnée uniquement parce que l'explication paraît plausible.
+
+Définissez aussi des limites de temps et de taille. Les grands builds peuvent subir un surcoût mesurable lorsque le logger binaire est activé. Il n'est pas nécessaire de conserver un binlog pour chaque build réussi si aucun scénario d'analyse ne l'exige.
+
+## Checklist d'investigation
+
+- Le journal correspond-il exactement au build défaillant ?
+- Le SDK, la configuration et le runner sont-ils identifiés ?
+- Le résumé confirme-t-il le symptôme observé ?
+- Les erreurs sont-elles reliées à leur projet, cible et tâche ?
+- L'origine des propriétés importantes a-t-elle été vérifiée ?
+- Les durées comparées sont-elles exclusives et reproductibles ?
+- Les deux builds ont-ils été capturés dans des conditions comparables ?
+- Les faits du journal sont-ils séparés des hypothèses du modèle ?
+- Le fichier a-t-il été traité comme un artefact sensible ?
+- Le correctif proposé est-il validé par un nouveau build et les tests ?
+
+## Ressources officielles
+
+L'équipe .NET présente l'[analyseur MSBuild Binlog pour VS Code](https://devblogs.microsoft.com/dotnet/msbuild-binlog-analyzer-vscode/) et le [Microsoft Binlog MCP Server](https://devblogs.microsoft.com/dotnet/msbuild-binlog-mcp-server/). Microsoft Learn documente la [création et le contenu des journaux MSBuild](https://learn.microsoft.com/visualstudio/ide/msbuild-logs) ainsi que l'option [`dotnet build -bl`](https://learn.microsoft.com/dotnet/core/tools/dotnet-build).
+
+Binlog MCP rend l'investigation plus accessible, mais sa valeur vient surtout d'une séparation nette : MSBuild collecte les faits, les outils MCP les interrogent, le modèle les synthétise et le développeur valide la cause puis le correctif.

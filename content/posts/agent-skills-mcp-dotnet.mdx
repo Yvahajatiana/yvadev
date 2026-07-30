@@ -1,0 +1,232 @@
+---
+title: "Agent Skills et MCP en .NET : distribution sécurisée"
+excerpt: "Distribuez les Agent Skills via MCP dans vos agents .NET avec chargement progressif, sources centralisées, limites d'archives et approbations explicites."
+date: "2026-07-30"
+author: "Yva Hajatiana"
+tags: [".NET", "AI Agents", "MCP", "Agent Skills", "C#"]
+coverImage: "/images/posts/cover-ai.webp"
+coverImageAlt: "Composition éditoriale abstraite sur l’intelligence artificielle appliquée"
+featured: false
+filename: "agent-skills-mcp-dotnet"
+---
+
+Un agent IA devient difficile à maintenir lorsque toutes ses règles, procédures et références sont placées dans un unique prompt. Le contexte grossit, plusieurs équipes copient les mêmes instructions et la moindre mise à jour impose de redéployer chaque application.
+
+Les Agent Skills proposent une autre organisation. Une compétence regroupe des instructions, des ressources et, dans certains cas, des scripts que l'agent charge seulement lorsqu'une tâche les exige. Microsoft Agent Framework permet désormais à un agent .NET de découvrir ces compétences depuis un serveur Model Context Protocol (MCP).
+
+Cette intégration ouvre une voie intéressante pour distribuer une expertise commune. Elle demande aussi de traiter le serveur de compétences comme une nouvelle frontière de confiance.
+
+## Agent Skill, ressource MCP et outil ne jouent pas le même rôle
+
+Une compétence n'est pas simplement une fonction supplémentaire. Elle décrit une méthode de travail spécialisée : procédure de réponse à un incident, règles de remboursement, conventions de revue de code ou guide d'analyse d'un jeu de données.
+
+Elle peut contenir :
+
+- un fichier `SKILL.md` qui décrit son objectif et ses instructions ;
+- des documents de référence chargés à la demande ;
+- des modèles, tables de correspondance ou checklists ;
+- des scripts dont l'exécution reste contrôlée par l'application.
+
+Un outil MCP exécute une opération structurée. Une ressource MCP fournit un contenu adressable. L'Agent Skill organise ces éléments pour transmettre une expertise réutilisable à l'agent.
+
+Le chargement suit une divulgation progressive. L'agent voit d'abord le nom et la description courte des compétences. Il charge ensuite les instructions d'une compétence pertinente, puis ses ressources si nécessaire. Cette séquence évite d'envoyer toute la bibliothèque dans le contexte du modèle à chaque requête.
+
+Pour revoir les primitives du protocole avant d'aller plus loin, consultez le guide sur [MCP, les données et les outils métier](/blog/protocole-model-contextuel-mcp-ia-donnees).
+
+## Pourquoi distribuer les compétences par MCP
+
+Les compétences locales conviennent lorsqu'une seule application les possède et les publie avec son code. Le serveur MCP devient utile lorsqu'une expertise doit être partagée entre plusieurs agents ou administrée par une équipe différente.
+
+Imaginons trois applications :
+
+- un assistant destiné au support ;
+- un agent d'astreinte ;
+- un assistant chargé de la conformité.
+
+Ces applications peuvent dépendre d'une même procédure de classification des incidents. Copier le dossier de compétence dans chaque dépôt crée trois versions susceptibles de diverger. Un serveur MCP permet à l'équipe responsable de publier une seule version et aux agents autorisés de la découvrir lors de leur exécution.
+
+Cette centralisation facilite la diffusion, mais elle ne remplace pas la gestion du changement. Une instruction modifiée peut changer le comportement de plusieurs agents sans nouvelle compilation. Il faut donc versionner le contenu, tester les changements et conserver une possibilité de retour arrière.
+
+## Deux formats de distribution
+
+L'intégration .NET prend actuellement en charge deux formes de compétences distantes.
+
+| Format | Fonctionnement | Usage adapté |
+| --- | --- | --- |
+| `skill-md` | le serveur expose `SKILL.md` et les ressources associées séparément | documents évolutifs chargés fichier par fichier |
+| `archive` | le serveur fournit une archive ZIP, TAR ou TAR compressée | compétence comprenant plusieurs fichiers cohérents |
+
+Avec `skill-md`, le framework lit les ressources MCP nécessaires au fur et à mesure. Avec `archive`, il télécharge le paquet, le contrôle puis l'extrait dans un répertoire local.
+
+Le code consommateur reste identique dans les deux cas. Le choix du format appartient au serveur et à l'équipe qui publie la compétence.
+
+## Connecter un agent .NET au serveur de compétences
+
+La distribution MCP des Agent Skills est disponible dans le package `Microsoft.Agents.AI.Mcp`. Au 30 juillet 2026, cette API reste expérimentale et le package doit être installé en préversion :
+
+```bash
+dotnet add package Microsoft.Agents.AI.Mcp --prerelease
+```
+
+Les Agent Skills locales de Microsoft Agent Framework disposent d'une API stable. Leur découverte par MCP est plus récente et peut encore évoluer. Épinglez donc les versions NuGet utilisées et validez une mise à jour avant de la déployer.
+
+Le client MCP se connecte d'abord au serveur. Le provider ajoute ensuite cette source distante à la bibliothèque de compétences de l'agent :
+
+```csharp
+using Microsoft.Agents.AI;
+using ModelContextProtocol.Client;
+
+await using var mcpClient = await McpClient.CreateAsync(
+    new StdioClientTransport(new()
+    {
+        Name = "company-skills",
+        Command = "dotnet",
+        Arguments = [skillsServerPath, "--server"]
+    }));
+
+var skillsProvider = new AgentSkillsProviderBuilder()
+    .UseMcpSkills(mcpClient)
+    .Build();
+```
+
+Le provider est ensuite transmis à l'agent comme fournisseur de contexte. Cet exemple utilise Azure OpenAI, mais la compétence reste indépendante du modèle qui la consomme :
+
+```csharp
+using Azure.AI.OpenAI;
+using Azure.Identity;
+using OpenAI.Responses;
+
+AIAgent agent = new AzureOpenAIClient(
+    new Uri(endpoint),
+    new DefaultAzureCredential())
+    .GetResponsesClient()
+    .AsAIAgent(
+    new ChatClientAgentOptions
+    {
+        Name = "SupportAgent",
+        ChatOptions = new()
+        {
+            Instructions = "Use approved skills when they match the request."
+        },
+        AIContextProviders = [skillsProvider]
+    },
+    model: deploymentName);
+
+var response = await agent.RunAsync(
+    "Prépare la procédure applicable à un incident de priorité élevée.");
+```
+
+Le modèle ne reçoit pas immédiatement tous les documents du serveur. Il découvre les descriptions, sélectionne la compétence appropriée puis demande son contenu.
+
+## Composer compétences locales et distantes
+
+Toutes les connaissances ne doivent pas devenir centrales. Une compétence propre à une application peut rester dans son dépôt, tandis que les procédures transverses proviennent du serveur MCP.
+
+Le builder permet de composer les deux sources :
+
+```csharp
+var skillsProvider = new AgentSkillsProviderBuilder()
+    .UseFileSkill(Path.Combine(AppContext.BaseDirectory, "skills"))
+    .UseMcpSkills(mcpClient)
+    .Build();
+```
+
+Cette séparation crée une responsabilité plus claire :
+
+- l'équipe applicative maintient les procédures spécifiques au produit ;
+- l'équipe plateforme publie les standards partagés ;
+- l'équipe sécurité définit les serveurs autorisés et les règles d'exécution.
+
+Évitez toutefois de fournir deux compétences concurrentes pour la même intention. Des descriptions proches rendent la sélection moins prévisible. Chaque compétence doit posséder un périmètre, un propriétaire et une version identifiables.
+
+## Encadrer le téléchargement des archives
+
+Une archive distante peut consommer beaucoup plus d'espace une fois décompressée. Elle peut également contenir un nombre excessif de fichiers. Le framework expose des limites explicites pour réduire ces risques :
+
+```csharp
+var skillsDirectory = Path.Combine(
+    AppContext.BaseDirectory,
+    "downloaded-skills");
+
+var skillsProvider = new AgentSkillsProviderBuilder()
+    .UseMcpSkills(mcpClient, new AgentMcpSkillsSourceOptions
+    {
+        ArchiveSkillsDirectory = skillsDirectory,
+        ArchiveMaxFileCount = 50,
+        ArchiveMaxSizeBytes = 2 * 1024 * 1024,
+        ArchiveMaxUncompressedSizeBytes = 4 * 1024 * 1024
+    })
+    .Build();
+```
+
+Les valeurs doivent être adaptées aux compétences réellement attendues, pas copiées mécaniquement. Une bibliothèque principalement textuelle peut rester très limitée. Une compétence contenant des jeux de données de référence demande peut-être davantage d'espace, mais ce besoin doit être justifié.
+
+Le répertoire d'extraction doit être isolé des sources de l'application et nettoyé selon une politique connue. Il ne doit pas devenir un emplacement d'exécution générique.
+
+## Ne jamais assimiler contenu distant et code fiable
+
+Microsoft Agent Framework n'exécute pas les scripts contenus dans une compétence distribuée sous forme d'archive MCP. Cette restriction est volontaire : un fichier téléchargé depuis un serveur distant reste non fiable, même si sa compétence paraît légitime.
+
+Pour les autres modes d'auteur, les outils `load_skill`, `read_skill_resource` et `run_skill_script` demandent une approbation par défaut. Ne désactivez pas globalement cette protection pour supprimer une friction de démonstration.
+
+Une architecture de production devrait au minimum :
+
+- autoriser explicitement les serveurs MCP et vérifier leur identité ;
+- filtrer les compétences exposées selon l'agent, le tenant et l'utilisateur ;
+- contrôler la taille, le nombre de fichiers et le répertoire d'extraction ;
+- valider les ressources avant de les transmettre à un autre outil ;
+- journaliser la compétence, sa version et les ressources effectivement chargées ;
+- exécuter les scripts locaux dans un environnement isolé avec des limites ;
+- soumettre les actions sensibles à une approbation indépendante du modèle.
+
+Le modèle peut choisir une compétence. Il ne doit pas décider seul qu'une source devient fiable ou qu'un script mérite davantage de permissions.
+
+## Concevoir la gouvernance avant le catalogue
+
+Une bibliothèque de compétences partagée a besoin des mêmes pratiques qu'une dépendance logicielle.
+
+Chaque compétence devrait indiquer :
+
+- son propriétaire ;
+- son objectif et les situations dans lesquelles elle ne s'applique pas ;
+- sa version et son historique de modification ;
+- les ressources et outils qu'elle peut utiliser ;
+- les données qu'elle est susceptible de lire ;
+- les scénarios d'évaluation qui prouvent son comportement attendu.
+
+Avant publication, testez les cas nominaux, les demandes ambiguës et les contenus contenant des instructions hostiles. Vérifiez également ce qui se passe lorsque le serveur est indisponible, lorsqu'une compétence disparaît ou lorsque son chargement dépasse les limites autorisées.
+
+Une compétence distante ne devrait pas être une dépendance silencieuse. Les traces doivent permettre de savoir quelle version a influencé une réponse. Ce point devient essentiel lorsqu'une même modification touche plusieurs agents.
+
+## Quand rester avec des compétences locales
+
+MCP ajoute une connexion, une authentification, une disponibilité réseau et une gouvernance centralisée. Cette complexité n'est pas toujours justifiée.
+
+Préférez une compétence locale lorsque :
+
+- une seule application la consomme ;
+- elle doit évoluer exactement avec le code ;
+- son contenu est petit et stable ;
+- l'application doit fonctionner sans accès au serveur ;
+- aucun propriétaire central n'existe pour la maintenir.
+
+La distribution MCP devient pertinente lorsqu'une compétence possède plusieurs consommateurs, doit être mise à jour indépendamment des applications ou relève d'une politique maintenue par une équipe centrale.
+
+## Checklist de mise en production
+
+- Le serveur MCP est-il authentifié et explicitement autorisé ?
+- Chaque compétence possède-t-elle un propriétaire et une version ?
+- Les versions NuGet expérimentales sont-elles épinglées ?
+- Les formats, tailles et nombres de fichiers sont-ils limités ?
+- Le répertoire d'extraction est-il isolé et nettoyé ?
+- Les scripts distants restent-ils non exécutables ?
+- Les approbations sont-elles conservées pour les opérations sensibles ?
+- Les compétences sont-elles filtrées par agent et par tenant ?
+- Les traces identifient-elles la compétence réellement chargée ?
+- Une indisponibilité du serveur produit-elle un échec contrôlé ?
+
+## Ressources officielles
+
+Microsoft présente la [découverte des Agent Skills par MCP](https://devblogs.microsoft.com/agent-framework/discover-agent-skills-from-mcp-servers-in-net/) et précise le statut expérimental de l'intégration. L'annonce des [Agent Skills stables pour .NET](https://devblogs.microsoft.com/agent-framework/agent-skills-for-net-is-now-released/) décrit les modes d'auteur, les approbations et le chargement progressif. Le [SDK MCP C# 2.0](https://devblogs.microsoft.com/dotnet/announcing-v20-of-the-official-mcp-csharp-sdk/) fournit le socle actuel des clients et serveurs MCP en .NET.
+
+Les Agent Skills distribuées par MCP séparent l'expertise métier du déploiement des agents. Cette souplesse devient réellement utile lorsque la version, la provenance, le chargement et les permissions de chaque compétence restent observables et contrôlés.
