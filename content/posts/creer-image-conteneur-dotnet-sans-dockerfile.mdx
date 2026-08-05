@@ -1,0 +1,317 @@
+---
+title: "Créer une image .NET sans Dockerfile avec le SDK"
+excerpt: "Créez et publiez une image OCI pour une API .NET avec dotnet publish, sans Dockerfile ni docker build, puis identifiez les limites de cette approche."
+date: "2026-08-05"
+author: "Yva Hajatiana"
+tags: [".NET 10", "ASP.NET Core", "Conteneurs", "Docker", "MSBuild", "DevOps"]
+coverImage: "/images/posts/default-dotnet.webp"
+coverImageAlt: "Logo .NET devant un environnement de développement moderne"
+featured: false
+filename: "creer-image-conteneur-dotnet-sans-dockerfile"
+---
+
+Conteneuriser une application .NET ne nécessite plus systématiquement d'écrire un `Dockerfile`. Le SDK sait publier l'application, choisir une image de base Microsoft, construire les couches d'une image compatible OCI et l'envoyer vers un moteur local, une archive ou un registre.
+
+Cette fonctionnalité ne remplace pas Docker dans tous les scénarios. Elle supprime surtout `docker build` et le `Dockerfile` pour les API, Workers et applications console dont la construction reste standard. Un moteur compatible OCI, comme Docker ou Podman, demeure nécessaire pour exécuter l'image localement.
+
+Ce tutoriel conteneurise une API ASP.NET Core avec .NET 10, explique ce que le SDK produit réellement et fixe une frontière claire entre la publication native et le `Dockerfile`.
+
+## Ce que signifie « sans Docker »
+
+Le mot Docker recouvre plusieurs éléments différents : un format d'image, un outil de construction, un moteur d'exécution et une plateforme. Dire que .NET crée un conteneur « sans Docker » manque donc de précision.
+
+La publication native permet de construire une image sans :
+
+- écrire un `Dockerfile` ;
+- appeler `docker build` ;
+- exécuter un démon Docker lorsque la destination est une archive ou un registre distant ;
+- ajouter le package `Microsoft.NET.Build.Containers` avec le SDK .NET 8.0.200 ou une version ultérieure.
+
+Elle ne permet pas d'exécuter un conteneur sans runtime. Une image OCI reste un paquet immuable. Pour démarrer un processus isolé à partir de cette image, il faut Docker, Podman, containerd ou le runtime d'une plateforme comme Kubernetes.
+
+| Opération | Docker requis ? |
+| --- | --- |
+| Compiler et publier l'application | Non |
+| Construire l'image OCI | Non |
+| Exporter l'image dans une archive | Non |
+| Envoyer l'image directement vers un registre | Non |
+| Charger et exécuter l'image avec Docker | Oui |
+| Exécuter l'image avec Podman | Non, mais Podman est requis |
+| Déployer l'image sur Kubernetes | Non sur le poste de build |
+
+La distinction importante est donc la suivante : **le SDK .NET sait construire l'image, mais il ne devient pas un moteur de conteneurs**.
+
+## Comment PublishContainer construit l'image
+
+La commande `dotnet publish` utilise MSBuild. La cible `PublishContainer` ajoute une phase de construction d'image après la publication habituelle de l'application :
+
+```bash
+dotnet publish --os linux --arch x64 /t:PublishContainer
+```
+
+Le SDK effectue alors plusieurs opérations :
+
+1. il restaure et compile le projet ;
+2. il publie les fichiers nécessaires à l'exécution ;
+3. il déduit une image de base à partir du type de projet ;
+4. il crée les couches contenant l'application et ses métadonnées ;
+5. il configure le répertoire de travail et la commande de démarrage ;
+6. il produit une image conforme aux spécifications OCI ;
+7. il l'envoie vers la destination demandée.
+
+`PublishContainer` ne génère pas un `Dockerfile` intermédiaire. Les tâches MSBuild lisent directement l'image de base, assemblent les couches et publient le manifeste final.
+
+La syntaxe historique suivante reste supportée :
+
+```bash
+dotnet publish -p:PublishProfile=DefaultContainer
+```
+
+L'appel direct à `/t:PublishContainer` exprime cependant mieux l'intention et fonctionne de manière plus homogène avec les différents types de projets.
+
+## Créer une API ASP.NET Core de démonstration
+
+Vérifiez d'abord que le SDK .NET 10 est disponible :
+
+```bash
+dotnet --info
+```
+
+Créez ensuite une API minimale :
+
+```bash
+dotnet new webapi -n YvaDev.ContainerApi --framework net10.0
+cd YvaDev.ContainerApi
+dotnet run
+```
+
+Le projet ASP.NET Core est publiable par défaut. Avec un SDK récent, aucun package NuGet supplémentaire n'est nécessaire pour activer la prise en charge des conteneurs.
+
+Pour une application console classique, il peut être nécessaire d'activer explicitement cette prise en charge dans le `.csproj` :
+
+```xml
+<PropertyGroup>
+  <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+</PropertyGroup>
+```
+
+Avant de construire l'image, personnalisez son nom et son tag :
+
+```xml
+<PropertyGroup>
+  <TargetFramework>net10.0</TargetFramework>
+  <ContainerRepository>yvadev-container-api</ContainerRepository>
+  <ContainerImageTag>1.0.0</ContainerImageTag>
+</PropertyGroup>
+```
+
+`ContainerRepository` doit être en minuscules. Sans valeur explicite, le SDK utilise le nom de l'assembly, à condition qu'il respecte les règles de nommage des images. Sans tag, la valeur par défaut est `latest` depuis .NET 8.
+
+## Publier l'image vers Docker ou Podman
+
+Avec Docker Desktop ou Podman démarré, exécutez :
+
+```bash
+dotnet publish --os linux --arch x64 /t:PublishContainer
+```
+
+Par défaut, le SDK envoie l'image au runtime local. Vérifiez sa présence avec Docker :
+
+```bash
+docker image ls yvadev-container-api
+```
+
+Puis démarrez l'API :
+
+```bash
+docker run --rm -p 8080:8080 yvadev-container-api:1.0.0
+```
+
+L'application est accessible sur `http://localhost:8080`. L'option `-p` publie le port du conteneur sur la machine hôte ; la présence d'un port dans les métadonnées de l'image ne l'expose pas automatiquement à l'extérieur.
+
+Pour forcer l'utilisation de Podman lorsque les deux outils sont installés :
+
+```bash
+dotnet publish --os linux --arch x64 /t:PublishContainer \
+  -p:LocalRegistry=podman
+```
+
+Cette méthode est particulièrement utile pour des microservices homogènes. Leur configuration reste dans les projets MSBuild et évite une collection de `Dockerfile` presque identiques. Elle complète les principes décrits dans le guide pour [structurer un projet ASP.NET Core maintenable](/blog/structurer-projet-aspnet-core-maintenable).
+
+## Produire une archive sans runtime local
+
+Une CI n'a pas toujours besoin de charger l'image dans un démon. Elle peut produire une archive transférable ou analysable par un outil de sécurité :
+
+```bash
+dotnet publish --os linux --arch x64 /t:PublishContainer \
+  -p:ContainerArchiveOutputPath=./artifacts/yvadev-container-api.tar.gz
+```
+
+Cette commande ne demande ni Docker ni Podman. L'archive contient l'image complète et peut ensuite être chargée :
+
+```bash
+docker load -i ./artifacts/yvadev-container-api.tar.gz
+```
+
+Ce flux est intéressant lorsqu'une organisation veut scanner une image avant de l'autoriser dans son registre. L'archive devient alors un artefact de build traçable, à conserver avec les résultats de l'analyse et le numéro de version.
+
+## Publier directement vers un registre
+
+Le SDK peut aussi envoyer l'image vers GitHub Container Registry, Azure Container Registry ou un autre registre compatible :
+
+```bash
+dotnet publish --os linux --arch x64 /t:PublishContainer \
+  -p:ContainerRegistry=ghcr.io \
+  -p:ContainerRepository=yvahajatiana/yvadev-container-api \
+  -p:ContainerImageTag=1.0.0
+```
+
+L'authentification reste obligatoire pour un registre privé. Le SDK sait lire la configuration Docker créée par les mécanismes habituels de connexion. En CI, préférez un jeton de courte durée et évitez de placer un mot de passe dans le `.csproj`, la commande ou les logs.
+
+Une étape GitHub Actions peut rester concise :
+
+```yaml
+- name: Authenticate to GHCR
+  uses: docker/login-action@v3
+  with:
+    registry: ghcr.io
+    username: ${{ github.actor }}
+    password: ${{ secrets.GITHUB_TOKEN }}
+
+- name: Publish the container image
+  run: >-
+    dotnet publish src/YvaDev.ContainerApi/YvaDev.ContainerApi.csproj
+    --configuration Release
+    --os linux
+    --arch x64
+    /t:PublishContainer
+    -p:ContainerRegistry=ghcr.io
+    -p:ContainerRepository=${{ github.repository_owner }}/yvadev-container-api
+    -p:ContainerImageTag=${{ github.sha }}
+```
+
+L'action de connexion ne sert ici qu'à fournir les informations d'authentification. La construction et l'envoi de l'image sont réalisés par le SDK .NET, sans `docker build`.
+
+Un tag fondé sur le SHA du commit rend chaque image identifiable. Un tag stable comme `latest` ou `production` peut être ajouté en complément, mais ne doit pas être la seule référence utilisée pour un déploiement reproductible.
+
+## Personnaliser l'image de base
+
+Le SDK sélectionne une image Microsoft selon le projet :
+
+- `mcr.microsoft.com/dotnet/aspnet` pour ASP.NET Core ;
+- `mcr.microsoft.com/dotnet/runtime` pour une application dépendante du runtime ;
+- `mcr.microsoft.com/dotnet/runtime-deps` pour une publication autonome.
+
+La version du tag est déduite du framework cible. Une API `net10.0` utilise donc une image ASP.NET Core 10 par défaut.
+
+Pour choisir la variante Alpine sans définir l'image complète :
+
+```xml
+<PropertyGroup>
+  <ContainerFamily>alpine</ContainerFamily>
+</PropertyGroup>
+```
+
+Pour imposer une image de base précise :
+
+```xml
+<PropertyGroup>
+  <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-alpine</ContainerBaseImage>
+</PropertyGroup>
+```
+
+`ContainerBaseImage` prend le dessus sur `ContainerFamily`. Ce choix doit être testé : Alpine utilise musl au lieu de glibc, ce qui peut révéler des incompatibilités avec certaines dépendances natives ou certains comportements de globalisation.
+
+Les images Microsoft récentes exécutent par défaut les applications Linux avec l'utilisateur non privilégié `app`. C'est une amélioration importante par rapport aux anciens conteneurs lancés systématiquement en `root`, mais elle oblige à vérifier les droits sur les répertoires dans lesquels l'application écrit.
+
+## Configurer les ports, variables et métadonnées
+
+Les propriétés et éléments MSBuild couvrent les besoins courants d'un `Dockerfile` déclaratif :
+
+```xml
+<ItemGroup>
+  <ContainerPort Include="8080" Type="tcp" />
+  <ContainerEnvironmentVariable Include="DOTNET_EnableDiagnostics" Value="0" />
+  <ContainerLabel Include="org.opencontainers.image.source"
+                  Value="https://github.com/Yvahajatiana/yvadev" />
+</ItemGroup>
+```
+
+Pour ASP.NET Core, le port est généralement déduit des variables `ASPNETCORE_HTTP_PORTS`, `ASPNETCORE_HTTPS_PORTS` ou `ASPNETCORE_URLS` présentes dans l'image. Le déclarer explicitement reste utile comme documentation lorsque l'application utilise un port particulier.
+
+Ne placez pas de secret dans `ContainerEnvironmentVariable`. Cette valeur devient une métadonnée durable de l'image. Les mots de passe, clés et jetons doivent être injectés au démarrage par la plateforme d'exécution.
+
+## Construire une image multi-architecture
+
+Une même référence d'image peut cibler des machines x64 et ARM64. Déclarez les identifiants dans le projet :
+
+```xml
+<PropertyGroup>
+  <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
+  <ContainerRuntimeIdentifiers>linux-x64;linux-arm64</ContainerRuntimeIdentifiers>
+</PropertyGroup>
+```
+
+Puis publiez sans imposer un RID unique :
+
+```bash
+dotnet publish /t:PublishContainer
+```
+
+Le SDK construit une image pour chaque architecture et les regroupe dans un index OCI sous le même nom. `ContainerRuntimeIdentifiers` doit rester un sous-ensemble de `RuntimeIdentifiers`.
+
+Ce mécanisme facilite le déploiement d'une API sur des nœuds Kubernetes hétérogènes ou sur des machines ARM. Il augmente cependant le temps de build, car l'application est publiée pour chaque architecture.
+
+## Ce que le SDK ne peut pas remplacer
+
+La principale limite tient à l'instruction `RUN`. La construction native sait reproduire les métadonnées habituelles d'une image, mais elle ne sait pas exécuter une commande arbitraire dans une couche.
+
+Conservez un `Dockerfile` lorsqu'il faut :
+
+- installer des paquets avec `apt`, `apk` ou `dnf` ;
+- compiler une bibliothèque native ;
+- créer des utilisateurs ou modifier profondément le système de fichiers ;
+- exécuter un script pendant la construction ;
+- construire un frontend Angular ou Vue avec Node.js avant de le copier dans ASP.NET Core ;
+- orchestrer plusieurs étapes de build de technologies différentes ;
+- appliquer un processus d'entreprise déjà standardisé autour de `Dockerfile` et BuildKit.
+
+Pour une application composée d'un frontend Angular et d'un backend .NET servis dans la même image, un `Dockerfile` multi-stage reste généralement plus lisible : une étape Node construit le frontend, une étape .NET publie l'API et une dernière image reçoit les deux sorties.
+
+Une autre solution consiste à préparer une image de base d'entreprise contenant les paquets requis, puis à la référencer avec `ContainerBaseImage`. Ce compromis centralise les dépendances système tout en laissant chaque microservice utiliser `PublishContainer`.
+
+## Choisir entre PublishContainer et Dockerfile
+
+| Situation | Choix recommandé |
+| --- | --- |
+| API ASP.NET Core standard | `PublishContainer` |
+| Worker ou application console standard | `PublishContainer` |
+| Plusieurs microservices avec la même convention | `PublishContainer` |
+| Export d'une archive pour scan de sécurité | `PublishContainer` |
+| Installation de paquets système | `Dockerfile` |
+| Build combiné Angular ou Vue et .NET | `Dockerfile` multi-stage |
+| Scripts et transformations complexes | `Dockerfile` |
+| Image de base d'entreprise déjà complète | Les deux approches sont possibles |
+
+Le critère n'est pas la longueur du fichier. Il faut choisir l'outil qui rend le processus de construction explicite. Pour une API standard, dix lignes de configuration MSBuild évitent un `Dockerfile` répétitif. Pour une chaîne hétérogène, cacher la complexité dans le projet rendrait au contraire la maintenance plus difficile.
+
+## Vérifications avant la mise en production
+
+Une image créée par le SDK doit subir les mêmes contrôles qu'une image construite avec Docker :
+
+- utiliser un tag immuable lié au commit ou à la version ;
+- vérifier l'image de base et suivre ses correctifs de sécurité ;
+- analyser les vulnérabilités de l'image finale ;
+- confirmer que le processus s'exécute sans privilèges root ;
+- tester les endpoints de santé et l'arrêt gracieux ;
+- limiter les fichiers inclus dans la publication ;
+- signer l'image ou produire une attestation si la chaîne de livraison l'exige ;
+- déployer d'abord dans un environnement de validation.
+
+Le mode de construction ne garantit ni la sécurité ni la qualité de l'application. Il simplifie le packaging. Les principes de CI/CD, de traçabilité et d'observabilité restent inchangés. Pour approfondir la conception globale, consultez aussi le guide sur l'[architecture .NET moderne](/blog/construire-architecture-dotnet-moderne-2025).
+
+## Ressources officielles
+
+Microsoft Learn fournit le tutoriel pour [conteneuriser une application avec `dotnet publish`](https://learn.microsoft.com/dotnet/core/containers/sdk-publish), la [présentation de la création d'images par le SDK](https://learn.microsoft.com/dotnet/core/containers/overview) et la [référence des propriétés MSBuild pour les conteneurs](https://learn.microsoft.com/dotnet/core/containers/publish-configuration).
+
+Le SDK .NET offre désormais une vraie voie de construction d'images OCI, pas un raccourci vers `docker build`. Utilisez-la pour les applications standard dont le packaging peut rester déclaratif. Dès que la construction doit exécuter des commandes système ou coordonner plusieurs toolchains, le `Dockerfile` redevient l'outil le plus clair.
