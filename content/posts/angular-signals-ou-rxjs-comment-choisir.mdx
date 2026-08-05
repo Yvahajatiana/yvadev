@@ -1,0 +1,343 @@
+---
+title: "Angular Signals ou RxJS : comment choisir en pratique"
+excerpt: "Signals et RxJS ne répondent pas au même problème. Découvrez lequel utiliser pour l’état, les événements, les appels HTTP et les formulaires Angular."
+date: "2026-08-05"
+author: "Yva Hajatiana"
+tags: ["Angular", "Signals", "RxJS", "TypeScript", "Frontend", "Architecture"]
+coverImage: "/images/posts/angular-signals-rxjs.webp"
+coverImageAlt: "Un graphe de signaux rouges relié à plusieurs flux réactifs violets"
+featured: false
+filename: "angular-signals-ou-rxjs-comment-choisir"
+---
+
+Depuis l’arrivée des Signals dans Angular, une question revient souvent : faut-il remplacer RxJS ? La réponse courte est non. Signals et RxJS appartiennent au même univers réactif, mais ils ne modélisent pas la même chose.
+
+Un Signal représente avant tout **une valeur actuelle** et ses dépendances. Un Observable représente **une suite de valeurs ou d’événements dans le temps**. Cette distinction permet de choisir sans opposer artificiellement les deux outils.
+
+Dans une application Angular moderne, l’approche la plus lisible consiste généralement à utiliser les Signals pour l’état consommé par l’interface, RxJS pour les flux asynchrones et leurs opérateurs, puis les fonctions d’interopérabilité à la frontière entre les deux.
+
+## La différence fondamentale : état ou flux
+
+Un Signal répond naturellement à la question : « quelle est la valeur maintenant ? » Il possède toujours une valeur lisible de manière synchrone :
+
+```typescript
+import { computed, signal } from '@angular/core';
+
+const quantity = signal(2);
+const unitPrice = signal(15);
+const total = computed(() => quantity() * unitPrice());
+
+console.log(total()); // 30
+quantity.set(3);
+console.log(total()); // 45
+```
+
+`computed` mémorise sa valeur et Angular suit automatiquement les Signals lus pendant son calcul. Il convient donc bien à un total, un filtre actif, un utilisateur sélectionné ou un indicateur de chargement.
+
+Un Observable répond plutôt à la question : « que s’est-il produit, dans quel ordre et comment dois-je réagir ? »
+
+```typescript
+const results$ = searchControl.valueChanges.pipe(
+  debounceTime(300),
+  distinctUntilChanged(),
+  switchMap(query => searchService.search(query))
+);
+```
+
+Ce flux exprime une chronologie : l’utilisateur saisit plusieurs valeurs, l’application attend, ignore les doublons et annule logiquement la recherche précédente lorsqu’une nouvelle requête commence.
+
+| Besoin | Signals | RxJS |
+| --- | --- | --- |
+| Lire immédiatement la valeur courante | Excellent | Nécessite souvent un abonnement ou `async` |
+| Calculer un état dérivé | `computed` | `map`, `combineLatest` |
+| Gérer debounce, annulation et concurrence | Limité | Excellent |
+| Représenter plusieurs événements successifs | Peu naturel | Excellent |
+| Mettre à jour finement un template | Excellent | Très bon avec `async` |
+| Propager une erreur ou une complétion | Non | Natif |
+
+La bonne décision ne dépend donc pas de la nouveauté de l’API, mais de la nature de la donnée.
+
+## Utiliser Signals pour l’état local de l’interface
+
+L’état interne d’un composant est le cas le plus évident : ouverture d’un panneau, élément sélectionné, pagination ou critères de tri. Signals évite le cérémonial d’un `BehaviorSubject` exposé avec `asObservable()` lorsque personne n’a besoin d’un véritable flux.
+
+```typescript
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+}
+
+@Component({
+  selector: 'app-product-list',
+  template: `
+    <input
+      type="search"
+      [value]="query()"
+      (input)="setQuery($event)"
+      placeholder="Rechercher"
+    />
+
+    <p>{{ filteredProducts().length }} produit(s)</p>
+
+    @for (product of filteredProducts(); track product.id) {
+      <button (click)="selectedId.set(product.id)">
+        {{ product.name }} — {{ product.price }} €
+      </button>
+    }
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ProductListComponent {
+  readonly products = signal<Product[]>([]);
+  readonly query = signal('');
+  readonly selectedId = signal<number | null>(null);
+
+  readonly filteredProducts = computed(() => {
+    const normalizedQuery = this.query().trim().toLowerCase();
+    return this.products().filter(product =>
+      product.name.toLowerCase().includes(normalizedQuery)
+    );
+  });
+
+  setQuery(event: Event): void {
+    this.query.set((event.target as HTMLInputElement).value);
+  }
+}
+```
+
+Le template lit directement `query()` et `filteredProducts()`. Il n’y a ni abonnement manuel, ni opérateur, ni risque de désabonnement oublié. Avec `OnPush`, la lecture d’un Signal permet aussi à Angular d’identifier précisément le composant à actualiser.
+
+Utilisez de préférence `computed` pour les valeurs dérivées. Copier un Signal dans un autre au moyen d’un `effect` crée deux sources de vérité et peut produire des mises à jour difficiles à suivre.
+
+## Conserver RxJS pour les événements et l’asynchrone complexe
+
+RxJS reste plus expressif dès que le temps, l’ordre ou la concurrence font partie du problème. Les opérateurs décrivent des stratégies précises :
+
+- `debounceTime` temporise un flux rapide ;
+- `switchMap` abandonne le résultat d’une opération devenue obsolète ;
+- `concatMap` conserve l’ordre des traitements ;
+- `exhaustMap` ignore les nouveaux déclenchements tant que le premier traitement continue ;
+- `retry` relance une opération selon une politique définie ;
+- `combineLatest` combine plusieurs sources vivantes.
+
+Prenons une recherche déclenchée par une saisie :
+
+```typescript
+import { Component, inject } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, debounceTime, distinctUntilChanged, of, startWith, switchMap } from 'rxjs';
+
+@Component({
+  selector: 'app-customer-search',
+  imports: [ReactiveFormsModule],
+  template: `
+    <input [formControl]="searchControl" />
+
+    @for (customer of customers(); track customer.id) {
+      <p>{{ customer.name }}</p>
+    }
+  `
+})
+export class CustomerSearchComponent {
+  private readonly customerService = inject(CustomerService);
+
+  readonly searchControl = new FormControl('', { nonNullable: true });
+
+  private readonly customers$ = this.searchControl.valueChanges.pipe(
+    startWith(this.searchControl.value),
+    debounceTime(300),
+    distinctUntilChanged(),
+    switchMap(query => this.customerService.search(query).pipe(
+      catchError(() => of([]))
+    ))
+  );
+
+  readonly customers = toSignal(this.customers$, { initialValue: [] });
+}
+```
+
+RxJS orchestre ici les événements, le délai, l’appel HTTP et l’annulation. `toSignal` fournit ensuite à la vue une valeur courante simple. Il ne s’agit pas de choisir un camp : chaque abstraction reste utilisée dans la partie qu’elle exprime le mieux.
+
+## Les appels HTTP nécessitent-ils RxJS ?
+
+`HttpClient` retourne des Observables. Pour un appel unique déclenché par une action, il n’est pas obligatoire de convertir immédiatement le résultat en Signal. Un Observable HTTP émet généralement une réponse puis se termine.
+
+RxJS devient particulièrement utile lorsque l’appel dépend d’autres événements : paramètres de route, saisie, rafraîchissement, reconnexion ou combinaison de plusieurs endpoints. Il permet alors d’exprimer l’annulation, la concurrence, les erreurs et les nouvelles tentatives dans une seule chaîne.
+
+En revanche, une fois les données chargées et utilisées comme état durable de l’écran, un Signal peut améliorer la lisibilité du composant ou du store. La frontière raisonnable est souvent :
+
+```text
+événements et transport → Observable → état affiché → Signal
+```
+
+Les API `resource` et `rxResource` rapprochent aussi le chargement asynchrone du monde des Signals. Elles ne rendent pas RxJS obsolète : elles conviennent à une ressource pilotée par des paramètres réactifs, tandis que les opérateurs RxJS restent plus complets pour coordonner plusieurs flux.
+
+## Formulaires : ne pas réécrire Reactive Forms avec Signals
+
+Les formulaires réactifs exposent déjà `valueChanges` et `statusChanges`. Gardez ces Observables lorsque vous avez besoin de debounce, de validation asynchrone ou de réactions entre plusieurs champs.
+
+Pour afficher une valeur ou un état du formulaire dans un calcul Signal, créez une conversion unique :
+
+```typescript
+readonly amount = toSignal(
+  this.form.controls.amount.valueChanges,
+  { initialValue: this.form.controls.amount.value }
+);
+
+readonly hasHighAmount = computed(() => this.amount() >= 10_000);
+```
+
+Évitez en revanche de dupliquer chaque contrôle dans un Signal et d’écrire deux mécanismes de synchronisation. Vous créeriez deux modèles concurrents pour le même formulaire.
+
+Angular propose également des formulaires fondés sur Signals dans ses versions récentes. Avant une migration, vérifiez leur niveau de stabilité et leur adéquation avec les composants UI et validateurs de votre projet. Une API nouvelle ne justifie pas à elle seule la réécriture d’un grand formulaire métier fiable.
+
+## Partager un état dans un service
+
+Un service Angular peut exposer un Signal en lecture seule et conserver les mutations en interne :
+
+```typescript
+import { Injectable, computed, signal } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class CartStore {
+  private readonly itemsState = signal<CartItem[]>([]);
+
+  readonly items = this.itemsState.asReadonly();
+  readonly count = computed(() =>
+    this.items().reduce((total, item) => total + item.quantity, 0)
+  );
+
+  add(item: CartItem): void {
+    this.itemsState.update(items => [...items, item]);
+  }
+}
+```
+
+Ce modèle suffit pour un état partagé simple. Pour un domaine complexe avec actions, effets asynchrones, historique, outils de développement ou conventions déjà établies autour de NgRx, une migration totale vers quelques Signals artisanaux peut au contraire réduire la prévisibilité.
+
+Signals change la manière dont un store expose et dérive son état, mais ne remplace pas les décisions d’architecture : frontières du domaine, immutabilité, commandes, gestion des erreurs et tests restent nécessaires.
+
+## Passer proprement de RxJS à Signals
+
+Angular fournit des fonctions d’interopérabilité dans `@angular/core/rxjs-interop`.
+
+### Convertir un Observable avec toSignal
+
+`toSignal` s’abonne immédiatement à l’Observable et expose sa dernière valeur. L’abonnement est normalement nettoyé avec le contexte Angular qui l’a créé.
+
+```typescript
+readonly user = toSignal(this.userService.currentUser$, {
+  initialValue: null
+});
+```
+
+Un Signal possède toujours une valeur. Il faut donc fournir `initialValue`, accepter `undefined`, ou utiliser `requireSync: true` uniquement lorsqu’une source comme `BehaviorSubject` émet obligatoirement dès l’abonnement.
+
+Ne rappelez pas `toSignal` à chaque lecture ou dans une méthode fréquemment invoquée : chaque appel crée un abonnement. Créez une seule conversion et réutilisez le Signal obtenu.
+
+### Convertir un Signal avec toObservable
+
+Lorsque des opérateurs temporels sont nécessaires, `toObservable` ramène un Signal dans une chaîne RxJS :
+
+```typescript
+readonly query = signal('');
+
+private readonly query$ = toObservable(this.query);
+
+readonly suggestions = toSignal(
+  this.query$.pipe(
+    debounceTime(250),
+    distinctUntilChanged(),
+    switchMap(query => this.searchService.suggest(query))
+  ),
+  { initialValue: [] }
+);
+```
+
+La conversion doit rester une frontière identifiable. Alterner plusieurs fois entre Signal et Observable dans la même chaîne rend le code plus difficile à raisonner et à tester.
+
+### Nettoyer les abonnements impératifs
+
+Lorsque vous devez réellement appeler `subscribe`, utilisez `takeUntilDestroyed` :
+
+```typescript
+private readonly destroyRef = inject(DestroyRef);
+
+ngOnInit(): void {
+  this.auditService.events$.pipe(
+    takeUntilDestroyed(this.destroyRef)
+  ).subscribe(event => this.logger.track(event));
+}
+```
+
+Dans un template, préférez toutefois le pipe `async` ou `toSignal` à un abonnement impératif qui ne fait que recopier une valeur.
+
+## Les pièges à éviter
+
+### Remplacer tous les Observables par des Signals
+
+Transformer un flux WebSocket, une suite d’événements ou une recherche annulable en Signal fait perdre la sémantique temporelle. Le Signal ne conserve que la valeur actuelle ; il ne représente ni la complétion ni l’historique des événements.
+
+### Utiliser effect comme subscribe
+
+`effect` sert surtout à synchroniser un Signal avec une API non réactive : journalisation, stockage local, canvas ou bibliothèque tierce. Il ne remplace pas la richesse de `pipe` et de ses opérateurs.
+
+Évitez notamment d’utiliser un effet pour propager un état dérivé :
+
+```typescript
+// À éviter
+effect(() => this.total.set(this.price() * this.quantity()));
+
+// Préférable
+readonly total = computed(() => this.price() * this.quantity());
+```
+
+### Exposer des Signals modifiables
+
+Un service ne devrait pas laisser tous ses consommateurs appeler `set`. Conservez le Signal modifiable en privé, exposez `asReadonly()` et fournissez des méthodes qui expriment les opérations métier.
+
+### Multiplier les conversions
+
+Décidez où se situe la frontière. Un service d’infrastructure peut exposer des Observables, tandis qu’un composant ou un store les convertit en état pour la vue. La convention exacte importe moins que sa cohérence dans toute l’équipe.
+
+## Une grille de décision concrète
+
+| Scénario | Choix recommandé | Pourquoi |
+| --- | --- | --- |
+| État ouvert/fermé d’une modale | Signal | Valeur locale synchrone |
+| Total calculé à partir de plusieurs champs | `computed` | État dérivé sans duplication |
+| Recherche avec debounce et annulation | RxJS puis `toSignal` | Le temps et la concurrence comptent |
+| Réponse HTTP affichée dans un composant | Observable avec `async` ou `toSignal` | Les deux sont lisibles |
+| WebSocket ou Server-Sent Events | RxJS | Suite d’événements longue durée |
+| Paramètres de route combinés à un endpoint | RxJS | Composition de sources asynchrones |
+| État partagé simple d’un panier | Service avec Signals | API synchrone et encapsulée |
+| Formulaire réactif existant | Reactive Forms et RxJS | Évite deux sources de vérité |
+| Persistance dans `localStorage` | Signal plus `effect` ciblé | Synchronisation avec une API impérative |
+| Store métier complexe existant | Conserver l’architecture et migrer progressivement | Réduit le risque de régression |
+
+## Migrer une application existante sans tout réécrire
+
+Une migration progressive est plus sûre qu’une conversion globale :
+
+1. commencez par l’état local des nouveaux composants ;
+2. remplacez les `BehaviorSubject` utilisés uniquement comme variables réactives simples ;
+3. conservez les chaînes RxJS qui modélisent réellement des événements ;
+4. placez `toSignal` près de la couche de présentation ;
+5. remplacez les états dérivés manuels par `computed` ;
+6. mesurez la lisibilité et les tests avant d’étendre la convention.
+
+Il n’est pas nécessaire de convertir un Observable correctement consommé avec le pipe `async`. Ce code reste idiomatique, sûr et compréhensible. La migration doit résoudre un problème réel : trop de code cérémoniel, dérivations difficiles à suivre ou besoin d’une lecture synchrone dans le template.
+
+## La règle à retenir
+
+Choisissez Signals lorsque votre modèle est une valeur courante : état local, sélection, préférence ou calcul dérivé. Choisissez RxJS lorsque votre modèle est un flux : événements, temporisation, annulation, concurrence, erreurs ou combinaison de sources asynchrones.
+
+Dans beaucoup de composants, la meilleure architecture utilise les deux : RxJS orchestre ce qui arrive dans le temps, puis un Signal présente le dernier état pertinent à Angular. Cette séparation rend le code plus explicite et évite de transformer une évolution du framework en guerre de technologies.
+
+## Ressources officielles
+
+La documentation Angular présente le [fonctionnement des Signals](https://angular.dev/guide/signals), les outils d’[interopérabilité entre RxJS et Signals](https://angular.dev/ecosystem/rxjs-interop), l’opérateur [`takeUntilDestroyed`](https://angular.dev/ecosystem/rxjs-interop/take-until-destroyed) et les [ressources asynchrones pilotées par Signals](https://angular.dev/guide/signals/resource).
