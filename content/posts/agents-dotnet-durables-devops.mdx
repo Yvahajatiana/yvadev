@@ -1,0 +1,422 @@
+---
+title: "Agents .NET durables : un workflow DevOps fiable"
+excerpt: "Construisez un workflow d’agent .NET résilient avec Durable Task : reprise après incident, validation humaine, tests locaux et déploiement Azure Functions."
+date: "2026-08-06"
+author: "Yva Hajatiana"
+tags: [".NET", "AI Agents", "DevOps", "Azure Functions", "C#"]
+coverImage: "/images/posts/cover-engineering.webp"
+coverImageAlt: "Composition éditoriale abstraite sur le diagnostic et la performance logicielle"
+featured: false
+filename: "agents-dotnet-durables-devops"
+---
+
+Un agent qui examine un incident de production peut prendre plusieurs minutes, appeler plusieurs services, puis attendre l’accord d’un humain avant toute correction. Un processus en mémoire perd son contexte au premier redémarrage. Le relancer aveuglément peut aussi refaire un appel coûteux au modèle, créer deux tickets ou appliquer deux fois une action de remédiation.
+
+La Durable Extension de Microsoft Agent Framework apporte une réponse particulièrement intéressante à ce problème : l’orchestration et l’état des sessions sont enregistrés par Durable Task. Les étapes déjà terminées peuvent être reprises, une approbation humaine peut rester en attente sans consommer de calcul et le même code peut être hébergé dans un worker .NET ou dans Azure Functions.
+
+Ce tutoriel construit un flux DevOps volontairement prudent : il collecte un diagnostic, produit une proposition de changement, attend une décision humaine, puis délègue l’action à une activité déterministe. Le modèle aide à analyser ; il ne reçoit jamais le droit de déployer seul.
+
+> **Statut à connaître.** Microsoft Agent Framework et son extension Durable Task sont encore en préversion au 6 août 2026. Épinglez les versions NuGet, testez chaque mise à jour et ne déduisez pas la compatibilité d’une API à partir d’un exemple ancien.
+
+## Pourquoi rendre un agent durable
+
+Une application de chat classique retient généralement l’historique dans la mémoire du processus. Cela suffit pour une question unique, mais pas pour un traitement opérationnel qui traverse plusieurs limites : un redémarrage de pod, une montée en charge, une approbation différée ou un appel à un service indisponible.
+
+Durable Task stocke les points de reprise et coordonne les unités de travail. Avec Microsoft Agent Framework, les agents et les étapes d’un workflow peuvent ainsi survivre à une défaillance entre deux appels. Les tâches achevées ne sont pas censées être relancées lors de la reprise ; l’historique permet aussi de comprendre le déroulement d’une exécution.
+
+Le bon cas d’usage n’est donc pas « rendre tout chat durable ». Choisissez cette architecture lorsqu’au moins un de ces éléments est présent :
+
+- un traitement dépasse la durée d’une requête HTTP ordinaire ;
+- une validation humaine, un minuteur ou un évènement externe peut suspendre le flux ;
+- plusieurs agents ou outils doivent s’exécuter dans un ordre contrôlé ;
+- une action a un effet de bord et doit être protégée contre les doublons ;
+- un audit des décisions et des étapes est nécessaire.
+
+Un assistant qui résume un texte sans état ni action sensible reste plus simple avec un client d’IA standard. La durabilité ajoute une infrastructure, un modèle d’exécution et des données persistées à gouverner.
+
+## Le flux : analyser, demander, puis agir
+
+Pour un incident de build ou de déploiement, séparons les responsabilités :
+
+```text
+Webhook / opérateur
+        |
+        v
+Orchestration durable
+  ├─ Diagnostic IA en lecture seule
+  ├─ Proposition structurée
+  ├─ Notification du réviseur
+  └─ Attente de l’évènement ApprovalDecision
+        |
+        +-- refus ou délai --> ticket / escalade
+        |
+        +-- accord --> activité déterministe de remédiation
+```
+
+L’agent peut interpréter un résumé de journal, des métriques ou une demande humaine. En revanche, la création d’une pull request, le changement de configuration ou le déclenchement d’un déploiement doivent rester dans une activité .NET explicite, authentifiée et idempotente. C’est cette frontière qui rend le flux révisable.
+
+L’article sur [Binlog MCP et le diagnostic des builds .NET](/blog/binlog-mcp-diagnostiquer-builds-dotnet-ia) explique comment fournir à l’assistant des données de compilation structurées. Ici, nous traitons le problème complémentaire : faire survivre et contrôler le workflow qui exploite ce diagnostic.
+
+## Prérequis et choix d’hébergement
+
+Pour reproduire l’exemple local, prévoyez :
+
+- le SDK .NET 9 ou supérieur ;
+- Docker Desktop ;
+- Azure Functions Core Tools v4 si vous choisissez l’hébergement Functions ;
+- Azure CLI et Azure Developer CLI (`azd`) pour provisionner et déployer Azure ;
+- une ressource Azure OpenAI et une identité autorisée, seulement si vous ajoutez un véritable agent de modèle.
+
+Deux modèles d’hébergement existent :
+
+| Modèle | À choisir quand | Responsabilité de l’équipe |
+| --- | --- | --- |
+| Azure Functions | endpoints HTTP, montée à l’échelle serverless, peu d’infrastructure | identité, réseau, paramètres et déploiement |
+| Worker auto-hébergé | conteneur, Kubernetes, service existant ou contrôle complet du cycle de vie | API, réseau, mise à l’échelle et exploitation complète |
+
+Dans les deux cas, Durable Task Scheduler (DTS) conserve l’état et coordonne l’exécution. Le tableau de bord DTS donne une vue des exécutions et des étapes ; traitez les entrées et sorties affichées comme des données potentiellement sensibles.
+
+## 1. Créer un workflow typé, sans IA d’abord
+
+Commencez par rendre le chemin métier testable sans modèle. Cette console représente une proposition de changement : une première étape enrichit l’incident, la seconde produit une recommandation. Les contrats sont des `record` .NET ; le compilateur vérifie donc que la sortie d’une étape correspond à l’entrée de la suivante.
+
+```powershell
+dotnet new console --framework net9.0 --name DurableIncident
+Set-Location DurableIncident
+dotnet add package Microsoft.Agents.AI --prerelease
+dotnet add package Microsoft.Agents.AI.Workflows --prerelease
+```
+
+Remplacez `Program.cs` par ce code :
+
+```csharp
+using Microsoft.Agents.AI.Workflows;
+
+var inspect = new InspectIncident();
+var propose = new ProposeChange();
+
+Workflow incidentWorkflow = new WorkflowBuilder(inspect)
+    .WithName("IncidentTriage")
+    .WithDescription("Analyse un incident et propose un changement révisable.")
+    .AddEdge(inspect, propose)
+    .Build();
+
+var incident = new IncidentInput(
+    Service: "catalog-api",
+    Severity: "high",
+    Summary: "Les requêtes retournent 503 après le déploiement 2026.08.06.2");
+
+await using StreamingRun run = await InProcessExecution.RunStreamingAsync(
+    incidentWorkflow, incident);
+
+await foreach (WorkflowEvent workflowEvent in run.WatchStreamAsync())
+{
+    if (workflowEvent is ExecutorCompletedEvent completed)
+    {
+        Console.WriteLine($"{completed.ExecutorId}: {completed.Data}");
+    }
+}
+
+internal sealed class InspectIncident()
+    : Executor<IncidentInput, IncidentContext>("InspectIncident")
+{
+    public override ValueTask<IncidentContext> HandleAsync(
+        IncidentInput message,
+        IWorkflowContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var contextResult = new IncidentContext(
+            message,
+            Evidence: $"Service={message.Service}; severity={message.Severity}");
+
+        return ValueTask.FromResult(contextResult);
+    }
+}
+
+internal sealed class ProposeChange()
+    : Executor<IncidentContext, ChangeProposal>("ProposeChange")
+{
+    public override ValueTask<ChangeProposal> HandleAsync(
+        IncidentContext message,
+        IWorkflowContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var proposal = new ChangeProposal(
+            message.Incident.Service,
+            Action: "Rollback du déploiement 2026.08.06.2",
+            Risk: "medium",
+            RequiresApproval: true);
+
+        return ValueTask.FromResult(proposal);
+    }
+}
+
+internal sealed record IncidentInput(string Service, string Severity, string Summary);
+internal sealed record IncidentContext(IncidentInput Incident, string Evidence);
+internal sealed record ChangeProposal(
+    string Service, string Action, string Risk, bool RequiresApproval);
+```
+
+Exécutez `dotnet run`. Aucun appel cloud n’est effectué : c’est une base rapide pour tester les contrats et le graphe. Dans un vrai système, remplacez progressivement `ProposeChange` par un agent qui retourne un objet structuré, puis validez cet objet avant toute action.
+
+## 2. Exécuter le même graphe avec reprise durable
+
+L’exécuteur ci-dessus fonctionne en mémoire. Pour ajouter le backend durable, démarrez l’émulateur DTS :
+
+```powershell
+docker run -d --name dts-emulator -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+```
+
+Installez ensuite les packages du worker et du client :
+
+```powershell
+dotnet add package Microsoft.Agents.AI.DurableTask --prerelease
+dotnet add package Microsoft.DurableTask.Client.AzureManaged
+dotnet add package Microsoft.DurableTask.Worker.AzureManaged
+dotnet add package Microsoft.Extensions.Hosting
+```
+
+Le graphe `IncidentTriage` ne change pas. Seul son hôte change. Ajoutez ces `using` puis remplacez la partie d’exécution en mémoire par le bloc suivant :
+
+```csharp
+using Microsoft.Agents.AI.DurableTask;
+using Microsoft.Agents.AI.DurableTask.Workflows;
+using Microsoft.DurableTask.Client.AzureManaged;
+using Microsoft.DurableTask.Worker.AzureManaged;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+string dtsConnectionString = Environment.GetEnvironmentVariable(
+    "DURABLE_TASK_SCHEDULER_CONNECTION_STRING")
+    ?? "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+
+IHost host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices(services =>
+    {
+        services.ConfigureDurableWorkflows(
+            options => options.AddWorkflow(incidentWorkflow),
+            workerBuilder => workerBuilder.UseDurableTaskScheduler(dtsConnectionString),
+            clientBuilder => clientBuilder.UseDurableTaskScheduler(dtsConnectionString));
+    })
+    .Build();
+
+await host.StartAsync();
+
+try
+{
+    IWorkflowClient client = host.Services.GetRequiredService<IWorkflowClient>();
+    IAwaitableWorkflowRun durableRun =
+        (IAwaitableWorkflowRun)await client.RunAsync(incidentWorkflow, incident);
+
+    Console.WriteLine($"Run ID: {durableRun.RunId}");
+    ChangeProposal? result = await durableRun.WaitForCompletionAsync<ChangeProposal>();
+    Console.WriteLine(result);
+}
+finally
+{
+    await host.StopAsync();
+}
+```
+
+Relancez `dotnet run`, puis ouvrez `http://localhost:8082`. Chaque exécuteur apparaît comme une activité durable. Arrêter le processus après une étape puis le relancer permet de vérifier la reprise sur votre scénario réel ; ne considérez pas cette démonstration minimale comme une preuve d’idempotence de vos API externes.
+
+## 3. Introduire une analyse IA sans déléguer la décision
+
+Quand la logique déterministe est validée, l’étape d’analyse peut appeler un `DurableAIAgent` depuis une orchestration. Il faut le récupérer par `context.GetAgent()` : ce wrapper enregistre correctement l’appel et son résultat dans l’historique durable.
+
+Voici l’ossature d’un orchestrateur Azure Functions qui produit une proposition structurée. La fonction qui applique réellement le changement est une activité séparée, jamais un prompt.
+
+```csharp
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.DurableTask;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.DurableTask;
+
+public static class IncidentOrchestration
+{
+    [Function(nameof(RunAsync))]
+    public static async Task<string> RunAsync(
+        [OrchestrationTrigger] TaskOrchestrationContext context)
+    {
+        IncidentInput incident = context.GetInput<IncidentInput>();
+
+        DurableAIAgent triageAgent = context.GetAgent("IncidentTriageAgent");
+        AgentSession session = await triageAgent.CreateSessionAsync();
+        AgentResponse<ChangeProposal> response =
+            await triageAgent.RunAsync<ChangeProposal>(
+                message: $"Analyse cet incident et propose une action réversible : {incident.Summary}",
+                session: session);
+
+        ChangeProposal proposal = response.Result;
+        await context.CallActivityAsync(nameof(NotifyReviewer), proposal);
+
+        HumanApproval approval;
+        try
+        {
+            approval = await context.WaitForExternalEvent<HumanApproval>(
+                eventName: "ApprovalDecision",
+                timeout: TimeSpan.FromHours(2));
+        }
+        catch (OperationCanceledException)
+        {
+            return await context.CallActivityAsync<string>(nameof(Escalate), proposal);
+        }
+
+        if (!approval.Approved)
+        {
+            return "Changement refusé par le réviseur.";
+        }
+
+        return await context.CallActivityAsync<string>(nameof(ApplyApprovedChange), proposal);
+    }
+
+    [Function(nameof(NotifyReviewer))]
+    public static Task NotifyReviewer([ActivityTrigger] ChangeProposal proposal)
+    {
+        // Envoyer une notification vers votre système de ticketing.
+        return Task.CompletedTask;
+    }
+
+    [Function(nameof(ApplyApprovedChange))]
+    public static Task<string> ApplyApprovedChange([ActivityTrigger] ChangeProposal proposal)
+    {
+        // Vérifier les droits, la fenêtre de changement et une clé d'idempotence.
+        return Task.FromResult($"Action appliquée : {proposal.Action}");
+    }
+
+    [Function(nameof(Escalate))]
+    public static Task<string> Escalate([ActivityTrigger] ChangeProposal proposal)
+    {
+        return Task.FromResult($"Escalade créée pour : {proposal.Service}");
+    }
+}
+
+public sealed record HumanApproval(bool Approved, string? Comment);
+```
+
+L’appel IA doit imposer un schéma de sortie strict pour `ChangeProposal`, définir les valeurs acceptées pour le risque et refuser une proposition incomplète. Ne concaténez pas des secrets, des journaux bruts contenant des données personnelles ou des instructions non fiables dans le message envoyé au modèle.
+
+Pour répondre, un portail interne ou une fonction d’administration utilise le client Durable Task :
+
+```csharp
+await client.RaiseEventAsync(
+    instanceId,
+    "ApprovalDecision",
+    new HumanApproval(Approved: true, Comment: "Rollback validé par l'astreinte."));
+```
+
+Cette attente est durable : le workflow conserve son état, puis reprend quand l’évènement arrive. Elle ne remplace pas une séparation des rôles : le compte qui soumet l’évènement doit être authentifié et autorisé à approuver ce service précis.
+
+## 4. Héberger l’agent dans Azure Functions
+
+Pour un agent conversationnel durable, l’intégration Functions crée les endpoints HTTP et gère les threads persistants. Un projet Functions utilise notamment `Microsoft.Agents.AI.Hosting.AzureFunctions` et `Microsoft.Azure.Functions.Worker` 2.2.0 ou supérieur.
+
+Le code d’hébergement reste très court :
+
+```csharp
+using Azure.AI.Projects;
+using Azure.Identity;
+using Microsoft.Agents.AI;
+using Microsoft.Agents.AI.Hosting.AzureFunctions;
+using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Extensions.Hosting;
+
+string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")
+    ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT is required.");
+string deployment = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")
+    ?? "gpt-4o-mini";
+
+AIAgent agent = new AIProjectClient(new Uri(endpoint), new DefaultAzureCredential())
+    .AsAIAgent(
+        model: deployment,
+        instructions: "Tu analyses les incidents. Tu ne déclenches jamais de changement.",
+        name: "IncidentTriageAgent");
+
+using IHost app = FunctionsApplication
+    .CreateBuilder(args)
+    .ConfigureFunctionsWebApplication()
+    .ConfigureDurableAgents(options => options.AddAIAgent(agent))
+    .Build();
+
+app.Run();
+```
+
+En production, préférez une `ManagedIdentityCredential` configurée explicitement plutôt que les essais successifs de `DefaultAzureCredential`. Attribuez à cette identité le rôle minimal sur Azure OpenAI et aucun droit de déploiement. L’activité `ApplyApprovedChange` doit posséder sa propre identité, plus étroite encore.
+
+## 5. Tester le parcours local et l’intégrer à la CI
+
+Une Functions app locale utilise Azurite pour ses besoins internes et l’émulateur DTS pour l’état durable. Lancez-les dans deux terminaux :
+
+```powershell
+docker run -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
+docker run -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+```
+
+Dans `local.settings.json`, gardez les valeurs locales hors de Git et ne copiez aucun secret de production :
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AZURE_OPENAI_ENDPOINT": "https://votre-ressource.openai.azure.com",
+    "AZURE_OPENAI_DEPLOYMENT": "gpt-4o-mini",
+    "TASKHUB_NAME": "default"
+  }
+}
+```
+
+Lancez `func start`. Un premier `POST` vers l’endpoint généré renvoie l’en-tête `x-ms-thread-id`. Réutilisez cet identifiant dans le paramètre `thread_id` afin de vérifier que le contexte survit entre deux requêtes :
+
+```powershell
+$response = Invoke-WebRequest -Uri "http://localhost:7071/api/agents/IncidentTriageAgent/run" `
+  -Method POST `
+  -Headers @{ "Content-Type" = "text/plain" } `
+  -Body "Le déploiement catalog-api échoue avec des erreurs 503."
+
+$threadId = $response.Headers["x-ms-thread-id"]
+
+Invoke-RestMethod -Uri "http://localhost:7071/api/agents/IncidentTriageAgent/run?thread_id=$threadId" `
+  -Method POST `
+  -Headers @{ "Content-Type" = "text/plain" } `
+  -Body "Propose uniquement une action réversible et un niveau de risque."
+```
+
+En CI, n’appelez pas un modèle réel pour chaque pull request. Gardez trois niveaux :
+
+- tests unitaires pour les exécuteurs purs et la validation de `ChangeProposal` ;
+- tests d’intégration contre l’émulateur DTS pour la reprise et la réception d’évènements ;
+- quelques évaluations contrôlées, avec réponses mises en cache ou environnement isolé, avant une release.
+
+Un test important consiste à provoquer une interruption après le diagnostic puis à vérifier que la reprise n’appelle pas deux fois votre API de ticketing. Donnez à chaque effet de bord une clé d’idempotence dérivée du `instanceId` de l’orchestration, et faites respecter cette clé par le système cible.
+
+## Points de vigilance en production
+
+La durabilité ne transforme pas automatiquement un agent en système sûr. Gardez ces règles :
+
+- **Préversion** : verrouillez les packages et prévoyez un environnement de validation avant toute mise à jour.
+- **Déterminisme** : l’orchestrateur coordonne les opérations ; le travail non déterministe et les accès externes doivent rester dans des activités ou des appels d’agent traçables.
+- **Idempotence** : une reprise protège les étapes enregistrées, mais votre activité doit encore supporter une requête répétée ou un timeout ambigu.
+- **Validation humaine** : le modèle peut proposer, jamais décider seul d’une action qui modifie une ressource, ouvre un accès ou déploie du code.
+- **Secrets et données** : filtrez les journaux avant le prompt ; chiffrez les données persistées et appliquez une durée de rétention aux sessions.
+- **Identités séparées** : l’agent de diagnostic est en lecture seule ; l’activité de remédiation reçoit uniquement les autorisations nécessaires à l’action approuvée.
+- **Observabilité** : corrélez l’ID de run, le ticket d’incident, la version du prompt, le modèle et l’action finale. Protégez l’accès au tableau de bord DTS, qui peut afficher des contenus sensibles.
+
+## Checklist avant de déployer
+
+- Les versions préliminaires sont-elles épinglées et validées ?
+- Les exécuteurs purs sont-ils couverts par des tests ?
+- Chaque appel à effet de bord possède-t-il une clé d’idempotence ?
+- Une approbation authentifiée précède-t-elle toute action de remédiation ?
+- Le modèle reçoit-il uniquement le contexte utile et filtré ?
+- Les identités de l’agent et de l’activité de changement sont-elles distinctes ?
+- Les sessions ont-elles une durée de rétention et une stratégie de purge ?
+- Les traces permettent-elles de reconstruire une exécution sans divulguer de secret ?
+- Une reprise, un refus et un timeout ont-ils été testés de bout en bout ?
+
+## Ressources officielles
+
+La documentation Microsoft de la [Durable Extension](https://learn.microsoft.com/en-us/agent-framework/integrations/durable-extension) décrit les deux modèles d’hébergement, les prérequis locaux et les sessions persistantes. Le guide [Durable Task pour Microsoft Agent Framework](https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-agents-microsoft-agent-framework) explique quand préférer ce modèle à un agent standard. Enfin, l’équipe .NET publie des [workflows durables Microsoft Agent Framework](https://devblogs.microsoft.com/dotnet/durable-workflows-in-microsoft-agent-framework/) avec les packages, l’émulateur DTS et les échantillons Azure Functions.
+
+Un workflow durable n’a pas pour but d’automatiser davantage à tout prix. Il rend les enchaînements longs et risqués récupérables, auditables et gouvernables : l’IA accélère l’analyse, tandis que le code typé, les identités et l’approbation humaine conservent le contrôle opérationnel.
